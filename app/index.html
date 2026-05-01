@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nur - Prayer Tracker</title>
+
+    <!-- Inline SVG favicon (star in gradient circle — same as brand mark) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2368d391'/%3E%3Cstop offset='100%25' stop-color='%2363b3ed'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='30' fill='url(%23g)'/%3E%3Cg transform='translate(8,8) scale(2)' fill='%231a365d'%3E%3Cpath d='M12 2L14.09 8.26L20 10L14.09 11.74L12 18L9.91 11.74L4 10L9.91 8.26L12 2Z'/%3E%3Cpath d='M19 14C17.34 14 16 15.34 16 17C16 18.66 17.34 20 19 20C20.66 20 22 18.66 22 17C22 15.34 20.66 14 19 14ZM17.5 17C17.5 16.17 18.17 15.5 19 15.5C19.83 15.5 20.5 16.17 20.5 17C20.5 17.83 19.83 18.5 19 18.5C18.17 18.5 17.5 17.83 17.5 17Z'/%3E%3C/g%3E%3C/svg%3E">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Crimson+Text:wght@400;600&family=Inter:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="assets/css/styles.css?v=203">
+
+</head>
+<body>
+
+    <!-- Floating background orbs (design-08) -->
+    <div class="floating-bg" aria-hidden="true">
+        <div class="bg-orb"></div>
+        <div class="bg-orb"></div>
+        <div class="bg-orb"></div>
+        <div class="bg-orb"></div>
+    </div>
+
+    <!-- Custom title bar (Electron frameless mode — hidden in browser) -->
+    <div class="titlebar" id="titlebar">
+        <div class="titlebar-drag">
+            <span class="titlebar-title">Nur</span>
+        </div>
+        <div class="titlebar-controls">
+            <button type="button" class="tb-btn tb-minimize" id="tb-min" title="Minimize">
+                <svg width="10" height="1" viewBox="0 0 10 1"><rect width="10" height="1" fill="currentColor"/></svg>
+            </button>
+            <button type="button" class="tb-btn tb-maximize" id="tb-max" title="Maximize">
+                <svg width="10" height="10" viewBox="0 0 10 10"><rect width="10" height="10" rx="1" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+            </button>
+            <button type="button" class="tb-btn tb-close" id="tb-close" title="Close">
+                <svg width="10" height="10" viewBox="0 0 10 10"><path d="M1 1l8 8M9 1l-8 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- App Shell -->
+    <div class="app-shell">
+
+        <!-- Skip Links for Accessibility -->
+        <a href="#main-content" class="skip-link">Skip to main content</a>
+        <a href="#calendar-section" class="skip-link">Skip to calendar</a>
+
+        <!-- ===== Header ===== -->
+        <header class="app-header" role="banner">
+            <div class="header-inner">
+                <div class="brand">
+                    <div class="brand-icon" aria-hidden="true">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L14.09 8.26L20 10L14.09 11.74L12 18L9.91 11.74L4 10L9.91 8.26L12 2Z" fill="currentColor"/>
+                            <path d="M19 14C17.34 14 16 15.34 16 17C16 18.66 17.34 20 19 20C20.66 20 22 18.66 22 17C22 15.34 20.66 14 19 14ZM17.5 17C17.5 16.17 18.17 15.5 19 15.5C19.83 15.5 20.5 16.17 20.5 17C20.5 17.83 19.83 18.5 19 18.5C18.17 18.5 17.5 17.83 17.5 17Z" fill="currentColor"/>
+                        </svg>
+                    </div>
+                    <h1 class="brand-name">Nur</h1>
+                </div>
+
+                <nav class="nav-tabs" role="navigation" aria-label="Main navigation">
+                    <button type="button" class="nav-tab active" data-page="dashboard" aria-pressed="true">
+                        Dashboard
+                    </button>
+                    <button type="button" class="nav-tab" data-page="times" aria-pressed="false">
+                        Prayer Times
+                    </button>
+                    <button type="button" class="nav-tab" data-page="stats" aria-pressed="false">
+                        Statistics
+                    </button>
+                </nav>
+
+                <div class="header-right">
+                    <button type="button" class="icon-btn" id="settings-btn" title="Settings" aria-label="Open settings">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                    </button>
+                    <div class="time-display">
+                        <div class="time" id="header-time">--:--</div>
+                        <div class="date-label" id="header-date-label">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- ===== Main Content ===== -->
+        <main class="main-content" id="main-content">
+
+        <!-- ============ Dashboard Page ============ -->
+        <div class="page page-dashboard active" data-page="dashboard">
+
+            <!-- Dashboard — 3 equal columns -->
+            <section class="dashboard-cards" aria-labelledby="dashboard-heading">
+                <h2 id="dashboard-heading" class="sr-only">Today's Progress</h2>
+
+                <!-- 1. Today's Prayers (ring + vertical list) -->
+                <div class="card prayer-card" tabindex="0" role="region" aria-labelledby="prayer-heading">
+                    <h3 id="prayer-heading">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="card-title-icon">
+                            <circle cx="12" cy="12" r="5" fill="currentColor"/>
+                            <path d="M12 1v3M21 12h-3M12 21v3M3 12h3" stroke="currentColor" stroke-width="1.5"/>
+                        </svg>
+                        Today's Prayers
+                    </h3>
+                    <div class="prayer-ring-wrap">
+                        <svg class="progress-ring" width="130" height="130" role="img" aria-label="prayers completed">
+                            <defs><linearGradient id="ring-grad-1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#68d391"/><stop offset="100%" stop-color="#63b3ed"/></linearGradient></defs>
+                            <circle cx="65" cy="65" r="54" fill="none" stroke="var(--ring-track)" stroke-width="7"></circle>
+                            <circle cx="65" cy="65" r="54" fill="none" stroke="url(#ring-grad-1)" stroke-width="7" stroke-linecap="round" id="main-progress-ring" stroke-dasharray="339.29" stroke-dashoffset="339.29"></circle>
+                        </svg>
+                        <div class="progress-text">
+                            <span class="progress-number" id="main-prayer-count">0</span>
+                            <span class="progress-total">/ 5</span>
+                        </div>
+                    </div>
+                    <div class="prayer-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- 2. Goals -->
+                <div class="card goals-card" tabindex="0" role="region" aria-labelledby="goals-heading">
+                    <h3 id="goals-heading">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="card-title-icon">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+                            <circle cx="12" cy="12" r="6" stroke="currentColor" stroke-width="1.5"/>
+                            <circle cx="12" cy="12" r="2" fill="currentColor"/>
+                        </svg>
+                        Goals
+                    </h3>
+                    <div class="goals-list" id="goals-list">
+                        <!-- Populated by JS -->
+                    </div>
+                    <button type="button" class="goals-add-btn" id="goals-add-btn" aria-label="Add a new goal">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        Add Goal
+                    </button>
+                </div>
+
+                <!-- 3. Reminders -->
+                <div class="card reminders-card" tabindex="0" role="region" aria-labelledby="reminders-heading">
+                    <h3>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="card-title-icon">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="currentColor"/>
+                        </svg>
+                        <span id="reminders-heading">Reminders</span>
+                    </h3>
+                    <div class="reminders-display">
+                        <!-- Populated by JS with this month's special days -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Hijri Calendar -->
+            <section class="calendar-section" id="calendar-section">
+                <div class="calendar-card">
+                    <div class="calendar-header">
+                        <div class="cal-titles">
+                            <h2 id="cal-month-title">Loading...</h2>
+                            <div class="cal-subtitle" id="cal-sub-title"></div>
+                        </div>
+                        <div class="cal-nav">
+                            <button type="button" class="cal-nav-btn" id="cal-prev" aria-label="Previous month">‹</button>
+                            <button type="button" class="cal-nav-btn today-btn" id="cal-today" aria-label="Go to today">Today</button>
+                            <button type="button" class="cal-nav-btn" id="cal-next" aria-label="Next month">›</button>
+                        </div>
+                    </div>
+
+                    <!-- Calendar grid rendered by JS -->
+                    <div class="calendar-grid" id="calendar-grid"></div>
+                </div>
+            </section>
+
+        </div>
+        <!-- ============ /Dashboard Page ============ -->
+
+        <!-- ============ Prayer Times Page ============ -->
+        <div class="page page-times" data-page="times">
+            <div class="times-page" id="times-page">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+        <!-- ============ Statistics Page ============ -->
+        <div class="page page-stats" data-page="stats">
+            <div class="stats-grid" id="stats-grid">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+        </main>
+    </div>
+
+    <!-- Floating next-prayer indicator (design-08) -->
+    <div class="next-prayer-float">
+        <span class="dot"></span>
+        <span id="next-prayer-text">Loading...</span>
+    </div>
+
+    <!-- Shared Modal -->
+    <div class="modal-backdrop" id="modal-backdrop" role="dialog" aria-labelledby="modal-title" aria-hidden="true">
+        <div class="modal day-detail-modal">
+            <div class="modal-header">
+                <h2 id="modal-title">Day Details</h2>
+                <button type="button" class="close-btn" id="modal-close" aria-label="Close modal">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-content" id="modal-content">
+                <!-- Content populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Context Menu -->
+    <div class="context-menu" id="context-menu" role="menu" aria-hidden="true">
+        <button type="button" class="context-item" id="ctx-mark-complete" role="menuitem">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <polyline points="20,6 9,17 4,12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Mark All Complete
+        </button>
+        <button type="button" class="context-item" id="ctx-mark-incomplete" role="menuitem">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                <path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            Mark All Incomplete
+        </button>
+        <div class="context-divider"></div>
+        <button type="button" class="context-item" id="ctx-add-note" role="menuitem">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="2"/>
+                <polyline points="14,2 14,8 20,8" stroke="currentColor" stroke-width="2"/>
+                <line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="2"/>
+                <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            Add Note
+        </button>
+        <button type="button" class="context-item" id="ctx-copy-date" role="menuitem">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke="currentColor" stroke-width="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            Copy Date
+        </button>
+    </div>
+
+    <!-- Prayer Timer Floating Window -->
+    <div class="prayer-timer-pip" id="prayer-timer" aria-live="polite" aria-hidden="true">
+        <div class="pip-header">
+            <span class="pip-title">Next Prayer</span>
+            <div class="pip-controls">
+                <button type="button" class="pip-btn" id="pip-minimize" title="Minimize" aria-label="Minimize timer">–</button>
+                <button type="button" class="pip-btn" id="pip-close" title="Close" aria-label="Close timer">×</button>
+            </div>
+        </div>
+        <div class="pip-content">
+            <div class="pip-prayer-name" id="pip-prayer">Maghrib</div>
+            <div class="pip-countdown" id="pip-countdown">2:34:12</div>
+        </div>
+        <div class="pip-drag-handle" aria-label="Drag to move timer"></div>
+    </div>
+
+    <!-- Print Styles -->
+    <style media="print">
+        .skip-link, .app-header, .floating-bg, .next-prayer-float,
+        .modal-backdrop, .context-menu, .prayer-timer-pip { display: none !important; }
+
+        .main-content { margin: 0; padding: 20px; }
+        .calendar-grid { page-break-inside: avoid; }
+
+        @page { margin: 1in; }
+
+        body {
+            background: white !important;
+            color: black !important;
+            font-size: 12pt;
+        }
+
+        .card {
+            border: 1px solid #ccc;
+            break-inside: avoid;
+            margin-bottom: 20px;
+        }
+    </style>
+
+    <!-- Scripts -->
+    <script src="assets/js/storage.js?v=203"></script>
+    <script src="assets/js/sync.js?v=203"></script>
+    <script src="assets/js/hijri-calendar.js?v=203"></script>
+    <script src="assets/js/app-simplified.js?v=203"></script>
+</body>
+</html>

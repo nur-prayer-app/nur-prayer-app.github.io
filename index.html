@@ -4,60 +4,76 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nur — Prayer Tracker</title>
-    <meta name="description" content="A prayer tracker built for Muslims. Daily prayers, qadaa goals, fasting, qyaam, Hijri calendar, and prayer times.">
+    <meta name="description" content="A prayer tracker built for Muslims. Daily prayers, fasting tracker, Hijri calendar, prayer times, cloud sync, and more.">
     <link rel="icon" type="image/png" href="icon.png">
     <meta property="og:title" content="Nur — Prayer Tracker">
-    <meta property="og:description" content="Track daily prayers, qadaa goals, fasting, and qyaam with a Hijri calendar and prayer times.">
+    <meta property="og:description" content="Track daily prayers, fasting, qadaa goals, and more with Hijri calendar and prayer times.">
     <meta property="og:image" content="https://nur-prayer-app.github.io/releases/icon.png">
     <meta property="og:url" content="https://nur-prayer-app.github.io/releases/">
     <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="Nur — Prayer Tracker">
-    <meta name="twitter:description" content="Track daily prayers, qadaa goals, fasting, and qyaam with a Hijri calendar and prayer times.">
-    <meta name="twitter:image" content="https://nur-prayer-app.github.io/releases/icon.png">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #0f1b2d 0%, #1a2940 50%, #0f1b2d 100%);
+            background: #0f1b2d;
             color: #e2e8f0;
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
+            overflow-x: hidden;
         }
+
+        /* ── Hero ── */
         .hero {
+            position: relative;
             text-align: center;
-            max-width: 600px;
+            padding: 5rem 2rem 4rem;
+            overflow: hidden;
         }
-        .icon {
-            width: 80px;
-            height: 80px;
-            border-radius: 20px;
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -40%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(ellipse, rgba(104,211,145,0.08) 0%, rgba(99,179,237,0.04) 40%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero > * { position: relative; z-index: 1; }
+        .hero-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 18px;
             background: linear-gradient(135deg, rgba(104,211,145,0.15), rgba(99,179,237,0.15));
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 1.5rem;
+            margin: 0 auto 1.25rem;
         }
-        .icon svg { color: #68d391; }
-        h1 {
-            font-size: 3rem;
-            font-weight: 700;
+        .hero-icon svg { color: #68d391; }
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
             background: linear-gradient(135deg, #68d391, #63b3ed);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 0.5rem;
+            background-clip: text;
+            letter-spacing: -1px;
         }
-        .tagline {
-            font-size: 1.1rem;
+        .hero-tagline {
+            font-size: 1.15rem;
             color: #94a3b8;
-            margin-bottom: 2rem;
-            line-height: 1.6;
+            max-width: 520px;
+            margin: 0.75rem auto 2rem;
+            line-height: 1.7;
         }
-        .download-btn {
+        .hero-ctas {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn-primary {
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
@@ -65,108 +81,243 @@
             background: linear-gradient(135deg, #68d391, #63b3ed);
             color: #0f1b2d;
             font-size: 1rem;
-            font-weight: 600;
+            font-weight: 700;
             border: none;
             border-radius: 12px;
             cursor: pointer;
             text-decoration: none;
             transition: transform 0.15s, box-shadow 0.15s;
         }
-        .download-btn:hover {
+        .btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 24px rgba(104, 211, 145, 0.25);
         }
-        .version {
-            margin-top: 0.75rem;
-            font-size: 0.8rem;
-            color: #64748b;
-        }
-        .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            max-width: 700px;
-            margin-top: 3rem;
-            text-align: left;
-        }
-        .feature {
-            padding: 1.25rem;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 12px;
-        }
-        .feature h3 {
-            font-size: 0.9rem;
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.875rem 2rem;
+            background: rgba(255,255,255,0.05);
             color: #e2e8f0;
-            margin-bottom: 0.25rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 12px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.15s;
         }
-        .feature p {
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.2);
+        }
+        .hero-version {
+            margin-top: 1rem;
             font-size: 0.8rem;
-            color: #94a3b8;
-            line-height: 1.5;
+            color: #475569;
         }
+
+        /* ── Features ── */
+        .features {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 2rem 2rem 4rem;
+        }
+        .features-title {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #e2e8f0;
+            margin-bottom: 0.5rem;
+        }
+        .features-sub {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-bottom: 2.5rem;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.25rem;
+        }
+        @media (max-width: 700px) {
+            .features-grid { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 2.5rem; }
+        }
+        .feature-card {
+            padding: 1.5rem;
+            background: rgba(255,255,255,0.025);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .feature-card:hover {
+            background: rgba(255,255,255,0.04);
+            border-color: rgba(104,211,145,0.2);
+        }
+        .feature-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.75rem;
+        }
+        .feature-icon svg { width: 20px; height: 20px; }
+        .fi-green  { background: rgba(104,211,145,0.12); color: #68d391; }
+        .fi-blue   { background: rgba(99,179,237,0.12);  color: #63b3ed; }
+        .fi-amber  { background: rgba(251,191,36,0.12);  color: #fbbf24; }
+        .fi-purple { background: rgba(200,162,255,0.12);  color: #c8a2ff; }
+        .fi-teal   { background: rgba(45,212,191,0.12);   color: #2dd4bf; }
+        .fi-red    { background: rgba(252,129,129,0.12);  color: #fc8181; }
+        .feature-card h3 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #e2e8f0;
+            margin-bottom: 0.35rem;
+        }
+        .feature-card p {
+            font-size: 0.82rem;
+            color: #94a3b8;
+            line-height: 1.6;
+        }
+
+        /* ── Footer ── */
         footer {
-            margin-top: 3rem;
+            text-align: center;
+            padding: 2rem;
+            border-top: 1px solid rgba(255,255,255,0.04);
+        }
+        .footer-links {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+        .footer-links a {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+        .footer-links a:hover { color: #e2e8f0; }
+        .footer-note {
             font-size: 0.75rem;
             color: #475569;
         }
     </style>
 </head>
 <body>
-    <div class="hero">
-        <div class="icon">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+    <section class="hero">
+        <div class="hero-icon">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
                 <path d="M12 2L14.09 8.26L20 10L14.09 11.74L12 18L9.91 11.74L4 10L9.91 8.26L12 2Z" fill="currentColor"/>
                 <path d="M19 14C17.34 14 16 15.34 16 17C16 18.66 17.34 20 19 20C20.66 20 22 18.66 22 17C22 15.34 20.66 14 19 14ZM17.5 17C17.5 16.17 18.17 15.5 19 15.5C19.83 15.5 20.5 16.17 20.5 17C20.5 17.83 19.83 18.5 19 18.5C18.17 18.5 17.5 17.83 17.5 17Z" fill="currentColor"/>
             </svg>
         </div>
         <h1>Nur</h1>
-        <p class="tagline">A prayer tracker built for Muslims. Daily prayers, qadaa goals, fasting, qyaam, Hijri calendar, and prayer times — all in one app.</p>
-        <a href="https://github.com/nur-prayer-app/releases/releases/download/v1.1.193/Nur.Setup.1.1.193.exe" class="download-btn">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Download for Windows
-        </a>
-        <div class="version" id="version-label">Loading version...</div>
-    </div>
+        <p class="hero-tagline">A prayer tracker built for Muslims. Track your daily prayers, fasting, qadaa goals, and more — with a beautiful Hijri calendar and accurate prayer times.</p>
+        <div class="hero-ctas">
+            <a href="https://github.com/nur-prayer-app/releases/releases/latest" class="btn-primary" id="download-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Download for Windows
+            </a>
+            <a href="app/" class="btn-secondary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke="currentColor" stroke-width="1.5"/></svg>
+                Try Web Version
+            </a>
+        </div>
+        <div class="hero-version" id="version-label"></div>
+    </section>
 
-    <div class="features">
-        <div class="feature">
-            <h3>Prayer Tracking</h3>
-            <p>Tap to log each prayer. Auto-detect missed prayers and track qadaa goals.</p>
+    <section class="features">
+        <h2 class="features-title">Everything you need</h2>
+        <p class="features-sub">Built with care for the Muslim community</p>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon fi-green">
+                    <svg viewBox="0 0 24 24" fill="none"><polyline points="20,6 9,17 4,12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <h3>Daily Prayer Tracking</h3>
+                <p>Log all 5 prayers with a single tap. Jumu'ah on Fridays. Auto-detect missed prayers.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon fi-blue">
+                    <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="1.5"/></svg>
+                </div>
+                <h3>Hijri Calendar</h3>
+                <p>Umm al-Qura calendar with special Islamic days, reminders, and hadith references.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon fi-amber">
+                    <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                </div>
+                <h3>Prayer Times</h3>
+                <p>Accurate calculation with live timeline, countdown, fasting tracker, and iqama offsets.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon fi-amber">
+                    <svg viewBox="0 0 24 24" fill="none"><path d="M6 2h12M6 22h12M6 2c0 4 4 5 4 8s-4 4-4 8h12c0-4-4-5-4-8s4-4 4-8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <h3>Fasting Tracker</h3>
+                <p>Live Fajr-to-Maghrib countdown with progress bar. Auto-enables during Ramadan.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon fi-purple">
+                    <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L14.09 8.26L20 10L14.09 11.74L12 18L9.91 11.74L4 10L9.91 8.26L12 2Z" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+                </div>
+                <h3>Qadaa Goals</h3>
+                <p>Track missed prayers and fasting. Set goals, record progress, see completion estimates.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon fi-teal">
+                    <svg viewBox="0 0 24 24" fill="none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+                </div>
+                <h3>Extras</h3>
+                <p>Log Duha, Shaf'a & Witr, Qiyam (with raka'at), and fasting — all tracked in stats.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon fi-green">
+                    <svg viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="1.5"/></svg>
+                </div>
+                <h3>Cloud Sync</h3>
+                <p>Sign in with Google to sync across devices. Local-first — works fully offline.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon fi-blue">
+                    <svg viewBox="0 0 24 24" fill="none"><path d="M18 20V10M12 20V4M6 20v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </div>
+                <h3>Statistics</h3>
+                <p>Punctuality ring, per-prayer reliability, volunteer acts, and qadaa progress.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon fi-red">
+                    <svg viewBox="0 0 24 24" fill="none"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke="currentColor" stroke-width="1.5"/></svg>
+                </div>
+                <h3>Islamic Reminders</h3>
+                <p>Special days, Surat Al-Kahf on Fridays, and clickable hadith references with sources.</p>
+            </div>
         </div>
-        <div class="feature">
-            <h3>Hijri Calendar</h3>
-            <p>Umm al-Qura calendar with prayer indicators, day modals, and adjustable offset.</p>
-        </div>
-        <div class="feature">
-            <h3>Prayer Times</h3>
-            <p>Accurate calculation for 30+ cities. Visual timeline, countdown hero, iqama offsets.</p>
-        </div>
-        <div class="feature">
-            <h3>System Tray</h3>
-            <p>Lives in your taskbar. Next-prayer countdown, quick-log, and native notifications.</p>
-        </div>
-        <div class="feature">
-            <h3>Statistics</h3>
-            <p>Punctuality ring, per-prayer bars, qadaa progress, and volunteer acts tracking.</p>
-        </div>
-        <div class="feature">
-            <h3>Privacy First</h3>
-            <p>All data stays on your computer. No accounts, no cloud, no tracking.</p>
-        </div>
-    </div>
+    </section>
 
     <footer>
-        <a href="feedback.html" style="color:#94a3b8;text-decoration:none;margin-right:1.5rem;">Send Feedback</a>
-        Made with care for the Muslim community.
+        <div class="footer-links">
+            <a href="app/">Web App</a>
+            <a href="feedback.html">Send Feedback</a>
+            <a href="https://github.com/nur-prayer-app/releases/releases/latest">Download</a>
+        </div>
+        <div class="footer-note">Made with care for the Muslim community.</div>
     </footer>
 
     <script>
         fetch('version.json').then(r => r.json()).then(d => {
-            document.getElementById('version-label').textContent = `v${d.version} — Windows 64-bit`;
-        }).catch(() => {
-            document.getElementById('version-label').textContent = '';
-        });
+            const el = document.getElementById('version-label');
+            el.textContent = `v${d.version} — Windows 64-bit`;
+            const btn = document.getElementById('download-btn');
+            if (btn && d.url) btn.href = d.url;
+        }).catch(() => {});
     </script>
 </body>
 </html>
