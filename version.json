@@ -1,5 +1,5 @@
 {
-  "version": "1.1.194",
-  "url": "https://github.com/nur-prayer-app/releases/releases/download/v1.1.194/Nur.Setup.1.1.194.exe",
-  "notes": "Cloud sync, Duha & Shaf'a/Witr prayers, forgot password, NSIS version check"
+  "version": "1.1.195",
+  "url": "https://github.com/nur-prayer-app/releases/releases/download/v1.1.195/Nur.Setup.1.1.195.exe",
+  "notes": "Distinct Witr color/icon, fix timeline glitch"
 }
