@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nur — Prayer Tracker</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f1b2d 0%, #1a2940 50%, #0f1b2d 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .hero {
+            text-align: center;
+            max-width: 600px;
+        }
+        .icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, rgba(104,211,145,0.15), rgba(99,179,237,0.15));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+        }
+        .icon svg { color: #68d391; }
+        h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #68d391, #63b3ed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+        .tagline {
+            font-size: 1.1rem;
+            color: #94a3b8;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.875rem 2rem;
+            background: linear-gradient(135deg, #68d391, #63b3ed);
+            color: #0f1b2d;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(104, 211, 145, 0.25);
+        }
+        .version {
+            margin-top: 0.75rem;
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            max-width: 700px;
+            margin-top: 3rem;
+            text-align: left;
+        }
+        .feature {
+            padding: 1.25rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+        }
+        .feature h3 {
+            font-size: 0.9rem;
+            color: #e2e8f0;
+            margin-bottom: 0.25rem;
+        }
+        .feature p {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            line-height: 1.5;
+        }
+        footer {
+            margin-top: 3rem;
+            font-size: 0.75rem;
+            color: #475569;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <div class="icon">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L14.09 8.26L20 10L14.09 11.74L12 18L9.91 11.74L4 10L9.91 8.26L12 2Z" fill="currentColor"/>
+                <path d="M19 14C17.34 14 16 15.34 16 17C16 18.66 17.34 20 19 20C20.66 20 22 18.66 22 17C22 15.34 20.66 14 19 14ZM17.5 17C17.5 16.17 18.17 15.5 19 15.5C19.83 15.5 20.5 16.17 20.5 17C20.5 17.83 19.83 18.5 19 18.5C18.17 18.5 17.5 17.83 17.5 17Z" fill="currentColor"/>
+            </svg>
+        </div>
+        <h1>Nur</h1>
+        <p class="tagline">A prayer tracker built for Muslims. Daily prayers, qadaa goals, fasting, qyaam, Hijri calendar, and prayer times — all in one app.</p>
+        <a href="https://github.com/nur-prayer-tracker/releases/releases/latest" class="download-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Download for Windows
+        </a>
+        <div class="version" id="version-label">Loading version...</div>
+    </div>
+
+    <div class="features">
+        <div class="feature">
+            <h3>Prayer Tracking</h3>
+            <p>Tap to log each prayer. Auto-detect missed prayers and track qadaa goals.</p>
+        </div>
+        <div class="feature">
+            <h3>Hijri Calendar</h3>
+            <p>Umm al-Qura calendar with prayer indicators, day modals, and adjustable offset.</p>
+        </div>
+        <div class="feature">
+            <h3>Prayer Times</h3>
+            <p>Accurate calculation for 30+ cities. Visual timeline, countdown hero, iqama offsets.</p>
+        </div>
+        <div class="feature">
+            <h3>System Tray</h3>
+            <p>Lives in your taskbar. Next-prayer countdown, quick-log, and native notifications.</p>
+        </div>
+        <div class="feature">
+            <h3>Statistics</h3>
+            <p>Punctuality ring, per-prayer bars, qadaa progress, and volunteer acts tracking.</p>
+        </div>
+        <div class="feature">
+            <h3>Privacy First</h3>
+            <p>All data stays on your computer. No accounts, no cloud, no tracking.</p>
+        </div>
+    </div>
+
+    <footer>Made with care for the Muslim community.</footer>
+
+    <script>
+        fetch('version.json').then(r => r.json()).then(d => {
+            document.getElementById('version-label').textContent = `v${d.version} — Windows 64-bit`;
+        }).catch(() => {
+            document.getElementById('version-label').textContent = '';
+        });
+    </script>
+</body>
+</html>
