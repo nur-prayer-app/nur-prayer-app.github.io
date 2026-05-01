@@ -292,10 +292,15 @@
             }
         }
 
-        if (changed) Storage.importAll(merged);
+        if (changed) {
+            Storage.importAll(merged);
+            await pushToCloud();
+            location.reload();
+            return true;
+        }
 
         await pushToCloud();
-        return changed;
+        return false;
     }
 
     /* ─── Sync: clear cloud ────────────────────────────────────── */
