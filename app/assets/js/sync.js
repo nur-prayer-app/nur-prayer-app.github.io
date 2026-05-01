@@ -274,6 +274,7 @@
         const lastSyncTs = getLastSync();
         const lastSyncMs = lastSyncTs ? new Date(lastSyncTs).getTime() : 0;
         let changed = false;
+        const merged = {};
 
         for (const [key, envelope] of Object.entries(cloudData)) {
             if (!envelope || typeof envelope !== 'object') continue;
@@ -282,14 +283,16 @@
 
             if (key in localSnapshot) {
                 if (localSnapshot[key] !== cloudValue && cloudTs > lastSyncMs) {
-                    Storage.set(key, typeof cloudValue === 'string' ? cloudValue : JSON.stringify(cloudValue));
+                    merged[key] = cloudValue;
                     changed = true;
                 }
             } else {
-                Storage.set(key, typeof cloudValue === 'string' ? cloudValue : JSON.stringify(cloudValue));
+                merged[key] = cloudValue;
                 changed = true;
             }
         }
+
+        if (changed) Storage.importAll(merged);
 
         await pushToCloud();
         return changed;
