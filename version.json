@@ -1,5 +1,5 @@
 {
-  "version": "1.1.195",
-  "url": "https://github.com/nur-prayer-app/releases/releases/download/v1.1.195/Nur.Setup.1.1.195.exe",
-  "notes": "Distinct Witr color/icon, fix timeline glitch"
+  "version": "1.1.196",
+  "url": "https://github.com/nur-prayer-app/releases/releases/download/v1.1.196/Nur.Setup.1.1.196.exe",
+  "notes": "Google Sign-In, deep link protocol"
 }
