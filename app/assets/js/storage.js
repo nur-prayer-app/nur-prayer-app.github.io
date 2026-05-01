@@ -88,7 +88,11 @@
         const raw = backend.getItem(key);
         if (raw == null) return fallback;
         if (!JSON_KEYS.has(key)) return raw;
-        try { return JSON.parse(raw); }
+        try {
+            let parsed = JSON.parse(raw);
+            if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+            return parsed;
+        }
         catch { return fallback; }
     }
 
