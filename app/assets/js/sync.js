@@ -219,7 +219,9 @@
         const snapshot = Storage.exportAll();
         const now = Date.now();
         const payload = {};
-        for (const [key, value] of Object.entries(snapshot)) {
+        for (const [key, raw] of Object.entries(snapshot)) {
+            let value = raw;
+            try { value = JSON.parse(raw); } catch {}
             payload[key] = { value, _ts: now };
         }
         return payload;
@@ -280,14 +282,15 @@
             if (!envelope || typeof envelope !== 'object') continue;
             const cloudTs = envelope._ts || 0;
             const cloudValue = envelope.value;
+            const raw = typeof cloudValue === 'string' ? cloudValue : JSON.stringify(cloudValue);
 
             if (key in localSnapshot) {
-                if (localSnapshot[key] !== cloudValue && cloudTs > lastSyncMs) {
-                    merged[key] = cloudValue;
+                if (localSnapshot[key] !== raw && cloudTs > lastSyncMs) {
+                    merged[key] = raw;
                     changed = true;
                 }
             } else {
-                merged[key] = cloudValue;
+                merged[key] = raw;
                 changed = true;
             }
         }
