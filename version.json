@@ -1,5 +1,5 @@
 {
-  "version": "1.1.205",
-  "url": "https://github.com/nur-prayer-app/releases/releases/download/v1.1.205/Nur.Setup.1.1.205.exe",
-  "notes": "Cloud sync fix, web version launch"
+  "version": "1.1.206",
+  "url": "https://github.com/nur-prayer-app/releases/releases/download/v1.1.206/Nur.Setup.1.1.206.exe",
+  "notes": "Cloud sync fixes, JWT decode, audit cleanup"
 }
