@@ -33,6 +33,11 @@
         return h;
     }
 
+    function decodeJwtPayload(token) {
+        const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+        return JSON.parse(atob(base64));
+    }
+
     function getSession() {
         if (cachedSession) return cachedSession;
         try {
@@ -87,9 +92,8 @@
         if (!session?.access_token) return null;
 
         try {
-            const payload = JSON.parse(atob(session.access_token.split('.')[1]));
-            const expiresAt = payload.exp * 1000;
-            if (Date.now() > expiresAt - 60000) {
+            const payload = decodeJwtPayload(session.access_token);
+            if (Date.now() > payload.exp * 1000 - 60000) {
                 session = await refreshToken();
             }
         } catch {
@@ -100,6 +104,17 @@
 
     /* ─── Auth ─────────────────────────────────────────────────── */
 
+    function establishSession(data, opts) {
+        const session = {
+            access_token: data.access_token,
+            refresh_token: data.refresh_token,
+            user: data.user || { id: decodeJwtPayload(data.access_token).sub, email: decodeJwtPayload(data.access_token).email },
+        };
+        saveSession(session);
+        startAutoSync();
+        return session;
+    }
+
     async function signUp(email, password) {
         const resp = await fetch(`${AUTH_URL}/signup`, {
             method: 'POST',
@@ -108,14 +123,7 @@
         });
         const data = await resp.json();
         if (!resp.ok) throw new Error(data.error_description || data.msg || 'Sign-up failed');
-        if (data.access_token) {
-            saveSession({
-                access_token: data.access_token,
-                refresh_token: data.refresh_token,
-                user: data.user,
-            });
-            startAutoSync();
-        }
+        if (data.access_token) establishSession(data);
         return data;
     }
 
@@ -127,13 +135,8 @@
         });
         const data = await resp.json();
         if (!resp.ok) throw new Error(data.error_description || data.msg || 'Sign-in failed');
-        saveSession({
-            access_token: data.access_token,
-            refresh_token: data.refresh_token,
-            user: data.user,
-        });
+        establishSession(data);
         await pullFromCloud();
-        startAutoSync();
         return data;
     }
 
@@ -150,13 +153,7 @@
     }
 
     async function handleOAuthTokens(accessToken, refreshToken) {
-        const payload = JSON.parse(atob(accessToken.split('.')[1]));
-        saveSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-            user: { id: payload.sub, email: payload.email },
-        });
-        startAutoSync();
+        establishSession({ access_token: accessToken, refresh_token: refreshToken });
         try { await pullFromCloud(); } catch (e) { console.warn('OAuth pull failed:', e); }
     }
 
@@ -177,15 +174,17 @@
     }
 
     if (!window.electronAPI && window.location.hash) {
-        try {
-            const params = new URLSearchParams(window.location.hash.substring(1));
-            const accessToken = params.get('access_token');
-            const refreshToken = params.get('refresh_token');
-            if (accessToken && refreshToken) {
-                handleOAuthTokens(accessToken, refreshToken);
-                history.replaceState(null, '', window.location.pathname);
-            }
-        } catch (e) { console.warn('Web OAuth parse error:', e); }
+        (async () => {
+            try {
+                const params = new URLSearchParams(window.location.hash.substring(1));
+                const accessToken = params.get('access_token');
+                const refreshToken = params.get('refresh_token');
+                if (accessToken && refreshToken) {
+                    history.replaceState(null, '', window.location.pathname);
+                    await handleOAuthTokens(accessToken, refreshToken);
+                }
+            } catch (e) { console.warn('Web OAuth parse error:', e); }
+        })();
     }
 
     async function resetPassword(email) {
