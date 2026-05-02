@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.217';
+    const APP_VERSION = '1.1.218';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -4845,7 +4845,7 @@
                         <!-- Prayer window bands across all 3 days.
                              Threshold lowered so even short windows (Fajr→Sunrise, Maghrib→Isha)
                              show their duration text. -->
-                        ${prayerBands.map(b => {
+                        ${prayerBandsAll.map(b => {
                             const w = Math.max(0.15, b.toPct - b.fromPct);
                             return `
                             <div class="daybar-window daybar-window-${b.id}"
@@ -4857,7 +4857,7 @@
                         `;}).join('')}
 
                         <!-- Duha (one per day) -->
-                        ${duhaSegs.map(s => {
+                        ${duhaSegsAll.map(s => {
                             const w = Math.max(0, s.toPct - s.fromPct);
                             return `
                             <div class="daybar-seg daybar-seg-duha"
@@ -4870,7 +4870,7 @@
 
                         <!-- Karaha (3 per day) — strips are too narrow for inline text; tooltip
                              surfaces duration + label. Click opens full popover with start/end time. -->
-                        ${karahaSegs.map(s => {
+                        ${karahaSegsAll.map(s => {
                             const w = Math.max(0.15, s.toPct - s.fromPct);
                             return `
                             <div class="daybar-seg daybar-seg-karaha"
@@ -4879,7 +4879,7 @@
                         `;}).join('')}
 
                         <!-- Last third (one per day) -->
-                        ${thirdSegs.map(s => {
+                        ${thirdSegsAll.map(s => {
                             const w = Math.max(0, s.toPct - s.fromPct);
                             return `
                             <div class="daybar-seg daybar-seg-third"
@@ -5061,13 +5061,13 @@
                         const segLeft = parseFloat(seg.style.left);
                         let html = '';
                         if (seg.classList.contains('daybar-seg-duha')) {
-                            const match = duhaSegs.find(s => Math.abs(s.fromPct - segLeft) < 0.01);
+                            const match = duhaSegsAll.find(s => Math.abs(s.fromPct - segLeft) < 0.01);
                             if (match) html = rangePopHtml('Duha', match.startAt, match.endAt, 'Sunnah prayer time');
                         } else if (seg.classList.contains('daybar-seg-third')) {
-                            const match = thirdSegs.find(s => Math.abs(s.fromPct - segLeft) < 0.01);
+                            const match = thirdSegsAll.find(s => Math.abs(s.fromPct - segLeft) < 0.01);
                             if (match) html = rangePopHtml('Last third of night', match.startAt, match.endAt, 'Best time for Tahajjud');
                         } else if (seg.classList.contains('daybar-seg-karaha')) {
-                            const match = karahaSegs.find(s => Math.abs(s.fromPct - segLeft) < 0.01);
+                            const match = karahaSegsAll.find(s => Math.abs(s.fromPct - segLeft) < 0.01);
                             if (match) html = rangePopHtml('Karaha', match.startAt, match.endAt, 'Avoid praying during this time');
                         }
                         if (html) openPop(html, leftPct);
@@ -5082,7 +5082,7 @@
                         const pCls = [...seg.classList].find(c => c.startsWith('daybar-window-') && c !== 'daybar-window');
                         const pid = pCls ? pCls.replace('daybar-window-', '') : null;
                         const day = seg.dataset.day;
-                        const match = prayerBands.find(b => b.id === pid && b.day === day);
+                        const match = prayerBandsAll.find(b => b.id === pid && b.day === day);
                         if (!match) return;
                         const dayLabel = day === 'today' ? '' : ` · ${days.find(d => d.dateKey === day)?.label || ''}`;
                         const html = rangePopHtml(`${match.name} window${dayLabel}`, match.startAt, match.endAt, 'From adhan to next prayer');
