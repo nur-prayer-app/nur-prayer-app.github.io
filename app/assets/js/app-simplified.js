@@ -3775,14 +3775,7 @@
         }
 
         if (tab === 'about') {
-            if (window.electronAPI) {
-                $('#check-update')?.addEventListener('click', checkForUpdates);
-            } else {
-                const btn = $('#check-update');
-                if (btn) { btn.textContent = 'Web version'; btn.disabled = true; }
-                const st = $('#update-status');
-                if (st) st.textContent = 'You\'re using the latest web version';
-            }
+            $('#check-update')?.addEventListener('click', checkForUpdates);
             $('#about-website')?.addEventListener('click', (e) => { e.preventDefault(); openUrl('https://nur-prayer-app.github.io/'); });
             $('#about-contact')?.addEventListener('click', (e) => { e.preventDefault(); openUrl('https://nur-prayer-app.github.io/contact.html'); });
         }
@@ -3805,6 +3798,8 @@
         return 0;
     }
 
+    const isElectron = !!window.electronAPI;
+
     async function checkForUpdates() {
         const statusEl = $('#update-status');
         const btn = $('#check-update');
@@ -3817,9 +3812,15 @@
             const cmp = compareVersions(data.version, APP_VERSION);
             if (cmp > 0) {
                 if (statusEl) statusEl.innerHTML = `<strong>v${data.version} available</strong>`;
-                if (btn) { btn.textContent = 'Download update'; btn.disabled = false; btn.onclick = () => {
-                    openUrl(data.url || 'https://nur-prayer-app.github.io/');
-                }; }
+                if (isElectron) {
+                    if (btn) { btn.textContent = 'Download update'; btn.disabled = false; btn.onclick = () => {
+                        openUrl(data.url || 'https://nur-prayer-app.github.io/');
+                    }; }
+                } else {
+                    if (btn) { btn.textContent = 'Reload to update'; btn.disabled = false; btn.onclick = () => {
+                        location.reload();
+                    }; }
+                }
             } else {
                 if (statusEl) statusEl.textContent = 'You\'re up to date';
                 if (btn) btn.disabled = false;
@@ -3836,11 +3837,17 @@
             if (!resp.ok) return;
             const data = await resp.json();
             if (compareVersions(data.version, APP_VERSION) > 0) {
-                const url = data.url || 'https://nur-prayer-app.github.io/';
-                toast(`Update available: v${data.version}`, {
-                    label: 'Download',
-                    fn: () => openUrl(url),
-                });
+                if (isElectron) {
+                    toast(`Update available: v${data.version}`, {
+                        label: 'Download',
+                        fn: () => openUrl(data.url || 'https://nur-prayer-app.github.io/'),
+                    });
+                } else {
+                    toast(`Update available: v${data.version}`, {
+                        label: 'Reload',
+                        fn: () => location.reload(),
+                    });
+                }
             }
         } catch { /* silent */ }
     }
@@ -6197,7 +6204,7 @@
 
         if (S.settings.notifications) schedulePrayerNotifications();
 
-        if (window.electronAPI) setTimeout(checkForUpdatesSilent, 5000);
+        setTimeout(checkForUpdatesSilent, 5000);
     }
 
     // Re-render data tab when OAuth callback completes (from Electron deep link)
