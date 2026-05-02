@@ -1,5 +1,5 @@
 {
-  "version": "1.1.222",
-  "url": "https://github.com/nur-prayer-app/nur-prayer-app.github.io/releases/download/v1.1.222/Nur.Setup.1.1.222.exe",
-  "notes": "iOS install banner — shows Share > Add to Home Screen instructions"
+  "version": "1.1.223",
+  "url": "https://github.com/nur-prayer-app/nur-prayer-app.github.io/releases/download/v1.1.223/Nur.Setup.1.1.223.exe",
+  "notes": "Fix manifest start_url for iOS, Safari-specific install instructions"
 }
