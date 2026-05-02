@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://nur-prayer-app.github.io/releases/sitemap.xml
+Sitemap: https://nur-prayer-app.github.io/sitemap.xml

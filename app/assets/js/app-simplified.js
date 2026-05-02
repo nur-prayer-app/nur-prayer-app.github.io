@@ -6,7 +6,7 @@
     'use strict';
 
     const APP_VERSION = '1.1.214';
-    const UPDATE_URL = 'https://nur-prayer-app.github.io/releases/version.json';
+    const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
     const $ = (s, c) => (c || document).querySelector(s);
@@ -3776,8 +3776,8 @@
 
         if (tab === 'about') {
             $('#check-update')?.addEventListener('click', checkForUpdates);
-            $('#about-website')?.addEventListener('click', (e) => { e.preventDefault(); openUrl('https://nur-prayer-app.github.io/releases/'); });
-            $('#about-contact')?.addEventListener('click', (e) => { e.preventDefault(); openUrl('https://nur-prayer-app.github.io/releases/contact.html'); });
+            $('#about-website')?.addEventListener('click', (e) => { e.preventDefault(); openUrl('https://nur-prayer-app.github.io/'); });
+            $('#about-contact')?.addEventListener('click', (e) => { e.preventDefault(); openUrl('https://nur-prayer-app.github.io/contact.html'); });
         }
     }
 
@@ -3811,7 +3811,7 @@
             if (cmp > 0) {
                 if (statusEl) statusEl.innerHTML = `<strong>v${data.version} available</strong>`;
                 if (btn) { btn.textContent = 'Download update'; btn.disabled = false; btn.onclick = () => {
-                    openUrl(data.url || 'https://nur-prayer-app.github.io/releases/');
+                    openUrl(data.url || 'https://nur-prayer-app.github.io/');
                 }; }
             } else {
                 if (statusEl) statusEl.textContent = 'You\'re up to date';
@@ -3829,7 +3829,7 @@
             if (!resp.ok) return;
             const data = await resp.json();
             if (compareVersions(data.version, APP_VERSION) > 0) {
-                const url = data.url || 'https://nur-prayer-app.github.io/releases/';
+                const url = data.url || 'https://nur-prayer-app.github.io/';
                 toast(`Update available: v${data.version}`, {
                     label: 'Download',
                     fn: () => openUrl(url),
