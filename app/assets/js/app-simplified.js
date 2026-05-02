@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.224';
+    const APP_VERSION = '1.1.225';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -5633,6 +5633,7 @@
         S.settings.notifications = true;
         save(KEYS.SETTINGS, S.settings);
         schedulePrayerNotifications();
+        subscribeToPush();
         toast('Prayer notifications on');
         updateNotifToggleBtn();
     }
@@ -5712,6 +5713,64 @@
         if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
             try { new Notification(title, { body, tag: 'nur-prayer' }); } catch (_) {}
         }
+    }
+
+    /* ── Background Push Subscription ──────────────────────────
+     * Registers a push subscription with the browser and stores it
+     * in Supabase so the Edge Function can send prayer-time pushes
+     * even when the app is closed. Only runs on web (not Electron).
+     * ────────────────────────────────────────────────────────── */
+    const VAPID_PUBLIC_KEY = 'BIsqq-SJ771xRfwcELAJGXwO0WY3dPi0cpbihv3yKNRjmYODeu3M3q70-eL9o_lYHBQjqLyMwa5oIqrySCveykM';
+
+    async function subscribeToPush() {
+        if (isElectron || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+        if (Notification.permission !== 'granted') return;
+        try {
+            const reg = await navigator.serviceWorker.ready;
+            let sub = await reg.pushManager.getSubscription();
+            if (!sub) {
+                sub = await reg.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+                });
+            }
+            await savePushSubscription(sub);
+        } catch (_) {}
+    }
+
+    function urlBase64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+        const raw = atob(base64);
+        return Uint8Array.from(raw, c => c.charCodeAt(0));
+    }
+
+    async function savePushSubscription(sub) {
+        if (typeof Sync === 'undefined' || !Sync.getSession) return;
+        const session = Sync.getSession();
+        if (!session) return;
+        const loc = S.settings.location;
+        try {
+            await fetch(`${Sync.SUPABASE_URL}/rest/v1/push_subscriptions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': Sync.SUPABASE_KEY,
+                    'Authorization': `Bearer ${session.access_token}`,
+                    'Prefer': 'resolution=merge-duplicates',
+                },
+                body: JSON.stringify({
+                    user_id: session.user.id,
+                    endpoint: sub.endpoint,
+                    keys: JSON.stringify(sub.toJSON().keys),
+                    lat: loc?.lat || null,
+                    lng: loc?.lng || null,
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    calc_method: S.settings.calcMethod || 'ISNA',
+                    updated_at: new Date().toISOString(),
+                }),
+            });
+        } catch (_) {}
     }
 
     /* ── Auto-missed prayers ─────────────────────────────────── */

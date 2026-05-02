@@ -457,5 +457,7 @@
         pushToCloud,
         pullFromCloud,
         clearCloud,
+        SUPABASE_URL,
+        SUPABASE_KEY,
     });
 })();
