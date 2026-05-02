@@ -94,7 +94,8 @@
         .nav-push{flex:1}
         .nav-actions{display:flex;align-items:center;gap:.6rem;flex-shrink:0}
         .btn-s{padding:.5rem 1.2rem;font-size:.85rem;font-weight:600;font-family:var(--body);border-radius:8px;text-decoration:none;transition:all .2s;cursor:pointer;border:none}
-        .btn-s-g{background:transparent;color:var(--text-2)}
+        .btn-s-ico{width:14px;height:14px;vertical-align:-2px}
+        .btn-s-g{background:transparent;color:var(--text-2);display:inline-flex;align-items:center;gap:.35rem}
         .btn-s-g:hover{color:var(--text)}
         .btn-s-dl{background:var(--grad);color:#0c1322;font-weight:700;display:inline-flex;align-items:center;gap:.35rem}
         .btn-s-dl:hover{box-shadow:0 4px 16px rgba(104,211,145,.2)}
@@ -105,14 +106,16 @@
         .nav-hamburger:hover{color:var(--text)}
         .nav-hamburger svg{width:24px;height:24px}
         @media(max-width:900px){
+            .nav-inner{gap:1rem;padding:0 1rem}
             .nav-hamburger{display:flex;align-items:center;justify-content:center;order:10}
+            .nav-actions{gap:.4rem}
             .nav-links,.nav-sep{display:none;flex-direction:column;gap:0}
             .nav-links.nav-open{display:flex;position:absolute;top:64px;left:0;right:0;background:rgba(21,34,56,.96);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);padding:1rem 2rem;gap:.5rem;z-index:99}
             .nav-links.nav-open a{padding:.6rem 0;font-size:.95rem}
         }
 
         /* ── Hero ── */
-        .hero{min-height:100vh;display:flex;align-items:center;padding:6rem 0 5rem}
+        .hero{min-height:100vh;display:flex;align-items:center;padding:6rem 0 5rem;overflow-x:clip}
         .hero .wrap{display:flex;align-items:center;gap:3rem}
         .hero-left{flex:1}
         .hero-pill{display:inline-flex;align-items:center;gap:7px;padding:.35rem .9rem;border-radius:100px;background:var(--bg-glass);border:1px solid var(--border);font-size:.72rem;font-weight:500;color:var(--text-2);margin-bottom:1.5rem}
@@ -123,8 +126,8 @@
         .hero-ctas{display:flex;gap:.6rem;flex-wrap:wrap}
         .btn{display:inline-flex;align-items:center;gap:.4rem;padding:.75rem 1.6rem;font-size:.88rem;font-weight:600;font-family:var(--body);border-radius:10px;text-decoration:none;transition:all .2s;border:none;cursor:pointer}
         .btn svg{width:16px;height:16px}
-        .btn-w{background:var(--text);color:var(--bg)}
-        .btn-w:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(255,255,255,.1)}
+        .btn-w{background:var(--grad);color:#0c1322;font-weight:700}
+        .btn-w:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(104,211,145,.25)}
         .btn-o{background:transparent;color:var(--text-2);border:1px solid var(--border)}
         .btn-o:hover{color:var(--text);border-color:var(--border-h);background:var(--bg-glass)}
         .hero-meta{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-top:1rem;font-size:.72rem;color:var(--text-3)}
@@ -211,14 +214,14 @@
         .feat-frame{width:100%;background:rgba(0,0,0,.15);border-radius:12px;border:1px solid var(--border);overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,.25)}
         .feat-frame-bar{height:28px;display:flex;align-items:center;padding:0 12px;gap:6px;background:rgba(0,0,0,.12)}
         .feat-frame-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.08)}
-        .feat-frame img{width:100%;height:380px;object-fit:cover;display:block}
-        .feat-frame img.zoom-dash{object-position:15% 15%;transform:scale(1.15);transform-origin:15% 15%}
-        .feat-frame img.zoom-times{object-position:25% 30%;transform:scale(1.15);transform-origin:25% 30%}
-        .feat-frame img.zoom-cal{object-position:45% 65%;transform:scale(1.15);transform-origin:45% 65%}
-        .feat-frame img.zoom-stats{object-position:45% 20%;transform:scale(1.15);transform-origin:45% 20%}
+        .feat-frame img{width:100%;height:340px;object-fit:cover;display:block;transform:scale(2);transform-origin:center}
+        .feat-frame img.zoom-dash{object-position:15% 15%;transform-origin:15% 15%}
+        .feat-frame img.zoom-times{object-position:25% 30%;transform-origin:25% 30%}
+        .feat-frame img.zoom-cal{object-position:45% 65%;transform-origin:45% 65%}
+        .feat-frame img.zoom-stats{object-position:45% 20%;transform-origin:45% 20%}
 
         /* ── Themes: 3D card stack ── */
-        .themes{padding:4rem 0 8rem}
+        .themes{padding:4rem 0 8rem;overflow-x:clip}
         .themes-head{text-align:center;margin-bottom:3rem}
         .themes-head .stitle{font-size:2.8rem}
         .themes-stage{position:relative;height:520px;max-width:900px;margin:0 auto;-webkit-perspective:1200px;perspective:1200px}
@@ -231,7 +234,7 @@
             cursor:pointer;
             transition:all .6s cubic-bezier(.4,0,.2,1);
         }
-        .t-card img{width:100%;display:block}
+        .t-card img{width:100%;height:420px;object-fit:cover;object-position:top;display:block;transform:scale(1.7);transform-origin:50% 15%}
         .t-card-label{
             padding:.7rem 1.1rem;display:flex;align-items:center;gap:8px;
             font-family:var(--display);font-size:.9rem;font-weight:700;
@@ -311,30 +314,49 @@
             .hero-p{margin-left:auto;margin-right:auto}
             .hero-ctas{justify-content:center}
             .hero-meta{justify-content:center}
-            .hero-right{flex:none;width:100%;max-width:380px;height:380px}
+            .hero-right{flex:none;width:100%;max-width:380px;height:380px;overflow:hidden}
             .orbit-1{width:180px;height:180px}.orbit-2{width:280px;height:280px}.orbit-3{width:360px;height:360px}
             .hcard{width:260px;padding:1.25rem 1rem}.hc-cd{font-size:38px}
+            .fc{zoom:.85}
             .fc-tl{left:2%}.fc-br{right:2%}
             .feat-row,.feat-row.reverse{flex-direction:column;gap:1.5rem}
             .feat-text{flex:none}
-            .feat-frame img{height:280px;transform:none}
-            .themes-stage{height:380px}
-            .t-card{width:85vw}
-            .t-card[data-pos="left"]{transform:translate(-75%,-50%) rotateY(8deg) scale(.75)}
-            .t-card[data-pos="right"]{transform:translate(-25%,-50%) rotateY(-8deg) scale(.75)}
+            .feat-frame img{height:240px}
+            .themes-stage{height:340px}
+            .t-card{width:70vw;max-width:70vw}
+            .t-card img{height:260px}
+            .t-card[data-pos="left"]{transform:translate(-78%,-50%) rotateY(8deg) scale(.75)}
+            .t-card[data-pos="right"]{transform:translate(-22%,-50%) rotateY(-8deg) scale(.75)}
             .nav-sep{display:none}
+            .nav-actions .btn-s-dl{display:none}
+            .hero-ctas{flex-direction:column-reverse;align-items:center}
+            .hero-ctas .btn-w{background:transparent;color:var(--text-3);border:1px solid var(--border);font-size:.8rem;padding:.55rem 1.2rem;box-shadow:none}
+            .hero-ctas .btn-o{background:var(--grad);color:#0c1322;border-color:transparent;font-weight:700}
             .foot-main{grid-template-columns:1fr 1fr}
             .foot-brand-area{grid-column:1/-1}
         }
         @media(max-width:480px){
             .hero-h1{font-size:2.2rem;letter-spacing:-1px}
-            .hero-right{height:320px}
-            .fc-tl,.fc-br{display:none}
-            .hcard{width:230px;padding:1rem .85rem}.hc-cd{font-size:30px}
-            .feat-frame img{height:220px}
+            .hero-right{flex:none;width:100%;max-width:300px;height:300px;margin:0 auto}
+            .orbit-1{width:150px;height:150px}.orbit-2{width:220px;height:220px}.orbit-3{width:290px;height:290px}
+            .fc{zoom:.6}
+            .fc-tl{top:2%;left:0}.fc-br{bottom:5%;right:0}
+            .hcard{width:240px;padding:1rem .85rem}.hc-cd{font-size:34px}
+            .hc-sub{display:none}
+            .features .wrap{padding:0 .5rem}
+            .feat-img-wrap{width:100%}
+            .feat-frame img{height:240px;object-fit:cover;transform:scale(1.8);transform-origin:center}
+            .feat-frame img.zoom-dash{object-position:center 15%}
+            .feat-frame img.zoom-times{object-position:center 30%}
+            .feat-frame img.zoom-cal{object-position:center 60%}
+            .feat-frame img.zoom-stats{object-position:center 20%}
+            .themes-stage{height:240px;-webkit-perspective:none;perspective:none}
+            .t-card{width:72vw;max-width:72vw}
+            .t-card img{height:200px;object-fit:cover;transform:scale(1.8);transform-origin:50% 20%}
+            .t-card[data-pos="front"]{transform:translate(-50%,-50%) scale(1)}
+            .t-card[data-pos="left"]{transform:translate(-82%,-50%) scale(.75);opacity:.3}
+            .t-card[data-pos="right"]{transform:translate(-18%,-50%) scale(.75);opacity:.3}
             .foot-main{grid-template-columns:1fr}
-        }
-        @media(max-width:600px){
             .foot-bottom{flex-direction:column;text-align:center;gap:.5rem}
         }
     </style>
@@ -360,7 +382,7 @@
         <svg viewBox="0 0 24 24" fill="none"><path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
     </button>
     <div class="nav-actions">
-        <a href="app/" class="btn-s btn-s-g">Web App</a>
+        <a href="app/" class="btn-s btn-s-g"><svg class="btn-s-ico" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10A15.3 15.3 0 0 1 12 2z" stroke="currentColor" stroke-width="1.5"/></svg> Use in Browser</a>
         <a href="https://github.com/nur-prayer-app/releases/releases/latest" class="btn-s btn-s-dl" id="nav-dl">
             <svg viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Download
@@ -381,7 +403,7 @@
                     <svg viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     Download for Windows
                 </a>
-                <a href="app/" class="btn btn-o">Open in Browser</a>
+                <a href="app/" class="btn btn-o"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10A15.3 15.3 0 0 1 12 2z" stroke="currentColor" stroke-width="1.5"/></svg> Use in Browser</a>
             </div>
             <div class="hero-meta">
                 <span id="hero-ver">v1.1.206</span>
@@ -515,7 +537,7 @@
         <p>Your data is yours alone. Everything is stored on your device with no account required. Cloud sync is optional if you want your data on multiple devices. No ads, no tracking, ever.</p>
         <div class="about-acts">
             <a href="contact.html" class="about-a"><svg viewBox="0 0 24 24" fill="none"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Contact Us</a>
-            <a href="app/" class="about-a"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M2 12h20" stroke="currentColor" stroke-width="1.5"/></svg> Try the Web App</a>
+            <a href="app/" class="about-a"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10A15.3 15.3 0 0 1 12 2z" stroke="currentColor" stroke-width="1.5"/></svg> Use in Browser</a>
         </div>
     </div>
 </section>
@@ -568,7 +590,7 @@
         <div class="foot-col">
             <h4>Product</h4>
             <a href="https://github.com/nur-prayer-app/releases/releases/latest" id="foot-dl">Download</a>
-            <a href="app/">Web App</a>
+            <a href="app/">Use in Browser</a>
         </div>
         <div class="foot-col">
             <h4>Resources</h4>
