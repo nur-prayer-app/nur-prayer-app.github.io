@@ -3755,7 +3755,7 @@
         if (tab === 'about') {
             $('#check-update')?.addEventListener('click', checkForUpdates);
             $('#about-website')?.addEventListener('click', (e) => { e.preventDefault(); openUrl('https://nur-prayer-app.github.io/releases/'); });
-            $('#about-feedback')?.addEventListener('click', (e) => { e.preventDefault(); openUrl('https://nur-prayer-app.github.io/releases/feedback.html'); });
+            $('#about-feedback')?.addEventListener('click', (e) => { e.preventDefault(); openUrl('https://nur-prayer-app.github.io/releases/contact.html'); });
         }
     }
 
