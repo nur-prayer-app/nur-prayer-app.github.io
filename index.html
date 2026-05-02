@@ -31,139 +31,65 @@
         .hero::before {
             content: '';
             position: absolute;
-            top: -40%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 800px;
-            height: 800px;
+            top: -40%; left: 50%; transform: translateX(-50%);
+            width: 800px; height: 800px;
             background: radial-gradient(ellipse, rgba(104,211,145,0.08) 0%, rgba(99,179,237,0.04) 40%, transparent 70%);
             pointer-events: none;
         }
         .hero > * { position: relative; z-index: 1; }
         .hero-icon {
-            width: 72px;
-            height: 72px;
-            border-radius: 18px;
+            width: 72px; height: 72px; border-radius: 18px;
             background: linear-gradient(135deg, rgba(104,211,145,0.15), rgba(99,179,237,0.15));
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
             margin: 0 auto 1.25rem;
         }
         .hero-icon svg { color: #68d391; }
         .hero h1 {
-            font-size: 3.5rem;
-            font-weight: 800;
+            font-size: 3.5rem; font-weight: 800;
             background: linear-gradient(135deg, #68d391, #63b3ed);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: -1px;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; letter-spacing: -1px;
         }
         .hero-tagline {
-            font-size: 1.15rem;
-            color: #94a3b8;
-            max-width: 520px;
-            margin: 0.75rem auto 2rem;
-            line-height: 1.7;
+            font-size: 1.15rem; color: #94a3b8;
+            max-width: 520px; margin: 0.75rem auto 2rem; line-height: 1.7;
         }
-        .hero-ctas {
-            display: flex;
-            gap: 0.75rem;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
+        .hero-ctas { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
         .btn-primary {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
+            display: inline-flex; align-items: center; gap: 0.5rem;
             padding: 0.875rem 2rem;
             background: linear-gradient(135deg, #68d391, #63b3ed);
-            color: #0f1b2d;
-            font-size: 1rem;
-            font-weight: 700;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            text-decoration: none;
+            color: #0f1b2d; font-size: 1rem; font-weight: 700;
+            border: none; border-radius: 12px; cursor: pointer; text-decoration: none;
             transition: transform 0.15s, box-shadow 0.15s;
         }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(104, 211, 145, 0.25);
-        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(104,211,145,0.25); }
         .btn-secondary {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
+            display: inline-flex; align-items: center; gap: 0.5rem;
             padding: 0.875rem 2rem;
-            background: rgba(255,255,255,0.05);
-            color: #e2e8f0;
-            font-size: 1rem;
-            font-weight: 600;
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 12px;
-            cursor: pointer;
-            text-decoration: none;
-            transition: all 0.15s;
+            background: rgba(255,255,255,0.05); color: #e2e8f0;
+            font-size: 1rem; font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.12); border-radius: 12px;
+            cursor: pointer; text-decoration: none; transition: all 0.15s;
         }
-        .btn-secondary:hover {
-            background: rgba(255,255,255,0.1);
-            border-color: rgba(255,255,255,0.2);
-        }
-        .hero-version {
-            margin-top: 1rem;
-            font-size: 0.8rem;
-            color: #475569;
-        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
+        .hero-version { margin-top: 1rem; font-size: 0.8rem; color: #475569; }
 
         /* ── Features ── */
-        .features {
-            max-width: 960px;
-            margin: 0 auto;
-            padding: 2rem 2rem 4rem;
-        }
-        .features-title {
-            text-align: center;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #e2e8f0;
-            margin-bottom: 0.5rem;
-        }
-        .features-sub {
-            text-align: center;
-            font-size: 0.9rem;
-            color: #64748b;
-            margin-bottom: 2.5rem;
-        }
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1.25rem;
-        }
-        @media (max-width: 700px) {
-            .features-grid { grid-template-columns: 1fr; }
-            .hero h1 { font-size: 2.5rem; }
-        }
+        .features { max-width: 960px; margin: 0 auto; padding: 2rem 2rem 4rem; }
+        .section-title { text-align: center; font-size: 1.5rem; font-weight: 700; color: #e2e8f0; margin-bottom: 0.5rem; }
+        .section-sub { text-align: center; font-size: 0.9rem; color: #64748b; margin-bottom: 2.5rem; }
+        .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
+        @media (max-width: 700px) { .features-grid { grid-template-columns: 1fr; } .hero h1 { font-size: 2.5rem; } }
         .feature-card {
             padding: 1.5rem;
-            background: rgba(255,255,255,0.025);
-            border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 14px;
-            transition: border-color 0.2s, background 0.2s;
+            background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px; transition: border-color 0.2s, background 0.2s;
         }
-        .feature-card:hover {
-            background: rgba(255,255,255,0.04);
-            border-color: rgba(104,211,145,0.2);
-        }
+        .feature-card:hover { background: rgba(255,255,255,0.04); border-color: rgba(104,211,145,0.2); }
         .feature-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 0.75rem;
+            width: 36px; height: 36px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; margin-bottom: 0.75rem;
         }
         .feature-icon svg { width: 20px; height: 20px; }
         .fi-green  { background: rgba(104,211,145,0.12); color: #68d391; }
@@ -172,131 +98,121 @@
         .fi-purple { background: rgba(200,162,255,0.12);  color: #c8a2ff; }
         .fi-teal   { background: rgba(45,212,191,0.12);   color: #2dd4bf; }
         .fi-red    { background: rgba(252,129,129,0.12);  color: #fc8181; }
-        .feature-card h3 {
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: #e2e8f0;
-            margin-bottom: 0.35rem;
+        .feature-card h3 { font-size: 0.95rem; font-weight: 700; color: #e2e8f0; margin-bottom: 0.35rem; }
+        .feature-card p { font-size: 0.82rem; color: #94a3b8; line-height: 1.6; }
+
+        /* ── Screenshots showcase ── */
+        .showcase {
+            max-width: 1100px; margin: 0 auto;
+            padding: 2rem 2rem 4rem;
+            display: flex; align-items: center; gap: 4rem;
         }
-        .feature-card p {
-            font-size: 0.82rem;
-            color: #94a3b8;
-            line-height: 1.6;
+        .showcase-text { flex: 0 0 280px; }
+        .showcase-text h2 {
+            font-size: 2rem; font-weight: 800;
+            background: linear-gradient(135deg, #68d391, #63b3ed);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; margin-bottom: 0.75rem;
+        }
+        .showcase-text p { font-size: 0.95rem; color: #94a3b8; line-height: 1.7; margin-bottom: 1.5rem; }
+        .theme-badges { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .theme-badge {
+            padding: 0.35rem 0.75rem; font-size: 0.75rem; font-weight: 600;
+            border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);
+        }
+        .tb-ocean  { color: #63b3ed; background: rgba(99,179,237,0.1); border-color: rgba(99,179,237,0.25); }
+        .tb-warm   { color: #fbbf24; background: rgba(251,191,36,0.1); border-color: rgba(251,191,36,0.25); }
+        .tb-teal   { color: #2dd4bf; background: rgba(45,212,191,0.1); border-color: rgba(45,212,191,0.25); }
+
+        .showcase-stack {
+            flex: 1; position: relative; height: 380px; min-width: 0;
+        }
+        .stack-img {
+            position: absolute; width: 72%; border-radius: 12px;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.08);
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .stack-img:nth-child(1) { top: 0; left: 0; transform: rotate(-3deg); z-index: 3; }
+        .stack-img:nth-child(2) { top: 40px; left: 14%; transform: rotate(1.5deg); z-index: 2; }
+        .stack-img:nth-child(3) { top: 80px; left: 26%; transform: rotate(5deg); z-index: 1; }
+        .stack-img:hover { box-shadow: 0 24px 60px rgba(0,0,0,0.5); z-index: 4; }
+        .stack-img:nth-child(1):hover { transform: rotate(-3deg) translateY(-6px); }
+        .stack-img:nth-child(2):hover { transform: rotate(1.5deg) translateY(-6px); }
+        .stack-img:nth-child(3):hover { transform: rotate(5deg) translateY(-6px); }
+
+        @media (max-width: 800px) {
+            .showcase { flex-direction: column; gap: 2rem; }
+            .showcase-text { flex: none; text-align: center; }
+            .theme-badges { justify-content: center; }
+            .showcase-stack { height: 260px; width: 100%; }
+            .stack-img { width: 80%; }
         }
 
-        /* ── Footer ── */
-        footer {
-            text-align: center;
-            padding: 2rem;
-            border-top: 1px solid rgba(255,255,255,0.04);
+        /* ── More screenshots grid ── */
+        .more-screenshots {
+            max-width: 1100px; margin: 0 auto; padding: 0 2rem 4rem;
         }
-        .footer-links {
-            display: flex;
-            gap: 2rem;
-            justify-content: center;
-            margin-bottom: 1rem;
-        }
-        /* ── Screenshots ── */
-        .screenshots {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 0 2rem 4rem;
-        }
-        .screenshots-title {
-            text-align: center;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #e2e8f0;
-            margin-bottom: 0.5rem;
-        }
-        .screenshots-sub {
-            text-align: center;
-            font-size: 0.9rem;
-            color: #64748b;
-            margin-bottom: 2rem;
-        }
-        .screenshots-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1.25rem;
-        }
-        @media (max-width: 700px) {
-            .screenshots-grid { grid-template-columns: 1fr; }
-        }
-        .screenshot-card {
-            display: block;
-            text-decoration: none;
-            border-radius: 12px;
-            overflow: hidden;
+        .ss-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+        @media (max-width: 700px) { .ss-grid { grid-template-columns: 1fr; } }
+        .ss-card {
+            border-radius: 10px; overflow: hidden;
             border: 1px solid rgba(255,255,255,0.06);
-            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
         }
-        .screenshot-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 32px rgba(0,0,0,0.3);
-        }
-        .screenshot-card img {
-            width: 100%;
-            display: block;
-            cursor: pointer;
+        .ss-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.3); }
+        .ss-card img { width: 100%; display: block; }
+        .ss-label {
+            padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.03);
+            font-size: 0.75rem; font-weight: 600; color: #64748b;
         }
 
-        /* ── Screenshot lightbox ── */
+        /* ── Lightbox ── */
         .lightbox {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.85);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            cursor: pointer;
+            position: fixed; inset: 0; background: rgba(0,0,0,0.92);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 9999; padding: 2rem; -webkit-user-select: none; user-select: none;
             animation: fadeIn 0.15s ease;
-            padding: 2rem;
         }
         .lightbox img {
-            max-width: 95%;
-            max-height: 90vh;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            max-width: 90%; max-height: 85vh; border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5); pointer-events: none;
             animation: scaleIn 0.15s ease;
         }
-        .lightbox-close {
-            position: absolute;
-            top: 1.5rem;
-            right: 1.5rem;
-            background: none;
-            border: none;
-            color: #94a3b8;
-            font-size: 2rem;
-            cursor: pointer;
-            line-height: 1;
+        .lb-close {
+            position: absolute; top: 1.25rem; right: 1.5rem;
+            background: none; border: none; color: #64748b;
+            font-size: 2rem; cursor: pointer; line-height: 1; z-index: 10;
         }
-        .lightbox-close:hover { color: #fff; }
+        .lb-close:hover { color: #fff; }
+        .lb-nav {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+            color: #e2e8f0; width: 44px; height: 44px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 1.25rem; transition: all 0.15s; z-index: 10;
+        }
+        .lb-nav:hover { background: rgba(255,255,255,0.15); }
+        .lb-prev { left: 1.5rem; }
+        .lb-next { right: 1.5rem; }
+        .lb-counter {
+            position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+            font-size: 0.8rem; color: #64748b;
+        }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .screenshot-label {
-            padding: 0.6rem 1rem;
-            background: rgba(255,255,255,0.03);
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: #94a3b8;
-        }
 
-        .footer-links a {
-            font-size: 0.85rem;
-            color: #94a3b8;
-            text-decoration: none;
-            transition: color 0.15s;
-        }
+        /* ── Footer ── */
+        footer { text-align: center; padding: 2rem; border-top: 1px solid rgba(255,255,255,0.04); }
+        .footer-links { display: flex; gap: 2rem; justify-content: center; margin-bottom: 1rem; }
+        .footer-links a { font-size: 0.85rem; color: #94a3b8; text-decoration: none; transition: color 0.15s; }
         .footer-links a:hover { color: #e2e8f0; }
-        .footer-note {
-            font-size: 0.75rem;
-            color: #475569;
-        }
+        .footer-note { font-size: 0.75rem; color: #475569; }
     </style>
 </head>
 <body>
+    <!-- Hero -->
     <section class="hero">
         <div class="hero-icon">
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
@@ -319,99 +235,96 @@
         <div class="hero-version" id="version-label"></div>
     </section>
 
+    <!-- Features -->
     <section class="features">
-        <h2 class="features-title">Everything you need</h2>
-        <p class="features-sub">Built with care for the Muslim community</p>
+        <h2 class="section-title">Everything you need</h2>
+        <p class="section-sub">Built with care for the Muslim community</p>
         <div class="features-grid">
             <div class="feature-card">
-                <div class="feature-icon fi-green">
-                    <svg viewBox="0 0 24 24" fill="none"><polyline points="20,6 9,17 4,12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </div>
+                <div class="feature-icon fi-green"><svg viewBox="0 0 24 24" fill="none"><polyline points="20,6 9,17 4,12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
                 <h3>Daily Prayer Tracking</h3>
                 <p>Log all 5 prayers with a single tap. Jumu'ah on Fridays. Auto-detect missed prayers.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon fi-blue">
-                    <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="1.5"/></svg>
-                </div>
+                <div class="feature-icon fi-blue"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="1.5"/></svg></div>
                 <h3>Hijri Calendar</h3>
                 <p>Umm al-Qura calendar with special Islamic days, reminders, and hadith references.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon fi-amber">
-                    <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-                </div>
+                <div class="feature-icon fi-amber"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
                 <h3>Prayer Times</h3>
                 <p>Accurate calculation with live timeline, countdown, fasting tracker, and iqama offsets.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon fi-amber">
-                    <svg viewBox="0 0 24 24" fill="none"><path d="M6 2h12M6 22h12M6 2c0 4 4 5 4 8s-4 4-4 8h12c0-4-4-5-4-8s4-4 4-8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </div>
+                <div class="feature-icon fi-amber"><svg viewBox="0 0 24 24" fill="none"><path d="M6 2h12M6 22h12M6 2c0 4 4 5 4 8s-4 4-4 8h12c0-4-4-5-4-8s4-4 4-8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
                 <h3>Fasting Tracker</h3>
                 <p>Live Fajr-to-Maghrib countdown with progress bar. Auto-enables during Ramadan.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon fi-purple">
-                    <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L14.09 8.26L20 10L14.09 11.74L12 18L9.91 11.74L4 10L9.91 8.26L12 2Z" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
-                </div>
+                <div class="feature-icon fi-purple"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2L14.09 8.26L20 10L14.09 11.74L12 18L9.91 11.74L4 10L9.91 8.26L12 2Z" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></div>
                 <h3>Qadaa Goals</h3>
                 <p>Track missed prayers and fasting. Set goals, record progress, see completion estimates.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon fi-teal">
-                    <svg viewBox="0 0 24 24" fill="none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
-                </div>
+                <div class="feature-icon fi-teal"><svg viewBox="0 0 24 24" fill="none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></div>
                 <h3>Extras</h3>
                 <p>Log Duha, Shaf'a & Witr, Qiyam (with raka'at), and fasting — all tracked in stats.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon fi-green">
-                    <svg viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="1.5"/></svg>
-                </div>
+                <div class="feature-icon fi-green"><svg viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="1.5"/></svg></div>
                 <h3>Cloud Sync</h3>
                 <p>Sign in with Google to sync across devices. Local-first — works fully offline.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon fi-blue">
-                    <svg viewBox="0 0 24 24" fill="none"><path d="M18 20V10M12 20V4M6 20v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                </div>
+                <div class="feature-icon fi-blue"><svg viewBox="0 0 24 24" fill="none"><path d="M18 20V10M12 20V4M6 20v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
                 <h3>Statistics</h3>
                 <p>Punctuality ring, per-prayer reliability, volunteer acts, and qadaa progress.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon fi-red">
-                    <svg viewBox="0 0 24 24" fill="none"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke="currentColor" stroke-width="1.5"/></svg>
-                </div>
+                <div class="feature-icon fi-red"><svg viewBox="0 0 24 24" fill="none"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke="currentColor" stroke-width="1.5"/></svg></div>
                 <h3>Islamic Reminders</h3>
                 <p>Special days, Surat Al-Kahf on Fridays, and clickable hadith references with sources.</p>
             </div>
         </div>
     </section>
 
-    <section class="screenshots">
-        <h2 class="screenshots-title">See it in action</h2>
-        <p class="screenshots-sub">Beautiful dark theme designed for focus</p>
-        <div class="screenshots-grid">
-            <div class="screenshot-card" data-src="screenshots/dashboard.png">
-                <img src="screenshots/dashboard.png" alt="Nur Dashboard — prayer tracking, goals, and reminders" loading="lazy">
-                <div class="screenshot-label">Dashboard</div>
+    <!-- Screenshots showcase -->
+    <section class="showcase">
+        <div class="showcase-text">
+            <h2>Beautiful Themes</h2>
+            <p>Choose the look that suits your style. Each theme is designed for readability and focus during your prayer journey.</p>
+            <div class="theme-badges">
+                <span class="theme-badge tb-ocean">Ocean</span>
+                <span class="theme-badge tb-warm">Warm</span>
+                <span class="theme-badge tb-teal">Teal</span>
             </div>
-            <div class="screenshot-card" data-src="screenshots/stats.png">
-                <img src="screenshots/stats.png" alt="Nur Statistics — punctuality ring, prayer bars, qadaa progress" loading="lazy">
-                <div class="screenshot-label">Statistics</div>
+        </div>
+        <div class="showcase-stack" id="showcase-stack">
+            <img class="stack-img" src="screenshots/dashboard.png" data-label="Dashboard · Ocean" alt="Dashboard — Ocean theme">
+            <img class="stack-img" src="screenshots/stats-warm.png" data-label="Statistics · Warm" alt="Statistics — Warm theme">
+            <img class="stack-img" src="screenshots/prayer-times-teal.png" data-label="Prayer Times · Teal" alt="Prayer Times — Teal theme">
+        </div>
+    </section>
+
+    <!-- More screenshots -->
+    <section class="more-screenshots">
+        <div class="ss-grid" id="ss-grid">
+            <div class="ss-card" data-src="screenshots/calendar.png" data-label="Hijri Calendar">
+                <img src="screenshots/calendar.png" alt="Hijri Calendar" loading="lazy">
+                <div class="ss-label">Hijri Calendar</div>
             </div>
-            <div class="screenshot-card" data-src="screenshots/calendar.png">
-                <img src="screenshots/calendar.png" alt="Nur Hijri Calendar — prayer indicators, special days" loading="lazy">
-                <div class="screenshot-label">Hijri Calendar</div>
+            <div class="ss-card" data-src="screenshots/dashboard-full.png" data-label="Dashboard · Warm">
+                <img src="screenshots/dashboard-full.png" alt="Dashboard — Warm" loading="lazy">
+                <div class="ss-label">Dashboard · Warm</div>
             </div>
-            <div class="screenshot-card" data-src="screenshots/prayer-times-teal.png">
-                <img src="screenshots/prayer-times-teal.png" alt="Nur Prayer Times — live timeline, countdown, fasting tracker" loading="lazy">
-                <div class="screenshot-label">Prayer Times</div>
+            <div class="ss-card" data-src="screenshots/stats.png" data-label="Statistics · Ocean">
+                <img src="screenshots/stats.png" alt="Statistics — Ocean" loading="lazy">
+                <div class="ss-label">Statistics · Ocean</div>
             </div>
         </div>
     </section>
 
+    <!-- Footer -->
     <footer>
         <div class="footer-links">
             <a href="app/">Web App</a>
@@ -422,19 +335,69 @@
     </footer>
 
     <script>
-        document.querySelectorAll('.screenshot-card[data-src]').forEach(card => {
-            card.addEventListener('click', () => {
-                const lb = document.createElement('div');
-                lb.className = 'lightbox';
-                lb.innerHTML = `<button class="lightbox-close">&times;</button><img src="${card.dataset.src}" alt="">`;
-                document.body.appendChild(lb);
-                lb.addEventListener('click', (e) => { if (e.target === lb || e.target.classList.contains('lightbox-close')) lb.remove(); });
+        // Collect all clickable images
+        const allImages = [
+            ...document.querySelectorAll('.stack-img'),
+            ...document.querySelectorAll('.ss-card[data-src]')
+        ].map(el => ({
+            src: el.dataset?.src || el.src,
+            label: el.dataset?.label || el.alt || '',
+            el
+        }));
+
+        let lbEl = null, lbIdx = 0;
+
+        function openLB(idx) {
+            lbIdx = idx;
+            if (lbEl) lbEl.remove();
+            lbEl = document.createElement('div');
+            lbEl.className = 'lightbox';
+            renderLB();
+            document.body.appendChild(lbEl);
+            document.addEventListener('keydown', lbKey);
+        }
+
+        function renderLB() {
+            const item = allImages[lbIdx];
+            lbEl.innerHTML = `
+                <button type="button" class="lb-close">&times;</button>
+                ${allImages.length > 1 ? '<button type="button" class="lb-nav lb-prev">&#8249;</button>' : ''}
+                <img src="${item.src}" alt="${item.label}">
+                ${allImages.length > 1 ? '<button type="button" class="lb-nav lb-next">&#8250;</button>' : ''}
+                <div class="lb-counter">${item.label} &middot; ${lbIdx + 1} / ${allImages.length}</div>`;
+            lbEl.querySelector('.lb-close').addEventListener('click', closeLB);
+            lbEl.querySelector('.lb-prev')?.addEventListener('click', (e) => { e.stopPropagation(); lbIdx = (lbIdx - 1 + allImages.length) % allImages.length; renderLB(); });
+            lbEl.querySelector('.lb-next')?.addEventListener('click', (e) => { e.stopPropagation(); lbIdx = (lbIdx + 1) % allImages.length; renderLB(); });
+            lbEl.addEventListener('click', (e) => { if (e.target === lbEl) closeLB(); });
+        }
+
+        function closeLB() { if (lbEl) { lbEl.remove(); lbEl = null; } document.removeEventListener('keydown', lbKey); }
+        function lbKey(e) {
+            if (e.key === 'Escape') closeLB();
+            if (e.key === 'ArrowLeft') { lbIdx = (lbIdx - 1 + allImages.length) % allImages.length; renderLB(); }
+            if (e.key === 'ArrowRight') { lbIdx = (lbIdx + 1) % allImages.length; renderLB(); }
+        }
+
+        // Touch swipe
+        document.addEventListener('touchstart', (e) => { if (lbEl) lbEl._tx = e.touches[0].clientX; }, { passive: true });
+        document.addEventListener('touchend', (e) => {
+            if (!lbEl || !lbEl._tx) return;
+            const dx = e.changedTouches[0].clientX - lbEl._tx;
+            if (Math.abs(dx) > 50) { lbIdx = dx < 0 ? (lbIdx + 1) % allImages.length : (lbIdx - 1 + allImages.length) % allImages.length; renderLB(); }
+            lbEl._tx = null;
+        }, { passive: true });
+
+        // Click handlers
+        allImages.forEach((item, i) => {
+            item.el.addEventListener('click', (e) => {
+                if (item.el.closest('.ss-card')) e.stopPropagation();
+                openLB(i);
             });
         });
 
+        // Version
         fetch('version.json').then(r => r.json()).then(d => {
-            const el = document.getElementById('version-label');
-            el.textContent = `v${d.version} — Windows 64-bit`;
+            document.getElementById('version-label').textContent = `v${d.version} — Windows 64-bit`;
             const btn = document.getElementById('download-btn');
             if (btn && d.url) btn.href = d.url;
         }).catch(() => {});
