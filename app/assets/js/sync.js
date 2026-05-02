@@ -348,6 +348,7 @@
 
         const cloudData = rows[0].data;
         const localSnapshot = Storage.exportAll();
+        const dirtyKeys = Storage.getDirtyKeys();
         const lastSyncTs = getLastSync();
         const lastSyncMs = lastSyncTs ? new Date(lastSyncTs).getTime() : 0;
         let changed = false;
@@ -355,6 +356,7 @@
 
         for (const [key, envelope] of Object.entries(cloudData)) {
             if (!envelope || typeof envelope !== 'object') continue;
+            if (dirtyKeys.has(key)) continue;
             const cloudTs = envelope._ts || 0;
             const cloudValue = envelope.value;
             const raw = typeof cloudValue === 'string' ? cloudValue : JSON.stringify(cloudValue);

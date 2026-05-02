@@ -1,5 +1,5 @@
 {
-  "version": "1.1.210",
-  "url": "https://github.com/nur-prayer-app/releases/releases/download/v1.1.210/Nur.Setup.1.1.210.exe",
-  "notes": "Fix Sync Now not pulling changes from other devices"
+  "version": "1.1.211",
+  "url": "https://github.com/nur-prayer-app/releases/releases/download/v1.1.211/Nur.Setup.1.1.211.exe",
+  "notes": "Fix sync overwriting local changes with stale cloud data"
 }
