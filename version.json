@@ -1,5 +1,5 @@
 {
-  "version": "1.1.218",
-  "url": "https://github.com/nur-prayer-app/nur-prayer-app.github.io/releases/download/v1.1.218/Nur.Setup.1.1.218.exe",
-  "notes": "Fix timeline rendering regression from dead code cleanup"
+  "version": "1.1.219",
+  "url": "https://github.com/nur-prayer-app/nur-prayer-app.github.io/releases/download/v1.1.219/Nur.Setup.1.1.219.exe",
+  "notes": "Relaxed timeline on mobile — min-width prevents cramped labels"
 }

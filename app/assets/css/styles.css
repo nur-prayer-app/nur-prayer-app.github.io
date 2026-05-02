@@ -1375,6 +1375,7 @@ body.electron .app-header {
   position: relative;
   height: 34px;
   width: 300%;
+  min-width: 1400px;
   background: transparent;
   border-radius: 16px;
   overflow: visible;
