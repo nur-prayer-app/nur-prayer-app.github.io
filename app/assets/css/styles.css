@@ -8108,4 +8108,43 @@ select.app-input option {
     .week-dots {
         gap: 2px;
     }
+
+    /* ---- Goal calculator: wrap unit selector below stepper ---- */
+    .calc-row {
+        flex-wrap: wrap;
+    }
+    .calc-unit-group {
+        flex-basis: 100%;
+    }
+    .calc-unit-btn {
+        font-size: 12px;
+        padding: var(--sp-1) var(--sp-2);
+    }
+
+    /* ---- Daybar: shrink overlapping labels ---- */
+    .daybar-marker-label,
+    .daybar-win-dur,
+    .daybar-seg-name,
+    .daybar-hour-label {
+        font-size: 8px;
+        letter-spacing: 0;
+    }
+    .daybar-seg-dur {
+        font-size: 7px;
+    }
+
+    /* ---- Day modal: extras row 3+2 wrap ---- */
+    .day-extras-row-5 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    .day-extras-row-5 .dec-circle {
+        width: 40px;
+        height: 40px;
+    }
+    .day-extras-row-5 .dec-name {
+        font-size: 11px;
+    }
+    .day-extras-row-5 .dec-sub {
+        font-size: 10px;
+    }
 }
