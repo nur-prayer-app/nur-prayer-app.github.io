@@ -665,12 +665,6 @@ body.electron .app-header {
   margin-bottom: var(--sp-6);
 }
 
-.times-preview {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-  text-align: left;
-}
 
 /* ================================================================
    Prayer Times page — hero countdown, ring grid, schedule
@@ -768,13 +762,6 @@ body.electron .app-header {
   font-weight: var(--weight-medium);
 }
 
-.hero-prayer {
-  font-family: var(--font-heading);
-  font-size: var(--text-xl);
-  font-weight: var(--weight-semibold);
-  color: var(--text-primary);
-  margin-top: 6px;
-}
 
 .hero-countdown {
   font-family: var(--font-heading);
@@ -794,42 +781,6 @@ body.electron .app-header {
   .hero-countdown { font-size: 40px; letter-spacing: -1px; }
 }
 
-/* Iqama sub-counter — appears under the main countdown when iqama is upcoming */
-.hero-iqama {
-  display: flex;
-  justify-content: center;
-  align-items: baseline;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--accent-2);
-  font-weight: var(--weight-medium);
-  margin-bottom: var(--sp-2);
-}
-
-.hero-iqama[hidden] { display: none; }
-
-.hero-iqama-label {
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  font-size: 10px;
-  color: var(--text-tertiary);
-}
-
-.hero-iqama-val {
-  font-family: var(--font-heading);
-  font-variant-numeric: tabular-nums;
-  color: var(--accent-2);
-}
-
-/* Last-prayer sub-line under the progress bar */
-.hero-last {
-  margin-top: var(--sp-3);
-  padding-top: var(--sp-2);
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  font-size: 11px;
-  color: var(--text-tertiary);
-  text-align: center;
-}
 
 /* Post-adhan (elapsed) mode gets a warmer accent */
 .times-hero[data-mode="elapsed"] .hero-countdown {
@@ -846,11 +797,6 @@ body.electron .app-header {
   color: #fbbf77;
 }
 
-.hero-at {
-  font-size: 13px;
-  color: var(--text-secondary);
-  margin-bottom: var(--sp-5);
-}
 
 .hero-progress {
   margin-top: 0; /* countdown sits immediately above — flex gap (sp-3) handles rhythm */
@@ -917,22 +863,6 @@ body.electron .app-header {
 .hpl-side.hpl-right .hpl-name { color: var(--text-tertiary); }
 .hpl-side.hpl-right .hpl-time { color: var(--text-secondary); }
 
-/* Hero counters below the progress bar.
-   Row of [Since last] + [Iqama]. Iqama is hidden unless it's in the post-adhan window,
-   in which case Since-last shrinks to make room. */
-.hero-counters {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-  margin-top: var(--sp-4);
-}
-
-.hero-counter-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
-  gap: var(--sp-2);
-  margin-top: var(--sp-3);
-}
 
 /* Secondary counter row — Since-last (always) + Iqama (only post-adhan, auto-hides) */
 .hero-sub-counters {
@@ -980,75 +910,6 @@ body.electron .app-header {
 }
 .hero-sub-iqama .hsub-label { color: var(--accent-2); }
 
-.hero-counter {
-  flex: 1;
-  padding: var(--sp-3) var(--sp-2);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-sm);
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.hero-counter[hidden] { display: none; }
-
-/* Primary (big) Next counter — stands out as the main countdown */
-.hero-counter-primary {
-  padding: var(--sp-4) var(--sp-3);
-  background: linear-gradient(180deg, rgba(104, 211, 145, 0.1), rgba(99, 179, 237, 0.05));
-  border-color: rgba(104, 211, 145, 0.2);
-}
-
-.hero-counter-primary .hero-counter-val {
-  font-size: 24px;
-}
-
-.hero-counter-primary .hero-counter-label {
-  font-size: 11px;
-}
-
-.hero-counter-val {
-  font-family: var(--font-heading);
-  font-size: 18px;
-  font-weight: var(--weight-bold);
-  color: var(--text-primary);
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-  letter-spacing: -0.3px;
-}
-
-.hero-counter-label {
-  font-size: 10px;
-  color: var(--text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: var(--weight-medium);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Iqama counter — blue accent to distinguish from "Since last" */
-.hero-counter-iqama {
-  background: rgba(99, 179, 237, 0.1);
-  border-color: rgba(99, 179, 237, 0.25);
-}
-
-.hero-counter-iqama .hero-counter-val {
-  color: var(--accent-2);
-}
-
-/* Window-closes counter — warn-tinted to signal "time's running out" */
-.hero-counter-closes {
-  background: rgba(251, 191, 119, 0.08);
-  border-color: rgba(251, 191, 119, 0.22);
-}
-.hero-counter-closes .hero-counter-val { color: #fbbf77; }
-
-.hero-counter[hidden] { display: none; }
 
 /* ── Side-by-side Current window + Next window cards ── */
 .hero-windows {
@@ -1128,84 +989,7 @@ body.electron .app-header {
   font-weight: var(--weight-medium);
 }
 
-/* Iqama sub-line inside Current card — appears only in post-adhan window */
-.hw-iqama {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: var(--sp-2);
-  margin-top: 6px;
-  padding-top: 6px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  font-size: 11px;
-}
-.hw-iqama[hidden] { display: none; }
-.hw-iqama-label {
-  color: var(--text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  font-size: 9px;
-  font-weight: var(--weight-semibold);
-}
-.hw-iqama-val {
-  color: var(--accent-2);
-  font-family: var(--font-heading);
-  font-weight: var(--weight-semibold);
-  font-variant-numeric: tabular-nums;
-}
 
-/* ── Legacy Next window card (kept for back-compat — unused now) ── */
-.hero-next-window {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-3);
-  padding: var(--sp-3) var(--sp-4);
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
-  text-align: left;
-}
-.hero-next-window[hidden] { display: none; }
-
-.hero-next-window[data-tone="duha"] {
-  background: linear-gradient(135deg, rgba(251, 191, 119, 0.12), rgba(251, 191, 119, 0.04));
-  border-color: rgba(251, 191, 119, 0.25);
-}
-.hero-next-window[data-tone="third"] {
-  background: linear-gradient(135deg, rgba(96, 165, 250, 0.14), rgba(96, 165, 250, 0.04));
-  border-color: rgba(96, 165, 250, 0.28);
-}
-.hero-next-window[data-tone="karaha"] {
-  background: linear-gradient(135deg, rgba(245, 101, 101, 0.14), rgba(245, 101, 101, 0.04));
-  border-color: rgba(245, 101, 101, 0.28);
-}
-
-.hnw-left { min-width: 0; }
-.hnw-right { text-align: right; min-width: 0; }
-
-.hnw-label {
-  font-size: 9px;
-  font-weight: var(--weight-semibold);
-  color: var(--text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-}
-
-.hnw-name {
-  font-family: var(--font-heading);
-  font-size: 15px;
-  font-weight: var(--weight-semibold);
-  color: var(--text-primary);
-  margin-top: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.hero-next-window[data-tone="duha"] .hnw-name { color: #fbbf77; }
-.hero-next-window[data-tone="third"] .hnw-name { color: #93c5fd; }
-.hero-next-window[data-tone="karaha"] .hnw-name { color: #fca5a5; }
 
 .hnw-count {
   font-family: var(--font-heading);
@@ -2150,16 +1934,6 @@ body.electron .app-header {
 .dbl-third { background: rgba(96, 165, 250, 0.7); border: 1px solid rgba(96, 165, 250, 0.9); }
 .dbl-karaha { background: repeating-linear-gradient(45deg, rgba(245, 101, 101, 0.7), rgba(245, 101, 101, 0.7) 2px, rgba(245, 101, 101, 0.3) 2px, rgba(245, 101, 101, 0.3) 4px); border: 1px solid rgba(245, 101, 101, 0.9); }
 
-/* Timeline row flash when jumped-to via daybar click */
-.time-row.highlight-flash {
-  animation: highlight-flash 1.2s ease-out;
-}
-
-@keyframes highlight-flash {
-  0% { background: rgba(104, 211, 145, 0.3); border-color: var(--accent-1); }
-  100% { }
-}
-
 /* Detailed counter grid — adapts to available columns */
 .times-counters {
   display: grid;
@@ -2346,77 +2120,6 @@ body.electron .app-header {
 
 /* ── Action card (top of stats): what the user should do right now ── */
 
-
-/* ── 7-day snapshot dots ── */
-.week-dots {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: var(--sp-2);
-  margin-bottom: var(--sp-3);
-}
-
-.week-dot-col {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-}
-
-.week-dot-day {
-  font-size: 11px;
-  color: var(--text-tertiary);
-  font-weight: var(--weight-medium);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.week-dot-col.today .week-dot-day {
-  color: var(--accent-1);
-  font-weight: var(--weight-bold);
-}
-
-.week-dot {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-heading);
-  font-weight: var(--weight-bold);
-  font-size: 13px;
-  color: var(--text-primary);
-  transition: transform var(--duration-fast) var(--ease-out);
-}
-
-.week-dot:hover { transform: scale(1.1); }
-
-.week-dot[data-tracked="false"] {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px dashed rgba(255, 255, 255, 0.1);
-  color: var(--text-muted);
-}
-.week-dot[data-count="0"][data-tracked="true"] { background: rgba(245, 101, 101, 0.25); color: #fc8181; }
-.week-dot[data-count="1"][data-tracked="true"] { background: rgba(104, 211, 145, 0.2); }
-.week-dot[data-count="2"][data-tracked="true"] { background: rgba(104, 211, 145, 0.35); }
-.week-dot[data-count="3"][data-tracked="true"] { background: rgba(104, 211, 145, 0.5); }
-.week-dot[data-count="4"][data-tracked="true"] { background: rgba(104, 211, 145, 0.7); }
-.week-dot[data-count="5"][data-tracked="true"] { background: var(--accent-1); color: #0a2540; }
-
-.week-dot-col.today .week-dot {
-  box-shadow: 0 0 0 2px var(--accent-1);
-}
-
-.week-total {
-  font-size: 12px;
-  color: var(--text-tertiary);
-  text-align: center;
-  padding-top: var(--sp-2);
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-}
-.week-total > span:first-child { color: var(--text-primary); font-weight: var(--weight-bold); }
-.week-total .up { color: var(--accent-1); }
-.week-total .down { color: #fc8181; }
 
 /* ── Focus area (which prayer to work on) ── */
 .focus-grid {
@@ -7970,7 +7673,7 @@ select.app-input option {
 }
 
 @media (forced-colors: active) {
-    .btn, .action-btn, .icon-btn, button {
+    .btn, .icon-btn, button {
         border: 1px solid ButtonBorder;
     }
     .card, .modal-overlay, .context-menu {
@@ -8097,16 +7800,6 @@ select.app-input option {
     }
     .stat-punct-card .donut-pct {
         font-size: 28px;
-    }
-
-    /* ---- Week dots (stats / dashboard) ---- */
-    .week-dot {
-        width: 30px;
-        height: 30px;
-        font-size: 11px;
-    }
-    .week-dots {
-        gap: 2px;
     }
 
     /* ---- Goal calculator: wrap unit selector below stepper ---- */
