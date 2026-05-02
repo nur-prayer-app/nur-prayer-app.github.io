@@ -14,13 +14,16 @@
     const SUPABASE_KEY = 'sb_publishable_BgBlYMnxPhkWWEtbHNHzIg_h-RkMDda';
     const AUTH_URL = `${SUPABASE_URL}/auth/v1`;
     const REST_URL = `${SUPABASE_URL}/rest/v1`;
+    const OAUTH_CALLBACK_URL = 'https://nur-prayer-app.github.io/releases/auth-callback.html';
     const SESSION_KEY = 'nur-sync-session';
     const LAST_SYNC_KEY = 'nur-last-sync';
     const SYNC_INTERVAL = 5 * 60 * 1000;
 
     let syncTimer = null;
+    let syncEnabled = false;
     let cachedSession = null;
-    let lastPushSnapshot = null;
+    let lastPushedTimestamps = null;
+    let syncFailures = 0;
 
     /* ─── Helpers ───────────────────────────────────────────────── */
 
@@ -60,6 +63,55 @@
         const ts = new Date().toISOString();
         localStorage.setItem(LAST_SYNC_KEY, ts);
         return ts;
+    }
+
+    /* ─── PKCE helpers ─────────────────────────────────────────── */
+
+    function generateCodeVerifier() {
+        const arr = new Uint8Array(32);
+        crypto.getRandomValues(arr);
+        return Array.from(arr, b => b.toString(36).padStart(2, '0')).join('').slice(0, 43);
+    }
+
+    async function generateCodeChallenge(verifier) {
+        const data = new TextEncoder().encode(verifier);
+        const hash = await crypto.subtle.digest('SHA-256', data);
+        return btoa(String.fromCharCode(...new Uint8Array(hash)))
+            .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
+    function storeCodeVerifier(v) {
+        if (window.electronAPI?.storeCodeVerifier) window.electronAPI.storeCodeVerifier(v);
+        else sessionStorage.setItem('nur-pkce-verifier', v);
+    }
+
+    function getCodeVerifier() {
+        if (window.electronAPI?.getCodeVerifier) return window.electronAPI.getCodeVerifier();
+        return sessionStorage.getItem('nur-pkce-verifier');
+    }
+
+    function clearCodeVerifier() {
+        if (window.electronAPI?.clearCodeVerifier) window.electronAPI.clearCodeVerifier();
+        else sessionStorage.removeItem('nur-pkce-verifier');
+    }
+
+    function getOAuthRedirectUrl() {
+        return window.electronAPI ? OAUTH_CALLBACK_URL : window.location.origin + window.location.pathname;
+    }
+
+    async function exchangeCodeForTokens(code) {
+        const verifier = getCodeVerifier();
+        clearCodeVerifier();
+        if (!verifier) throw new Error('Missing PKCE code verifier');
+
+        const resp = await fetch(`${AUTH_URL}/token?grant_type=authorization_code`, {
+            method: 'POST',
+            headers: headers(),
+            body: JSON.stringify({ code, code_verifier: verifier, redirect_to: getOAuthRedirectUrl() }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error_description || data.msg || 'Token exchange failed');
+        return data;
     }
 
     /* ─── Token refresh ────────────────────────────────────────── */
@@ -140,11 +192,16 @@
         return data;
     }
 
-    function signInWithGoogle() {
-        const redirectTo = window.electronAPI
-            ? 'https://nur-prayer-app.github.io/releases/auth-callback.html'
-            : window.location.origin + window.location.pathname;
-        const url = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}`;
+    async function signInWithGoogle() {
+        const verifier = generateCodeVerifier();
+        const challenge = await generateCodeChallenge(verifier);
+        storeCodeVerifier(verifier);
+
+        const redirectTo = getOAuthRedirectUrl();
+        const url = `${SUPABASE_URL}/auth/v1/authorize?provider=google`
+            + `&redirect_to=${encodeURIComponent(redirectTo)}`
+            + `&code_challenge=${encodeURIComponent(challenge)}`
+            + `&code_challenge_method=S256`;
         if (window.electronAPI?.openExternal) {
             window.electronAPI.openExternal(url);
         } else {
@@ -157,31 +214,44 @@
         try { await pullFromCloud(); } catch (e) { console.warn('OAuth pull failed:', e); }
     }
 
+    async function handleOAuthRedirect(url) {
+        const qIdx = url.indexOf('?');
+        if (qIdx !== -1) {
+            const params = new URLSearchParams(url.slice(qIdx + 1));
+            const code = params.get('code');
+            if (code) {
+                const data = await exchangeCodeForTokens(code);
+                await handleOAuthTokens(data.access_token, data.refresh_token);
+                window.dispatchEvent(new Event('sync-auth-changed'));
+                return true;
+            }
+        }
+        // Legacy implicit flow fallback (pre-PKCE clients)
+        const fragment = url.split('#')[1];
+        if (fragment) {
+            const params = new URLSearchParams(fragment);
+            const accessToken = params.get('access_token');
+            const refreshToken = params.get('refresh_token');
+            if (accessToken && refreshToken) {
+                await handleOAuthTokens(accessToken, refreshToken);
+                window.dispatchEvent(new Event('sync-auth-changed'));
+                return true;
+            }
+        }
+        return false;
+    }
+
     if (window.electronAPI?.onOAuthCallback) {
-        window.electronAPI.onOAuthCallback(async (url) => {
-            try {
-                const fragment = url.split('#')[1];
-                if (!fragment) return;
-                const params = new URLSearchParams(fragment);
-                const accessToken = params.get('access_token');
-                const refreshToken = params.get('refresh_token');
-                if (accessToken && refreshToken) {
-                    await handleOAuthTokens(accessToken, refreshToken);
-                    window.dispatchEvent(new Event('sync-auth-changed'));
-                }
-            } catch (e) { console.warn('OAuth callback error:', e); }
+        window.electronAPI.onOAuthCallback(url => {
+            handleOAuthRedirect(url).catch(e => console.warn('OAuth callback error:', e));
         });
     }
 
-    if (!window.electronAPI && window.location.hash) {
+    if (!window.electronAPI) {
         (async () => {
             try {
-                const params = new URLSearchParams(window.location.hash.substring(1));
-                const accessToken = params.get('access_token');
-                const refreshToken = params.get('refresh_token');
-                if (accessToken && refreshToken) {
+                if (await handleOAuthRedirect(window.location.href)) {
                     history.replaceState(null, '', window.location.pathname);
-                    await handleOAuthTokens(accessToken, refreshToken);
                 }
             } catch (e) { console.warn('Web OAuth parse error:', e); }
         })();
@@ -214,27 +284,28 @@
 
     /* ─── Sync: push ───────────────────────────────────────────── */
 
-    function buildCloudPayload() {
+    function buildCloudPayload(dirtyKeys) {
         const snapshot = Storage.exportAll();
         const now = Date.now();
         const payload = {};
         for (const [key, raw] of Object.entries(snapshot)) {
             let value = raw;
             try { value = JSON.parse(raw); } catch {}
-            payload[key] = { value, _ts: now };
+            const prevTs = lastPushedTimestamps?.[key] || 0;
+            payload[key] = { value, _ts: dirtyKeys.has(key) ? now : prevTs };
         }
         return payload;
     }
 
     async function pushToCloud(force) {
+        const dirtyKeys = Storage.getDirtyKeys();
+        if (!force && lastPushedTimestamps !== null && dirtyKeys.size === 0) return;
+
         const token = await getValidToken();
         if (!token) return;
         const session = getSession();
 
-        const snapshot = JSON.stringify(Storage.exportAll());
-        if (!force && snapshot === lastPushSnapshot) return;
-
-        const payload = buildCloudPayload();
+        const payload = buildCloudPayload(dirtyKeys);
         const resp = await fetch(`${REST_URL}/user_data?on_conflict=user_id`, {
             method: 'POST',
             headers: {
@@ -251,7 +322,11 @@
             const err = await resp.text();
             throw new Error(`Push failed: ${err}`);
         }
-        lastPushSnapshot = snapshot;
+        const timestamps = {};
+        for (const [key, envelope] of Object.entries(payload)) timestamps[key] = envelope._ts;
+        lastPushedTimestamps = timestamps;
+        Storage.clearDirtyKeys();
+        syncFailures = 0;
         return setLastSync();
     }
 
@@ -295,13 +370,15 @@
         }
 
         if (changed) {
-            Storage.importAll(merged);
-            await pushToCloud();
+            Storage.suppressDirty(true);
+            try { Storage.importAll(merged); }
+            finally { Storage.suppressDirty(false); }
+            if (Storage.getDirtyKeys().size > 0) await pushToCloud();
             location.reload();
             return true;
         }
 
-        await pushToCloud();
+        if (Storage.getDirtyKeys().size > 0) await pushToCloud();
         return false;
     }
 
@@ -322,15 +399,31 @@
 
     /* ─── Auto-sync ────────────────────────────────────────────── */
 
+    const MAX_BACKOFF = 30 * 60 * 1000;
+
+    function scheduleNextSync() {
+        const delay = Math.min(SYNC_INTERVAL * Math.pow(2, syncFailures), MAX_BACKOFF);
+        syncTimer = setTimeout(async () => {
+            try {
+                await pushToCloud();
+            } catch (e) {
+                console.warn('Auto-sync failed:', e);
+                syncFailures++;
+            }
+            if (syncEnabled) scheduleNextSync();
+        }, delay);
+    }
+
     function startAutoSync() {
         stopAutoSync();
-        syncTimer = setInterval(async () => {
-            try { await pushToCloud(); } catch (e) { console.warn('Auto-sync failed:', e); }
-        }, SYNC_INTERVAL);
+        syncEnabled = true;
+        syncFailures = 0;
+        scheduleNextSync();
     }
 
     function stopAutoSync() {
-        if (syncTimer) { clearInterval(syncTimer); syncTimer = null; }
+        syncEnabled = false;
+        if (syncTimer !== null) { clearTimeout(syncTimer); syncTimer = null; }
     }
 
     if (getSession()) startAutoSync();
