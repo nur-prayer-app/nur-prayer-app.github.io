@@ -5,13 +5,19 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.206';
+    const APP_VERSION = '__APP_VERSION__';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/releases/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
     const $ = (s, c) => (c || document).querySelector(s);
     const $$ = (s, c) => [...(c || document).querySelectorAll(s)];
     const hk = (y, m, d) => `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const esc = (s) => {
+        if (!s) return '';
+        const d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
+    };
 
     /* ── State ───────────────────────────────────────────────────
        All persistence flows through the Storage repository (assets/js/storage.js),
@@ -277,7 +283,7 @@
                 // For AUTO (not manual) qadaa-auto goals, fold the origin date into the title as
                 // "X days ago" so we don't add an extra row that inflates the card. Manual entries
                 // are a pure "pay back a missed prayer" goal — no day-of-origin, so no suffix.
-                let displayName = g.name || type.name;
+                let displayName = esc(g.name) || type.name;
                 if (isAutoType && !g.isManual && g.missedOn) {
                     const nowStart = new Date(); nowStart.setHours(0,0,0,0);
                     const missedStart = new Date(g.missedOn); missedStart.setHours(0,0,0,0);
@@ -286,7 +292,7 @@
                         : daysAgo === 1 ? 'yesterday'
                         : daysAgo > 0 ? `${daysAgo} days ago`
                         : '';
-                    if (when) displayName = `${g.name || type.name} from ${when}`;
+                    if (when) displayName = `${esc(g.name) || type.name} from ${when}`;
                 }
                 return `
                 <div class="goal-row${isAutoType ? (g.isManual ? ' goal-row-manual' : ' goal-row-auto') : ''}" data-idx="${realIdx}" role="button" tabindex="0">
@@ -326,7 +332,7 @@
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">${type.icon}</svg>
                             </div>
                             <div class="goal-info">
-                                <div class="goal-name">${g.name || type.name}</div>
+                                <div class="goal-name">${esc(g.name) || type.name}</div>
                                 <div class="goal-progress-text">${done} / ${g.total} · ${pct}%</div>
                             </div>
                             <button type="button" class="archive-action archive-restore" data-aidx="${i}" title="Restore">
@@ -1240,7 +1246,7 @@
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">${type.icon}</svg>
                 </div>
                 <div class="goal-info">
-                    <div class="goal-name">${g.name || type.name}${g.type === 'qadaa-auto' && !g.isManual ? '<span class="goal-auto-tag">AUTO</span>' : ''}${g.completed ? '<span class="archive-done-tag">DONE</span>' : ''}</div>
+                    <div class="goal-name">${esc(g.name) || type.name}${g.type === 'qadaa-auto' && !g.isManual ? '<span class="goal-auto-tag">AUTO</span>' : ''}${g.completed ? '<span class="archive-done-tag">DONE</span>' : ''}</div>
                     <div class="goal-progress-text">${done} / ${g.total} · ${pct}%${archivedDate ? ' · ' + archivedDate : ''}</div>
                 </div>
                 <button type="button" class="archive-action archive-restore" data-idx="${i}" title="Restore">
@@ -2446,9 +2452,9 @@
 
         function goalLabel(g) {
             if (g.type === 'qadaa-auto') {
-                return `${g.name || 'Missed'}${g.missedOnLabel ? ' · ' + g.missedOnLabel : ''}`;
+                return `${esc(g.name) || 'Missed'}${g.missedOnLabel ? ' · ' + esc(g.missedOnLabel) : ''}`;
             }
-            return g.name || 'Qadaa Prayers';
+            return esc(g.name) || 'Qadaa Prayers';
         }
 
         // Render whole modal body — re-rendered when target or data changes
