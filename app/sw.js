@@ -1,5 +1,5 @@
 // Nur — Service Worker (cache-first, version stamped by build-web.js)
-const CACHE_VERSION = 'nur-v224';
+const CACHE_VERSION = 'nur-v225';
 const CACHE_NAME = CACHE_VERSION;
 
 const PRECACHE_URLS = [
@@ -45,6 +45,34 @@ self.addEventListener('activate', event => {
           .map(key => caches.delete(key))
       ))
       .then(() => self.clients.claim())
+  );
+});
+
+// Push — show notification from server even when app is closed
+self.addEventListener('push', event => {
+  if (!event.data) return;
+  const data = event.data.json();
+  const title = data.title || 'Nur';
+  const options = {
+    body: data.body || '',
+    icon: 'assets/icons/icon-avatar.png',
+    badge: 'assets/icons/icon-avatar.png',
+    tag: data.tag || 'nur-prayer',
+    renotify: true,
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// Notification click — open or focus the app
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
+      for (const client of windowClients) {
+        if (client.url.includes('/app/') && 'focus' in client) return client.focus();
+      }
+      return clients.openWindow('/app/');
+    })
   );
 });
 

@@ -1,5 +1,5 @@
 {
-  "version": "1.1.224",
-  "url": "https://github.com/nur-prayer-app/nur-prayer-app.github.io/releases/download/v1.1.224/Nur.Setup.1.1.224.exe",
-  "notes": "GPS reverse geocoding — shows city name instead of coordinates, auto-sets calculation method"
+  "version": "1.1.225",
+  "url": "https://github.com/nur-prayer-app/nur-prayer-app.github.io/releases/download/v1.1.225/Nur.Setup.1.1.225.exe",
+  "notes": "Background push scaffold, native widget directories, VAPID keys"
 }
