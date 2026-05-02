@@ -406,7 +406,8 @@
         const delay = Math.min(SYNC_INTERVAL * Math.pow(2, syncFailures), MAX_BACKOFF);
         syncTimer = setTimeout(async () => {
             try {
-                await pushToCloud();
+                const pulled = await pullFromCloud();
+                if (!pulled) await pushToCloud();
             } catch (e) {
                 console.warn('Auto-sync failed:', e);
                 syncFailures++;
