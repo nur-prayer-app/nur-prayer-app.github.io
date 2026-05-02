@@ -13,126 +13,214 @@
     <meta property="og:type" content="website">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0f1b2d;
+            background: #0a0f1a;
             color: #e2e8f0;
-            min-height: 100vh;
             overflow-x: hidden;
         }
 
+        /* ── Nav ── */
+        .nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0.75rem 2rem;
+            background: rgba(10, 15, 26, 0.8);
+            -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .nav-brand {
+            display: flex; align-items: center; gap: 0.5rem;
+            font-size: 1.1rem; font-weight: 700; color: #e2e8f0; text-decoration: none;
+        }
+        .nav-brand svg { color: #68d391; }
+        .nav-links { display: flex; align-items: center; gap: 1.75rem; }
+        .nav-links a {
+            font-size: 0.85rem; font-weight: 500; color: #94a3b8;
+            text-decoration: none; transition: color 0.15s;
+        }
+        .nav-links a:hover, .nav-links a.active { color: #e2e8f0; }
+        .nav-actions { display: flex; align-items: center; gap: 0.75rem; }
+        .nav-btn {
+            padding: 0.5rem 1.25rem; font-size: 0.82rem; font-weight: 600;
+            border-radius: 8px; text-decoration: none; transition: all 0.15s; cursor: pointer; border: none;
+        }
+        .nav-btn-ghost { background: transparent; color: #94a3b8; }
+        .nav-btn-ghost:hover { color: #e2e8f0; }
+        .nav-btn-primary {
+            background: linear-gradient(135deg, #68d391, #63b3ed);
+            color: #0a0f1a; font-weight: 700;
+        }
+        .nav-btn-primary:hover { box-shadow: 0 4px 16px rgba(104,211,145,0.3); }
+
         /* ── Hero ── */
         .hero {
-            position: relative;
-            text-align: center;
-            padding: 5rem 2rem 4rem;
-            overflow: hidden;
-        }
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: -40%; left: 50%; transform: translateX(-50%);
-            width: 800px; height: 800px;
-            background: radial-gradient(ellipse, rgba(104,211,145,0.08) 0%, rgba(99,179,237,0.04) 40%, transparent 70%);
-            pointer-events: none;
-        }
-        .hero > * { position: relative; z-index: 1; }
-        .hero-icon {
-            width: 72px; height: 72px; border-radius: 18px;
-            background: linear-gradient(135deg, rgba(104,211,145,0.15), rgba(99,179,237,0.15));
+            position: relative; min-height: 100vh;
             display: flex; align-items: center; justify-content: center;
-            margin: 0 auto 1.25rem;
+            padding: 6rem 2rem 4rem; overflow: hidden;
         }
-        .hero-icon svg { color: #68d391; }
-        .hero h1 {
-            font-size: 3.5rem; font-weight: 800;
-            background: linear-gradient(135deg, #68d391, #63b3ed);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            background-clip: text; letter-spacing: -1px;
+        .hero-bg {
+            position: absolute; inset: 0; z-index: 0;
+            background:
+                radial-gradient(ellipse at 20% 50%, rgba(104,211,145,0.12) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 30%, rgba(99,179,237,0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 60% 80%, rgba(45,212,191,0.06) 0%, transparent 40%),
+                radial-gradient(ellipse at 30% 20%, rgba(200,162,255,0.05) 0%, transparent 40%);
         }
-        .hero-tagline {
-            font-size: 1.15rem; color: #94a3b8;
-            max-width: 520px; margin: 0.75rem auto 2rem; line-height: 1.7;
-        }
-        .hero-ctas { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
-        .btn-primary {
-            display: inline-flex; align-items: center; gap: 0.5rem;
-            padding: 0.875rem 2rem;
-            background: linear-gradient(135deg, #68d391, #63b3ed);
-            color: #0f1b2d; font-size: 1rem; font-weight: 700;
-            border: none; border-radius: 12px; cursor: pointer; text-decoration: none;
-            transition: transform 0.15s, box-shadow 0.15s;
-        }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(104,211,145,0.25); }
-        .btn-secondary {
-            display: inline-flex; align-items: center; gap: 0.5rem;
-            padding: 0.875rem 2rem;
-            background: rgba(255,255,255,0.05); color: #e2e8f0;
-            font-size: 1rem; font-weight: 600;
-            border: 1px solid rgba(255,255,255,0.12); border-radius: 12px;
-            cursor: pointer; text-decoration: none; transition: all 0.15s;
-        }
-        .btn-secondary:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
-        .hero-version { margin-top: 1rem; font-size: 0.8rem; color: #475569; }
-
-        /* ── Features ── */
-        .features { max-width: 960px; margin: 0 auto; padding: 2rem 2rem 4rem; }
-        .section-title { text-align: center; font-size: 1.5rem; font-weight: 700; color: #e2e8f0; margin-bottom: 0.5rem; }
-        .section-sub { text-align: center; font-size: 0.9rem; color: #64748b; margin-bottom: 2.5rem; }
-        .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
-        @media (max-width: 700px) { .features-grid { grid-template-columns: 1fr; } .hero h1 { font-size: 2.5rem; } }
-        .feature-card {
-            padding: 1.5rem;
-            background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 14px; transition: border-color 0.2s, background 0.2s;
-        }
-        .feature-card:hover { background: rgba(255,255,255,0.04); border-color: rgba(104,211,145,0.2); }
-        .feature-icon {
-            width: 36px; height: 36px; border-radius: 10px;
-            display: flex; align-items: center; justify-content: center; margin-bottom: 0.75rem;
-        }
-        .feature-icon svg { width: 20px; height: 20px; }
-        .fi-green  { background: rgba(104,211,145,0.12); color: #68d391; }
-        .fi-blue   { background: rgba(99,179,237,0.12);  color: #63b3ed; }
-        .fi-amber  { background: rgba(251,191,36,0.12);  color: #fbbf24; }
-        .fi-purple { background: rgba(200,162,255,0.12);  color: #c8a2ff; }
-        .fi-teal   { background: rgba(45,212,191,0.12);   color: #2dd4bf; }
-        .fi-red    { background: rgba(252,129,129,0.12);  color: #fc8181; }
-        .feature-card h3 { font-size: 0.95rem; font-weight: 700; color: #e2e8f0; margin-bottom: 0.35rem; }
-        .feature-card p { font-size: 0.82rem; color: #94a3b8; line-height: 1.6; }
-
-        /* ── Screenshots showcase ── */
-        .showcase {
-            max-width: 1100px; margin: 0 auto;
-            padding: 2rem 2rem 4rem;
+        .hero-content {
+            position: relative; z-index: 1;
+            max-width: 1200px; width: 100%;
             display: flex; align-items: center; gap: 4rem;
         }
-        .showcase-text { flex: 0 0 280px; }
-        .showcase-text h2 {
-            font-size: 2rem; font-weight: 800;
+        .hero-text { flex: 1; }
+        .hero-text h1 {
+            font-size: 3.5rem; font-weight: 800; line-height: 1.1;
+            letter-spacing: -1.5px; margin-bottom: 1.25rem;
+        }
+        .hero-text h1 span {
             background: linear-gradient(135deg, #68d391, #63b3ed);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            background-clip: text; margin-bottom: 0.75rem;
+            background-clip: text;
         }
-        .showcase-text p { font-size: 0.95rem; color: #94a3b8; line-height: 1.7; margin-bottom: 1.5rem; }
+        .hero-text p {
+            font-size: 1.1rem; color: #94a3b8; line-height: 1.7;
+            max-width: 460px; margin-bottom: 2rem;
+        }
+        .hero-ctas { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+        .btn-lg {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.9rem 2rem; font-size: 1rem; font-weight: 700;
+            border-radius: 12px; text-decoration: none; transition: all 0.15s; border: none; cursor: pointer;
+        }
+        .btn-lg-primary {
+            background: linear-gradient(135deg, #68d391, #63b3ed); color: #0a0f1a;
+        }
+        .btn-lg-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(104,211,145,0.25); }
+        .btn-lg-ghost {
+            background: rgba(255,255,255,0.06); color: #e2e8f0;
+            border: 1px solid rgba(255,255,255,0.12);
+        }
+        .btn-lg-ghost:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
+
+        /* ── Hero demo ── */
+        .hero-demo {
+            flex: 0 0 380px; position: relative;
+        }
+        .demo-card {
+            background: rgba(15, 27, 45, 0.9);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px; padding: 1.5rem; backdrop-filter: blur(12px);
+            box-shadow: 0 24px 48px rgba(0,0,0,0.4);
+        }
+        .demo-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+        .demo-title { font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
+        .demo-date { font-size: 0.7rem; color: #475569; }
+        .demo-ring-row {
+            display: flex; align-items: center; gap: 1.5rem;
+            margin-bottom: 1.25rem;
+        }
+        .demo-ring {
+            width: 80px; height: 80px; position: relative;
+        }
+        .demo-ring svg { width: 80px; height: 80px; }
+        .demo-ring-text {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .demo-ring-num { font-size: 1.5rem; font-weight: 800; color: #68d391; line-height: 1; }
+        .demo-ring-label { font-size: 0.6rem; color: #64748b; }
+        .demo-prayers {
+            display: flex; flex-direction: column; gap: 0.4rem; flex: 1;
+        }
+        .demo-prayer {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0.3rem 0; font-size: 0.8rem;
+        }
+        .demo-prayer-name { color: #94a3b8; }
+        .demo-prayer-time { color: #475569; font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+        .demo-prayer-check { color: #68d391; font-weight: 700; }
+        .demo-prayer-pending { color: #334155; }
+        .demo-divider { border: none; border-top: 1px solid rgba(255,255,255,0.06); margin: 0.75rem 0; }
+        .demo-next {
+            text-align: center;
+        }
+        .demo-next-label { font-size: 0.65rem; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
+        .demo-next-name { font-size: 0.9rem; font-weight: 700; color: #e2e8f0; margin: 0.25rem 0; }
+        .demo-next-countdown {
+            font-size: 1.75rem; font-weight: 800;
+            background: linear-gradient(135deg, #68d391, #63b3ed);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; font-variant-numeric: tabular-nums;
+        }
+        .demo-glow {
+            position: absolute; top: -30%; right: -30%; width: 300px; height: 300px;
+            background: radial-gradient(circle, rgba(104,211,145,0.08) 0%, transparent 70%);
+            pointer-events: none; z-index: -1;
+        }
+
+        /* ── Features ── */
+        .features { max-width: 1100px; margin: 0 auto; padding: 5rem 2rem; }
+        .section-badge {
+            display: inline-block; padding: 0.35rem 1rem;
+            font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;
+            color: #68d391; background: rgba(104,211,145,0.08);
+            border: 1px solid rgba(104,211,145,0.2); border-radius: 20px;
+            margin-bottom: 1rem;
+        }
+        .section-title { font-size: 2rem; font-weight: 800; color: #e2e8f0; margin-bottom: 0.5rem; letter-spacing: -0.5px; }
+        .section-sub { font-size: 1rem; color: #64748b; margin-bottom: 3rem; max-width: 500px; }
+        .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
+        @media (max-width: 800px) { .features-grid { grid-template-columns: 1fr; } }
+        .feature-card {
+            padding: 1.75rem; background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.06); border-radius: 14px;
+            transition: all 0.2s;
+        }
+        .feature-card:hover { background: rgba(255,255,255,0.04); border-color: rgba(104,211,145,0.15); transform: translateY(-2px); }
+        .feature-icon {
+            width: 40px; height: 40px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;
+        }
+        .feature-icon svg { width: 20px; height: 20px; }
+        .fi-green  { background: rgba(104,211,145,0.1); color: #68d391; }
+        .fi-blue   { background: rgba(99,179,237,0.1);  color: #63b3ed; }
+        .fi-amber  { background: rgba(251,191,36,0.1);  color: #fbbf24; }
+        .fi-purple { background: rgba(200,162,255,0.1);  color: #c8a2ff; }
+        .fi-teal   { background: rgba(45,212,191,0.1);   color: #2dd4bf; }
+        .fi-red    { background: rgba(252,129,129,0.1);  color: #fc8181; }
+        .feature-card h3 { font-size: 1rem; font-weight: 700; color: #e2e8f0; margin-bottom: 0.4rem; }
+        .feature-card p { font-size: 0.85rem; color: #94a3b8; line-height: 1.6; }
+
+        /* ── Themes showcase ── */
+        .themes { max-width: 1100px; margin: 0 auto; padding: 3rem 2rem 5rem; }
+        .themes-row { display: flex; align-items: center; gap: 4rem; }
+        .themes-text { flex: 0 0 300px; }
+        .themes-text h2 {
+            font-size: 2rem; font-weight: 800; margin-bottom: 0.75rem; letter-spacing: -0.5px;
+        }
+        .themes-text h2 span {
+            background: linear-gradient(135deg, #68d391, #63b3ed);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .themes-text p { font-size: 0.95rem; color: #94a3b8; line-height: 1.7; margin-bottom: 1.5rem; }
         .theme-badges { display: flex; gap: 0.5rem; flex-wrap: wrap; }
         .theme-badge {
-            padding: 0.35rem 0.75rem; font-size: 0.75rem; font-weight: 600;
+            padding: 0.4rem 0.85rem; font-size: 0.75rem; font-weight: 600;
             border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);
         }
-        .tb-ocean  { color: #63b3ed; background: rgba(99,179,237,0.1); border-color: rgba(99,179,237,0.25); }
-        .tb-warm   { color: #fbbf24; background: rgba(251,191,36,0.1); border-color: rgba(251,191,36,0.25); }
-        .tb-teal   { color: #2dd4bf; background: rgba(45,212,191,0.1); border-color: rgba(45,212,191,0.25); }
-
-        .showcase-stack {
-            flex: 1; position: relative; height: 380px; min-width: 0;
-        }
+        .tb-ocean  { color: #63b3ed; background: rgba(99,179,237,0.08); border-color: rgba(99,179,237,0.2); }
+        .tb-warm   { color: #fbbf24; background: rgba(251,191,36,0.08); border-color: rgba(251,191,36,0.2); }
+        .tb-teal   { color: #2dd4bf; background: rgba(45,212,191,0.08); border-color: rgba(45,212,191,0.2); }
+        .themes-stack { flex: 1; position: relative; height: 380px; min-width: 0; }
         .stack-img {
             position: absolute; width: 72%; border-radius: 12px;
             box-shadow: 0 16px 48px rgba(0,0,0,0.4);
             border: 1px solid rgba(255,255,255,0.08);
-            cursor: pointer;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
         .stack-img:nth-child(1) { top: 0; left: 0; transform: rotate(-3deg); z-index: 3; }
         .stack-img:nth-child(2) { top: 40px; left: 14%; transform: rotate(1.5deg); z-index: 2; }
@@ -142,31 +230,40 @@
         .stack-img:nth-child(2):hover { transform: rotate(1.5deg) translateY(-6px); }
         .stack-img:nth-child(3):hover { transform: rotate(5deg) translateY(-6px); }
 
-        @media (max-width: 800px) {
-            .showcase { flex-direction: column; gap: 2rem; }
-            .showcase-text { flex: none; text-align: center; }
-            .theme-badges { justify-content: center; }
-            .showcase-stack { height: 260px; width: 100%; }
-            .stack-img { width: 80%; }
-        }
-
-        /* ── More screenshots grid ── */
-        .more-screenshots {
-            max-width: 1100px; margin: 0 auto; padding: 0 2rem 4rem;
-        }
-        .ss-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-        @media (max-width: 700px) { .ss-grid { grid-template-columns: 1fr; } }
-        .ss-card {
+        /* ── More screenshots ── */
+        .gallery { max-width: 1100px; margin: 0 auto; padding: 0 2rem 5rem; }
+        .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+        @media (max-width: 700px) { .gallery-grid { grid-template-columns: 1fr; } }
+        .gallery-card {
             border-radius: 10px; overflow: hidden;
             border: 1px solid rgba(255,255,255,0.06);
             cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
         }
-        .ss-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.3); }
-        .ss-card img { width: 100%; display: block; }
-        .ss-label {
+        .gallery-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.3); }
+        .gallery-card img { width: 100%; display: block; }
+        .gallery-label {
             padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.03);
             font-size: 0.75rem; font-weight: 600; color: #64748b;
         }
+
+        /* ── CTA ── */
+        .cta-section {
+            text-align: center; padding: 5rem 2rem;
+            position: relative; overflow: hidden;
+        }
+        .cta-section::before {
+            content: ''; position: absolute; inset: 0;
+            background: radial-gradient(ellipse at 50% 50%, rgba(104,211,145,0.06) 0%, transparent 60%);
+            pointer-events: none;
+        }
+        .cta-section > * { position: relative; z-index: 1; }
+        .cta-section h2 { font-size: 2.25rem; font-weight: 800; margin-bottom: 0.75rem; letter-spacing: -0.5px; }
+        .cta-section h2 span {
+            background: linear-gradient(135deg, #68d391, #63b3ed);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .cta-section p { font-size: 1rem; color: #64748b; margin-bottom: 2rem; }
+        .cta-btns { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
 
         /* ── Lightbox ── */
         .lightbox {
@@ -189,17 +286,14 @@
         .lb-nav {
             position: absolute; top: 50%; transform: translateY(-50%);
             background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.18);
-            color: #fff; width: 56px; height: 56px; border-radius: 50%;
+            color: #fff; width: 52px; height: 52px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            cursor: pointer; font-size: 1.75rem; transition: all 0.15s; z-index: 10;
+            cursor: pointer; font-size: 1.5rem; transition: all 0.15s; z-index: 10;
         }
         .lb-nav:hover { background: rgba(255,255,255,0.25); }
         .lb-prev { left: calc(50% - 48vw); }
         .lb-next { right: calc(50% - 48vw); }
-        @media (min-width: 1200px) {
-            .lb-prev { left: calc(50% - 550px); }
-            .lb-next { right: calc(50% - 550px); }
-        }
+        @media (min-width: 1200px) { .lb-prev { left: calc(50% - 550px); } .lb-next { right: calc(50% - 550px); } }
         .lb-counter {
             position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
             font-size: 0.8rem; color: #64748b;
@@ -213,210 +307,312 @@
         .footer-links a { font-size: 0.85rem; color: #94a3b8; text-decoration: none; transition: color 0.15s; }
         .footer-links a:hover { color: #e2e8f0; }
         .footer-note { font-size: 0.75rem; color: #475569; }
+
+        /* ── Responsive ── */
+        @media (max-width: 900px) {
+            .hero-content { flex-direction: column; text-align: center; }
+            .hero-text h1 { font-size: 2.5rem; }
+            .hero-text p { margin-left: auto; margin-right: auto; }
+            .hero-ctas { justify-content: center; }
+            .hero-demo { flex: none; width: 100%; max-width: 380px; }
+            .themes-row { flex-direction: column; }
+            .themes-text { flex: none; text-align: center; }
+            .theme-badges { justify-content: center; }
+            .themes-stack { height: 280px; width: 100%; }
+            .stack-img { width: 80%; }
+            .nav-links { display: none; }
+        }
     </style>
 </head>
 <body>
-    <!-- Hero -->
-    <section class="hero">
-        <div class="hero-icon">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2L14.09 8.26L20 10L14.09 11.74L12 18L9.91 11.74L4 10L9.91 8.26L12 2Z" fill="currentColor"/>
-                <path d="M19 14C17.34 14 16 15.34 16 17C16 18.66 17.34 20 19 20C20.66 20 22 18.66 22 17C22 15.34 20.66 14 19 14ZM17.5 17C17.5 16.17 18.17 15.5 19 15.5C19.83 15.5 20.5 16.17 20.5 17C20.5 17.83 19.83 18.5 19 18.5C18.17 18.5 17.5 17.83 17.5 17Z" fill="currentColor"/>
-            </svg>
-        </div>
-        <h1>Nur</h1>
-        <p class="hero-tagline">A prayer tracker built for Muslims. Track your daily prayers, fasting, qadaa goals, and more — with a beautiful Hijri calendar and accurate prayer times.</p>
-        <div class="hero-ctas">
-            <a href="https://github.com/nur-prayer-app/releases/releases/latest" class="btn-primary" id="download-btn">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                Download for Windows
-            </a>
-            <a href="app/" class="btn-secondary">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke="currentColor" stroke-width="1.5"/></svg>
-                Open in Browser
-            </a>
-        </div>
-        <div class="hero-version" id="version-label"></div>
-    </section>
 
-    <!-- Features -->
-    <section class="features">
-        <h2 class="section-title">Everything you need</h2>
-        <p class="section-sub">Built with care for the Muslim community</p>
-        <div class="features-grid">
-            <div class="feature-card">
-                <div class="feature-icon fi-green"><svg viewBox="0 0 24 24" fill="none"><polyline points="20,6 9,17 4,12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-                <h3>Daily Prayer Tracking</h3>
-                <p>Log all 5 prayers with a single tap. Jumu'ah on Fridays. Auto-detect missed prayers.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon fi-blue"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="1.5"/></svg></div>
-                <h3>Hijri Calendar</h3>
-                <p>Umm al-Qura calendar with special Islamic days, reminders, and hadith references.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon fi-amber"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
-                <h3>Prayer Times</h3>
-                <p>Accurate calculation with live timeline, countdown, fasting tracker, and iqama offsets.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon fi-amber"><svg viewBox="0 0 24 24" fill="none"><path d="M6 2h12M6 22h12M6 2c0 4 4 5 4 8s-4 4-4 8h12c0-4-4-5-4-8s4-4 4-8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-                <h3>Fasting Tracker</h3>
-                <p>Live Fajr-to-Maghrib countdown with progress bar. Auto-enables during Ramadan.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon fi-purple"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2L14.09 8.26L20 10L14.09 11.74L12 18L9.91 11.74L4 10L9.91 8.26L12 2Z" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></div>
-                <h3>Qadaa Goals</h3>
-                <p>Track missed prayers and fasting. Set goals, record progress, see completion estimates.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon fi-teal"><svg viewBox="0 0 24 24" fill="none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></div>
-                <h3>Extras</h3>
-                <p>Log Duha, Shaf'a & Witr, Qiyam (with raka'at), and fasting — all tracked in stats.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon fi-green"><svg viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="1.5"/></svg></div>
-                <h3>Cloud Sync</h3>
-                <p>Sign in with Google to sync across devices. Local-first — works fully offline.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon fi-blue"><svg viewBox="0 0 24 24" fill="none"><path d="M18 20V10M12 20V4M6 20v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
-                <h3>Statistics</h3>
-                <p>Punctuality ring, per-prayer reliability, volunteer acts, and qadaa progress.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon fi-red"><svg viewBox="0 0 24 24" fill="none"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke="currentColor" stroke-width="1.5"/></svg></div>
-                <h3>Islamic Reminders</h3>
-                <p>Special days, Surat Al-Kahf on Fridays, and clickable hadith references with sources.</p>
+<!-- Nav -->
+<nav class="nav">
+    <a href="#" class="nav-brand">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L14.09 8.26L20 10L14.09 11.74L12 18L9.91 11.74L4 10L9.91 8.26L12 2Z" fill="currentColor"/>
+            <path d="M19 14C17.34 14 16 15.34 16 17C16 18.66 17.34 20 19 20C20.66 20 22 18.66 22 17C22 15.34 20.66 14 19 14Z" fill="currentColor"/>
+        </svg>
+        Nur
+    </a>
+    <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#themes">Themes</a>
+        <a href="#gallery">Screenshots</a>
+    </div>
+    <div class="nav-actions">
+        <a href="app/" class="nav-btn nav-btn-ghost">Open in Browser</a>
+        <a href="https://github.com/nur-prayer-app/releases/releases/latest" class="nav-btn nav-btn-primary" id="nav-download">Download</a>
+    </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero" id="top">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+        <div class="hero-text">
+            <h1>Track Your Prayers,<br><span>Stay Connected</span></h1>
+            <p>A beautiful prayer tracker for Muslims. Log daily prayers, track fasting, set qadaa goals, and never miss a prayer time — all with an accurate Hijri calendar.</p>
+            <div class="hero-ctas">
+                <a href="https://github.com/nur-prayer-app/releases/releases/latest" class="btn-lg btn-lg-primary" id="hero-download">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Download for Windows
+                </a>
+                <a href="app/" class="btn-lg btn-lg-ghost">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke="currentColor" stroke-width="1.5"/></svg>
+                    Open in Browser
+                </a>
             </div>
         </div>
-    </section>
+        <div class="hero-demo">
+            <div class="demo-glow"></div>
+            <div class="demo-card">
+                <div class="demo-header">
+                    <span class="demo-title">Today's Prayers</span>
+                    <span class="demo-date" id="demo-date"></span>
+                </div>
+                <div class="demo-ring-row">
+                    <div class="demo-ring">
+                        <svg viewBox="0 0 80 80">
+                            <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="6"/>
+                            <circle cx="40" cy="40" r="34" fill="none" stroke="url(#demo-grad)" stroke-width="6"
+                                stroke-linecap="round" stroke-dasharray="171.0 213.6" transform="rotate(-90 40 40)"/>
+                            <defs><linearGradient id="demo-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#68d391"/><stop offset="100%" stop-color="#63b3ed"/></linearGradient></defs>
+                        </svg>
+                        <div class="demo-ring-text">
+                            <span class="demo-ring-num">4</span>
+                            <span class="demo-ring-label">/ 5</span>
+                        </div>
+                    </div>
+                    <div class="demo-prayers">
+                        <div class="demo-prayer"><span class="demo-prayer-name">Fajr</span><span class="demo-prayer-time">4:37 AM</span><span class="demo-prayer-check">&#10003;</span></div>
+                        <div class="demo-prayer"><span class="demo-prayer-name">Dhuhr</span><span class="demo-prayer-time">12:53 PM</span><span class="demo-prayer-check">&#10003;</span></div>
+                        <div class="demo-prayer"><span class="demo-prayer-name">Asr</span><span class="demo-prayer-time">4:29 PM</span><span class="demo-prayer-check">&#10003;</span></div>
+                        <div class="demo-prayer"><span class="demo-prayer-name">Maghrib</span><span class="demo-prayer-time">7:32 PM</span><span class="demo-prayer-check">&#10003;</span></div>
+                        <div class="demo-prayer"><span class="demo-prayer-name">Isha</span><span class="demo-prayer-time">8:57 PM</span><span class="demo-prayer-pending">&#9675;</span></div>
+                    </div>
+                </div>
+                <hr class="demo-divider">
+                <div class="demo-next">
+                    <div class="demo-next-label">Next Prayer</div>
+                    <div class="demo-next-name">Isha</div>
+                    <div class="demo-next-countdown" id="demo-countdown">01:23:45</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 
-    <!-- Screenshots showcase -->
-    <section class="showcase">
-        <div class="showcase-text">
-            <h2>Beautiful Themes</h2>
-            <p>Choose the look that suits your style. Each theme is designed for readability and focus during your prayer journey.</p>
+<!-- Features -->
+<section class="features" id="features">
+    <span class="section-badge">Features</span>
+    <h2 class="section-title">Everything you need</h2>
+    <p class="section-sub">Built with care for the Muslim community</p>
+    <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon fi-green"><svg viewBox="0 0 24 24" fill="none"><polyline points="20,6 9,17 4,12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <h3>Daily Prayer Tracking</h3>
+            <p>Log all 5 prayers with a single tap. Jumu'ah on Fridays. Auto-detect missed prayers.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon fi-blue"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="1.5"/></svg></div>
+            <h3>Hijri Calendar</h3>
+            <p>Umm al-Qura calendar with special Islamic days, reminders, and hadith references.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon fi-amber"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+            <h3>Prayer Times</h3>
+            <p>Accurate calculation with live timeline, countdown, fasting tracker, and iqama offsets.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon fi-amber"><svg viewBox="0 0 24 24" fill="none"><path d="M6 2h12M6 22h12M6 2c0 4 4 5 4 8s-4 4-4 8h12c0-4-4-5-4-8s4-4 4-8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <h3>Fasting Tracker</h3>
+            <p>Live Fajr-to-Maghrib countdown with progress bar. Auto-enables during Ramadan.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon fi-purple"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2L14.09 8.26L20 10L14.09 11.74L12 18L9.91 11.74L4 10L9.91 8.26L12 2Z" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></div>
+            <h3>Qadaa Goals</h3>
+            <p>Track missed prayers and fasting. Set goals, record progress, see completion estimates.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon fi-teal"><svg viewBox="0 0 24 24" fill="none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></div>
+            <h3>Extras</h3>
+            <p>Log Duha, Shaf'a & Witr, Qiyam with raka'at, and fasting — all tracked in stats.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon fi-green"><svg viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="1.5"/></svg></div>
+            <h3>Cloud Sync</h3>
+            <p>Sign in with Google to sync across devices. Local-first — works fully offline.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon fi-blue"><svg viewBox="0 0 24 24" fill="none"><path d="M18 20V10M12 20V4M6 20v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+            <h3>Statistics</h3>
+            <p>Punctuality ring, per-prayer reliability, volunteer acts, and qadaa progress.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon fi-red"><svg viewBox="0 0 24 24" fill="none"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke="currentColor" stroke-width="1.5"/></svg></div>
+            <h3>Islamic Reminders</h3>
+            <p>Special days, Surat Al-Kahf on Fridays, and clickable hadith references with sources.</p>
+        </div>
+    </div>
+</section>
+
+<!-- Themes -->
+<section class="themes" id="themes">
+    <div class="themes-row">
+        <div class="themes-text">
+            <span class="section-badge">Themes</span>
+            <h2>Your Style,<br><span>Your Focus</span></h2>
+            <p>Choose the look that suits your mood. Each theme is crafted for readability and focus during your prayer journey.</p>
             <div class="theme-badges">
                 <span class="theme-badge tb-ocean">Ocean</span>
                 <span class="theme-badge tb-warm">Warm</span>
                 <span class="theme-badge tb-teal">Teal</span>
             </div>
         </div>
-        <div class="showcase-stack" id="showcase-stack">
-            <img class="stack-img" src="screenshots/ocean-dashboard.png" data-label="Dashboard · Ocean" alt="Dashboard — Ocean theme">
-            <img class="stack-img" src="screenshots/warm-dashboard.png" data-label="Dashboard · Warm" alt="Dashboard — Warm theme">
-            <img class="stack-img" src="screenshots/teal-dashboard.png" data-label="Dashboard · Teal" alt="Dashboard — Teal theme">
+        <div class="themes-stack" id="themes-stack">
+            <img class="stack-img" src="screenshots/ocean-dashboard.png" data-label="Dashboard · Ocean" alt="Dashboard — Ocean">
+            <img class="stack-img" src="screenshots/warm-dashboard.png" data-label="Dashboard · Warm" alt="Dashboard — Warm">
+            <img class="stack-img" src="screenshots/teal-dashboard.png" data-label="Dashboard · Teal" alt="Dashboard — Teal">
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- More screenshots -->
-    <section class="more-screenshots">
-        <div class="ss-grid" id="ss-grid">
-            <div class="ss-card" data-src="screenshots/ocean-stats.png" data-label="Statistics · Ocean">
-                <img src="screenshots/ocean-stats.png" alt="Statistics — Ocean" loading="lazy">
-                <div class="ss-label">Statistics · Ocean</div>
-            </div>
-            <div class="ss-card" data-src="screenshots/warm-prayer-times.png" data-label="Prayer Times · Warm">
-                <img src="screenshots/warm-prayer-times.png" alt="Prayer Times — Warm" loading="lazy">
-                <div class="ss-label">Prayer Times · Warm</div>
-            </div>
-            <div class="ss-card" data-src="screenshots/teal-stats.png" data-label="Statistics · Teal">
-                <img src="screenshots/teal-stats.png" alt="Statistics — Teal" loading="lazy">
-                <div class="ss-label">Statistics · Teal</div>
-            </div>
-            <div class="ss-card" data-src="screenshots/ocean-prayer-times.png" data-label="Prayer Times · Ocean">
-                <img src="screenshots/ocean-prayer-times.png" alt="Prayer Times — Ocean" loading="lazy">
-                <div class="ss-label">Prayer Times · Ocean</div>
-            </div>
-            <div class="ss-card" data-src="screenshots/warm-stats.png" data-label="Statistics · Warm">
-                <img src="screenshots/warm-stats.png" alt="Statistics — Warm" loading="lazy">
-                <div class="ss-label">Statistics · Warm</div>
-            </div>
-            <div class="ss-card" data-src="screenshots/teal-prayer-times.png" data-label="Prayer Times · Teal">
-                <img src="screenshots/teal-prayer-times.png" alt="Prayer Times — Teal" loading="lazy">
-                <div class="ss-label">Prayer Times · Teal</div>
-            </div>
+<!-- Gallery -->
+<section class="gallery" id="gallery">
+    <div class="gallery-grid" id="gallery-grid">
+        <div class="gallery-card" data-src="screenshots/ocean-stats.png" data-label="Statistics · Ocean">
+            <img src="screenshots/ocean-stats.png" alt="Statistics — Ocean" loading="lazy">
+            <div class="gallery-label">Statistics · Ocean</div>
         </div>
-    </section>
-
-    <!-- Footer -->
-    <footer>
-        <div class="footer-links">
-            <a href="app/">Web App</a>
-            <a href="feedback.html">Send Feedback</a>
-            <a href="https://github.com/nur-prayer-app/releases/releases/latest">Download</a>
+        <div class="gallery-card" data-src="screenshots/warm-prayer-times.png" data-label="Prayer Times · Warm">
+            <img src="screenshots/warm-prayer-times.png" alt="Prayer Times — Warm" loading="lazy">
+            <div class="gallery-label">Prayer Times · Warm</div>
         </div>
-        <div class="footer-note">Made with care for the Muslim community.</div>
-    </footer>
+        <div class="gallery-card" data-src="screenshots/teal-stats.png" data-label="Statistics · Teal">
+            <img src="screenshots/teal-stats.png" alt="Statistics — Teal" loading="lazy">
+            <div class="gallery-label">Statistics · Teal</div>
+        </div>
+        <div class="gallery-card" data-src="screenshots/ocean-prayer-times.png" data-label="Prayer Times · Ocean">
+            <img src="screenshots/ocean-prayer-times.png" alt="Prayer Times — Ocean" loading="lazy">
+            <div class="gallery-label">Prayer Times · Ocean</div>
+        </div>
+        <div class="gallery-card" data-src="screenshots/warm-stats.png" data-label="Statistics · Warm">
+            <img src="screenshots/warm-stats.png" alt="Statistics — Warm" loading="lazy">
+            <div class="gallery-label">Statistics · Warm</div>
+        </div>
+        <div class="gallery-card" data-src="screenshots/teal-prayer-times.png" data-label="Prayer Times · Teal">
+            <img src="screenshots/teal-prayer-times.png" alt="Prayer Times — Teal" loading="lazy">
+            <div class="gallery-label">Prayer Times · Teal</div>
+        </div>
+    </div>
+</section>
 
-    <script>
-        // Collect all clickable images
-        const allImages = [
-            ...document.querySelectorAll('.stack-img'),
-            ...document.querySelectorAll('.ss-card[data-src]')
-        ].map(el => ({
-            src: el.dataset?.src || el.src,
-            label: el.dataset?.label || el.alt || '',
-            el
-        }));
+<!-- CTA -->
+<section class="cta-section">
+    <h2>Ready to <span>start tracking?</span></h2>
+    <p>Download for desktop or use it right in your browser.</p>
+    <div class="cta-btns">
+        <a href="https://github.com/nur-prayer-app/releases/releases/latest" class="btn-lg btn-lg-primary" id="cta-download">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Download for Windows
+        </a>
+        <a href="app/" class="btn-lg btn-lg-ghost">Open in Browser</a>
+    </div>
+</section>
 
-        let lbEl = null, lbIdx = 0;
+<!-- Footer -->
+<footer>
+    <div class="footer-links">
+        <a href="app/">Web App</a>
+        <a href="feedback.html">Send Feedback</a>
+        <a href="https://github.com/nur-prayer-app/releases/releases/latest">Download</a>
+    </div>
+    <div class="footer-note">Made with care for the Muslim community.</div>
+</footer>
 
-        function openLB(idx) {
-            lbIdx = idx;
-            if (lbEl) lbEl.remove();
-            lbEl = document.createElement('div');
-            lbEl.className = 'lightbox';
-            renderLB();
-            document.body.appendChild(lbEl);
-            document.addEventListener('keydown', lbKey);
-        }
+<script>
+    // Demo date
+    const now = new Date();
+    const hijriFormatter = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', { day: 'numeric', month: 'long', year: 'numeric' });
+    document.getElementById('demo-date').textContent = hijriFormatter.format(now);
 
-        function renderLB() {
-            const item = allImages[lbIdx];
-            lbEl.innerHTML = `
-                <button type="button" class="lb-close">&times;</button>
-                ${allImages.length > 1 ? '<button type="button" class="lb-nav lb-prev">&#8249;</button>' : ''}
-                <img src="${item.src}" alt="${item.label}">
-                ${allImages.length > 1 ? '<button type="button" class="lb-nav lb-next">&#8250;</button>' : ''}
-                <div class="lb-counter">${item.label} &middot; ${lbIdx + 1} / ${allImages.length}</div>`;
-            lbEl.querySelector('.lb-close').addEventListener('click', closeLB);
-            lbEl.querySelector('.lb-prev')?.addEventListener('click', (e) => { e.stopPropagation(); lbIdx = (lbIdx - 1 + allImages.length) % allImages.length; renderLB(); });
-            lbEl.querySelector('.lb-next')?.addEventListener('click', (e) => { e.stopPropagation(); lbIdx = (lbIdx + 1) % allImages.length; renderLB(); });
-            lbEl.addEventListener('click', (e) => { if (e.target === lbEl) closeLB(); });
-        }
+    // Demo countdown (fake ticking)
+    let demoSec = 5025;
+    function tickDemo() {
+        demoSec--;
+        if (demoSec < 0) demoSec = 5400;
+        const h = Math.floor(demoSec / 3600);
+        const m = Math.floor((demoSec % 3600) / 60);
+        const s = demoSec % 60;
+        const el = document.getElementById('demo-countdown');
+        if (el) el.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }
+    tickDemo();
+    setInterval(tickDemo, 1000);
 
-        function closeLB() { if (lbEl) { lbEl.remove(); lbEl = null; } document.removeEventListener('keydown', lbKey); }
-        function lbKey(e) {
-            if (e.key === 'Escape') closeLB();
-            if (e.key === 'ArrowLeft') { lbIdx = (lbIdx - 1 + allImages.length) % allImages.length; renderLB(); }
-            if (e.key === 'ArrowRight') { lbIdx = (lbIdx + 1) % allImages.length; renderLB(); }
-        }
-
-        // Touch swipe
-        document.addEventListener('touchstart', (e) => { if (lbEl) lbEl._tx = e.touches[0].clientX; }, { passive: true });
-        document.addEventListener('touchend', (e) => {
-            if (!lbEl || !lbEl._tx) return;
-            const dx = e.changedTouches[0].clientX - lbEl._tx;
-            if (Math.abs(dx) > 50) { lbIdx = dx < 0 ? (lbIdx + 1) % allImages.length : (lbIdx - 1 + allImages.length) % allImages.length; renderLB(); }
-            lbEl._tx = null;
-        }, { passive: true });
-
-        // Click handlers
-        allImages.forEach((item, i) => {
-            item.el.addEventListener('click', (e) => {
-                if (item.el.closest('.ss-card')) e.stopPropagation();
-                openLB(i);
-            });
+    // Nav active state on scroll
+    const sections = ['features', 'themes', 'gallery'];
+    window.addEventListener('scroll', () => {
+        const y = window.scrollY + 100;
+        let active = '';
+        sections.forEach(id => {
+            const el = document.getElementById(id);
+            if (el && el.offsetTop <= y) active = id;
         });
+        document.querySelectorAll('.nav-links a').forEach(a => {
+            a.classList.toggle('active', a.getAttribute('href') === '#' + active);
+        });
+    });
 
-        // Version
-        fetch('version.json').then(r => r.json()).then(d => {
-            document.getElementById('version-label').textContent = `v${d.version} — Windows 64-bit`;
-            const btn = document.getElementById('download-btn');
-            if (btn && d.url) btn.href = d.url;
-        }).catch(() => {});
-    </script>
+    // Lightbox
+    const allImages = [
+        ...document.querySelectorAll('.stack-img'),
+        ...document.querySelectorAll('.gallery-card[data-src]')
+    ].map(el => ({ src: el.dataset?.src || el.src, label: el.dataset?.label || el.alt || '', el }));
+
+    let lbEl = null, lbIdx = 0;
+    function openLB(idx) {
+        lbIdx = idx; if (lbEl) lbEl.remove();
+        lbEl = document.createElement('div'); lbEl.className = 'lightbox';
+        renderLB(); document.body.appendChild(lbEl);
+        document.addEventListener('keydown', lbKey);
+    }
+    function renderLB() {
+        const item = allImages[lbIdx];
+        lbEl.innerHTML = `
+            <button type="button" class="lb-close">&times;</button>
+            ${allImages.length > 1 ? '<button type="button" class="lb-nav lb-prev">&#8249;</button>' : ''}
+            <img src="${item.src}" alt="${item.label}">
+            ${allImages.length > 1 ? '<button type="button" class="lb-nav lb-next">&#8250;</button>' : ''}
+            <div class="lb-counter">${item.label} &middot; ${lbIdx + 1} / ${allImages.length}</div>`;
+        lbEl.querySelector('.lb-close').addEventListener('click', closeLB);
+        lbEl.querySelector('.lb-prev')?.addEventListener('click', (e) => { e.stopPropagation(); lbIdx = (lbIdx - 1 + allImages.length) % allImages.length; renderLB(); });
+        lbEl.querySelector('.lb-next')?.addEventListener('click', (e) => { e.stopPropagation(); lbIdx = (lbIdx + 1) % allImages.length; renderLB(); });
+        lbEl.addEventListener('click', (e) => { if (e.target === lbEl) closeLB(); });
+    }
+    function closeLB() { if (lbEl) { lbEl.remove(); lbEl = null; } document.removeEventListener('keydown', lbKey); }
+    function lbKey(e) {
+        if (e.key === 'Escape') closeLB();
+        if (e.key === 'ArrowLeft') { lbIdx = (lbIdx - 1 + allImages.length) % allImages.length; renderLB(); }
+        if (e.key === 'ArrowRight') { lbIdx = (lbIdx + 1) % allImages.length; renderLB(); }
+    }
+    document.addEventListener('touchstart', (e) => { if (lbEl) lbEl._tx = e.touches[0].clientX; }, { passive: true });
+    document.addEventListener('touchend', (e) => {
+        if (!lbEl || !lbEl._tx) return;
+        const dx = e.changedTouches[0].clientX - lbEl._tx;
+        if (Math.abs(dx) > 50) { lbIdx = dx < 0 ? (lbIdx + 1) % allImages.length : (lbIdx - 1 + allImages.length) % allImages.length; renderLB(); }
+        lbEl._tx = null;
+    }, { passive: true });
+    allImages.forEach((item, i) => { item.el.addEventListener('click', () => openLB(i)); });
+
+    // Version
+    fetch('version.json').then(r => r.json()).then(d => {
+        ['nav-download', 'hero-download', 'cta-download'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el && d.url) el.href = d.url;
+        });
+    }).catch(() => {});
+</script>
 </body>
 </html>
