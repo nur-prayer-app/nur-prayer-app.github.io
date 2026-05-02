@@ -1,5 +1,5 @@
 {
-  "version": "1.1.219",
-  "url": "https://github.com/nur-prayer-app/nur-prayer-app.github.io/releases/download/v1.1.219/Nur.Setup.1.1.219.exe",
-  "notes": "Relaxed timeline on mobile — min-width prevents cramped labels"
+  "version": "1.1.220",
+  "url": "https://github.com/nur-prayer-app/nur-prayer-app.github.io/releases/download/v1.1.220/Nur.Setup.1.1.220.exe",
+  "notes": "Fix service worker caching — updates now apply on reload"
 }
