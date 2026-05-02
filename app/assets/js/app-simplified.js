@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.215';
+    const APP_VERSION = '__APP_VERSION__';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -6013,6 +6013,8 @@
 
     /* ── Modal System ────────────────────────────────────────── */
     function closeAllModals() {
+        const focused = document.activeElement;
+        if (focused && focused.closest('.modal-backdrop')) focused.blur();
         $$('.modal-backdrop').forEach(b => {
             b.classList.remove('active');
             b.setAttribute('aria-hidden', 'true');
