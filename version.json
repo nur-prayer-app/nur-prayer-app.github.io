@@ -1,5 +1,5 @@
 {
-  "version": "1.1.211",
-  "url": "https://github.com/nur-prayer-app/releases/releases/download/v1.1.211/Nur.Setup.1.1.211.exe",
-  "notes": "Fix sync overwriting local changes with stale cloud data"
+  "version": "1.1.212",
+  "url": "https://github.com/nur-prayer-app/releases/releases/download/v1.1.212/Nur.Setup.1.1.212.exe",
+  "notes": "Fix PKCE Google sign-in (Supabase uses non-standard grant_type=pkce)"
 }

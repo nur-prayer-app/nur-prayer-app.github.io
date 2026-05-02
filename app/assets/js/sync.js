@@ -104,10 +104,10 @@
         clearCodeVerifier();
         if (!verifier) throw new Error('Missing PKCE code verifier');
 
-        const resp = await fetch(`${AUTH_URL}/token?grant_type=authorization_code`, {
+        const resp = await fetch(`${AUTH_URL}/token?grant_type=pkce`, {
             method: 'POST',
             headers: headers(),
-            body: JSON.stringify({ code, code_verifier: verifier, redirect_to: getOAuthRedirectUrl() }),
+            body: JSON.stringify({ auth_code: code, code_verifier: verifier }),
         });
         const data = await resp.json();
         if (!resp.ok) throw new Error(data.error_description || data.msg || 'Token exchange failed');
