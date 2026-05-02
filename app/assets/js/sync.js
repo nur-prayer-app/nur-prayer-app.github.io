@@ -14,7 +14,7 @@
     const SUPABASE_KEY = 'sb_publishable_BgBlYMnxPhkWWEtbHNHzIg_h-RkMDda';
     const AUTH_URL = `${SUPABASE_URL}/auth/v1`;
     const REST_URL = `${SUPABASE_URL}/rest/v1`;
-    const OAUTH_CALLBACK_URL = 'https://nur-prayer-app.github.io/releases/auth-callback.html';
+    const OAUTH_CALLBACK_URL = 'https://nur-prayer-app.github.io/auth-callback.html';
     const SESSION_KEY = 'nur-sync-session';
     const LAST_SYNC_KEY = 'nur-last-sync';
     const SYNC_INTERVAL = 5 * 60 * 1000;
