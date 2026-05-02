@@ -240,6 +240,41 @@
             display: block;
             cursor: pointer;
         }
+
+        /* ── Screenshot lightbox ── */
+        .lightbox {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            cursor: pointer;
+            animation: fadeIn 0.15s ease;
+            padding: 2rem;
+        }
+        .lightbox img {
+            max-width: 95%;
+            max-height: 90vh;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            animation: scaleIn 0.15s ease;
+        }
+        .lightbox-close {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 2rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+        .lightbox-close:hover { color: #fff; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .screenshot-label {
             padding: 0.6rem 1rem;
             background: rgba(255,255,255,0.03);
@@ -358,22 +393,22 @@
         <h2 class="screenshots-title">See it in action</h2>
         <p class="screenshots-sub">Beautiful dark theme designed for focus</p>
         <div class="screenshots-grid">
-            <a class="screenshot-card" href="screenshots/dashboard.png" target="_blank">
+            <div class="screenshot-card" data-src="screenshots/dashboard.png">
                 <img src="screenshots/dashboard.png" alt="Nur Dashboard — prayer tracking, goals, and reminders" loading="lazy">
                 <div class="screenshot-label">Dashboard</div>
-            </a>
-            <a class="screenshot-card" href="screenshots/stats.png" target="_blank">
+            </div>
+            <div class="screenshot-card" data-src="screenshots/stats.png">
                 <img src="screenshots/stats.png" alt="Nur Statistics — punctuality ring, prayer bars, qadaa progress" loading="lazy">
                 <div class="screenshot-label">Statistics</div>
-            </a>
-            <a class="screenshot-card" href="screenshots/calendar.png" target="_blank">
+            </div>
+            <div class="screenshot-card" data-src="screenshots/calendar.png">
                 <img src="screenshots/calendar.png" alt="Nur Hijri Calendar — prayer indicators, special days" loading="lazy">
                 <div class="screenshot-label">Hijri Calendar</div>
-            </a>
-            <a class="screenshot-card" href="screenshots/prayer-times-teal.png" target="_blank">
+            </div>
+            <div class="screenshot-card" data-src="screenshots/prayer-times-teal.png">
                 <img src="screenshots/prayer-times-teal.png" alt="Nur Prayer Times — live timeline, countdown, fasting tracker" loading="lazy">
                 <div class="screenshot-label">Prayer Times</div>
-            </a>
+            </div>
         </div>
     </section>
 
@@ -387,6 +422,16 @@
     </footer>
 
     <script>
+        document.querySelectorAll('.screenshot-card[data-src]').forEach(card => {
+            card.addEventListener('click', () => {
+                const lb = document.createElement('div');
+                lb.className = 'lightbox';
+                lb.innerHTML = `<button class="lightbox-close">&times;</button><img src="${card.dataset.src}" alt="">`;
+                document.body.appendChild(lb);
+                lb.addEventListener('click', (e) => { if (e.target === lb || e.target.classList.contains('lightbox-close')) lb.remove(); });
+            });
+        });
+
         fetch('version.json').then(r => r.json()).then(d => {
             const el = document.getElementById('version-label');
             el.textContent = `v${d.version} — Windows 64-bit`;
