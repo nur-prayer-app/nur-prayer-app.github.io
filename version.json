@@ -1,5 +1,5 @@
 {
-  "version": "1.1.215",
-  "url": "https://github.com/nur-prayer-app/nur-prayer-app.github.io/releases/download/v1.1.215/Nur.Setup.1.1.215.exe",
-  "notes": "Landing page overhaul, mobile responsive fixes, repo rename, URL cleanup"
+  "version": "1.1.216",
+  "url": "https://github.com/nur-prayer-app/nur-prayer-app.github.io/releases/download/v1.1.216/Nur.Setup.1.1.216.exe",
+  "notes": "Mobile responsive fixes, update checker fix, aria-hidden fix"
 }
