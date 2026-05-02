@@ -224,6 +224,8 @@
             .screenshots-grid { grid-template-columns: 1fr; }
         }
         .screenshot-card {
+            display: block;
+            text-decoration: none;
             border-radius: 12px;
             overflow: hidden;
             border: 1px solid rgba(255,255,255,0.06);
@@ -236,6 +238,7 @@
         .screenshot-card img {
             width: 100%;
             display: block;
+            cursor: pointer;
         }
         .screenshot-label {
             padding: 0.6rem 1rem;
@@ -355,22 +358,22 @@
         <h2 class="screenshots-title">See it in action</h2>
         <p class="screenshots-sub">Beautiful dark theme designed for focus</p>
         <div class="screenshots-grid">
-            <div class="screenshot-card">
+            <a class="screenshot-card" href="screenshots/dashboard.png" target="_blank">
                 <img src="screenshots/dashboard.png" alt="Nur Dashboard — prayer tracking, goals, and reminders" loading="lazy">
                 <div class="screenshot-label">Dashboard</div>
-            </div>
-            <div class="screenshot-card">
+            </a>
+            <a class="screenshot-card" href="screenshots/stats.png" target="_blank">
                 <img src="screenshots/stats.png" alt="Nur Statistics — punctuality ring, prayer bars, qadaa progress" loading="lazy">
                 <div class="screenshot-label">Statistics</div>
-            </div>
-            <div class="screenshot-card">
+            </a>
+            <a class="screenshot-card" href="screenshots/calendar.png" target="_blank">
                 <img src="screenshots/calendar.png" alt="Nur Hijri Calendar — prayer indicators, special days" loading="lazy">
                 <div class="screenshot-label">Hijri Calendar</div>
-            </div>
-            <div class="screenshot-card">
+            </a>
+            <a class="screenshot-card" href="screenshots/prayer-times-teal.png" target="_blank">
                 <img src="screenshots/prayer-times-teal.png" alt="Nur Prayer Times — live timeline, countdown, fasting tracker" loading="lazy">
                 <div class="screenshot-label">Prayer Times</div>
-            </div>
+            </a>
         </div>
     </section>
 
