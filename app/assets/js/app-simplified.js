@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.222';
+    const APP_VERSION = '1.1.223';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -6114,7 +6114,11 @@
         if (isNative) {
             bar.innerHTML = `<span>Install Nur for a better experience</span><button type="button" class="btn btn-primary btn-sm pwa-install-btn">Install</button><button type="button" class="pwa-install-close" aria-label="Dismiss">&times;</button>`;
         } else if (_isIOS) {
-            bar.innerHTML = `<span>Install Nur: tap <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="vertical-align:-3px"><path d="M12 3v12M12 3l-4 4M12 3l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> then "Add to Home Screen"</span><button type="button" class="pwa-install-close" aria-label="Dismiss">&times;</button>`;
+            const isSafari = /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS|OPiOS|EdgiOS|Brave/.test(navigator.userAgent);
+            const msg = isSafari
+                ? `Install Nur: tap <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="vertical-align:-3px"><path d="M12 3v12M12 3l-4 4M12 3l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> then "Add to Home Screen"`
+                : `To install Nur, open this page in Safari and tap Share → Add to Home Screen`;
+            bar.innerHTML = `<span>${msg}</span><button type="button" class="pwa-install-close" aria-label="Dismiss">&times;</button>`;
         } else {
             return;
         }
