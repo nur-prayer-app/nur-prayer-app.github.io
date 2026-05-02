@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.207';
+    const APP_VERSION = '1.1.208';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/releases/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
