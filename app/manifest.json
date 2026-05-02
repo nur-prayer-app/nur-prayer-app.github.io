@@ -1,12 +1,17 @@
 {
   "name": "Nur — Prayer Tracker",
   "short_name": "Nur",
+  "description": "Track your daily prayers, fasting, and Quran reading. Free, private, works offline.",
   "start_url": ".",
+  "id": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#0f1b2d",
   "theme_color": "#0f1b2d",
+  "categories": ["lifestyle", "utilities"],
   "icons": [
-    { "src": "assets/icons/icon-avatar.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "assets/icons/icon-avatar.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "assets/icons/icon-avatar.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-avatar.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "assets/icons/icon-avatar.png", "sizes": "192x192", "type": "image/png", "purpose": "any" }
   ]
 }

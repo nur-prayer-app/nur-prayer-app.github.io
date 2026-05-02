@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.220';
+    const APP_VERSION = '1.1.221';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -6090,6 +6090,43 @@
             if (e.key === 'Escape') closeAllModals();
         });
     }
+
+    /* ── PWA Install Prompt ──────────────────────────────────── */
+    let _deferredInstallPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        _deferredInstallPrompt = e;
+        showInstallBanner();
+    });
+
+    function showInstallBanner() {
+        if (!_deferredInstallPrompt) return;
+        if (window.matchMedia('(display-mode: standalone)').matches) return;
+        if (window.electronAPI) return;
+        if (getSetting('installDismissed')) return;
+        const bar = document.createElement('div');
+        bar.className = 'pwa-install-bar';
+        bar.innerHTML = `<span>Install Nur for a better experience</span><button type="button" class="btn btn-primary btn-sm pwa-install-btn">Install</button><button type="button" class="pwa-install-close" aria-label="Dismiss">&times;</button>`;
+        document.body.appendChild(bar);
+        requestAnimationFrame(() => bar.classList.add('active'));
+        bar.querySelector('.pwa-install-btn').addEventListener('click', async () => {
+            bar.remove();
+            if (_deferredInstallPrompt) {
+                _deferredInstallPrompt.prompt();
+                await _deferredInstallPrompt.userChoice;
+                _deferredInstallPrompt = null;
+            }
+        });
+        bar.querySelector('.pwa-install-close').addEventListener('click', () => {
+            bar.remove();
+            setSetting('installDismissed', true);
+        });
+    }
+
+    window.addEventListener('appinstalled', () => {
+        _deferredInstallPrompt = null;
+        document.querySelector('.pwa-install-bar')?.remove();
+    });
 
     /* ── Init ────────────────────────────────────────────────── */
     function init() {

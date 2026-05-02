@@ -1,5 +1,5 @@
 {
-  "version": "1.1.220",
-  "url": "https://github.com/nur-prayer-app/nur-prayer-app.github.io/releases/download/v1.1.220/Nur.Setup.1.1.220.exe",
-  "notes": "Fix service worker caching — updates now apply on reload"
+  "version": "1.1.221",
+  "url": "https://github.com/nur-prayer-app/nur-prayer-app.github.io/releases/download/v1.1.221/Nur.Setup.1.1.221.exe",
+  "notes": "PWA mobile — installable from browser, A2HS prompt, iOS support"
 }
