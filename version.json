@@ -1,5 +1,5 @@
 {
-  "version": "1.1.223",
-  "url": "https://github.com/nur-prayer-app/nur-prayer-app.github.io/releases/download/v1.1.223/Nur.Setup.1.1.223.exe",
-  "notes": "Fix manifest start_url for iOS, Safari-specific install instructions"
+  "version": "1.1.224",
+  "url": "https://github.com/nur-prayer-app/nur-prayer-app.github.io/releases/download/v1.1.224/Nur.Setup.1.1.224.exe",
+  "notes": "GPS reverse geocoding — shows city name instead of coordinates, auto-sets calculation method"
 }
