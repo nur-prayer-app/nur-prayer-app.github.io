@@ -1,5 +1,5 @@
 {
-  "version": "1.1.221",
-  "url": "https://github.com/nur-prayer-app/nur-prayer-app.github.io/releases/download/v1.1.221/Nur.Setup.1.1.221.exe",
-  "notes": "PWA mobile — installable from browser, A2HS prompt, iOS support"
+  "version": "1.1.222",
+  "url": "https://github.com/nur-prayer-app/nur-prayer-app.github.io/releases/download/v1.1.222/Nur.Setup.1.1.222.exe",
+  "notes": "iOS install banner — shows Share > Add to Home Screen instructions"
 }

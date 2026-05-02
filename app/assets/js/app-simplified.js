@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.221';
+    const APP_VERSION = '1.1.222';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -6093,6 +6093,9 @@
 
     /* ── PWA Install Prompt ──────────────────────────────────── */
     let _deferredInstallPrompt = null;
+    const _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const _isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         _deferredInstallPrompt = e;
@@ -6100,16 +6103,26 @@
     });
 
     function showInstallBanner() {
-        if (!_deferredInstallPrompt) return;
-        if (window.matchMedia('(display-mode: standalone)').matches) return;
-        if (window.electronAPI) return;
+        if (_isStandalone || window.electronAPI) return;
         if (getSetting('installDismissed')) return;
+        if (document.querySelector('.pwa-install-bar')) return;
+
+        const isNative = !!_deferredInstallPrompt;
         const bar = document.createElement('div');
         bar.className = 'pwa-install-bar';
-        bar.innerHTML = `<span>Install Nur for a better experience</span><button type="button" class="btn btn-primary btn-sm pwa-install-btn">Install</button><button type="button" class="pwa-install-close" aria-label="Dismiss">&times;</button>`;
+
+        if (isNative) {
+            bar.innerHTML = `<span>Install Nur for a better experience</span><button type="button" class="btn btn-primary btn-sm pwa-install-btn">Install</button><button type="button" class="pwa-install-close" aria-label="Dismiss">&times;</button>`;
+        } else if (_isIOS) {
+            bar.innerHTML = `<span>Install Nur: tap <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="vertical-align:-3px"><path d="M12 3v12M12 3l-4 4M12 3l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> then "Add to Home Screen"</span><button type="button" class="pwa-install-close" aria-label="Dismiss">&times;</button>`;
+        } else {
+            return;
+        }
+
         document.body.appendChild(bar);
         requestAnimationFrame(() => bar.classList.add('active'));
-        bar.querySelector('.pwa-install-btn').addEventListener('click', async () => {
+
+        bar.querySelector('.pwa-install-btn')?.addEventListener('click', async () => {
             bar.remove();
             if (_deferredInstallPrompt) {
                 _deferredInstallPrompt.prompt();
@@ -6173,6 +6186,7 @@
         if (S.settings.notifications) schedulePrayerNotifications();
 
         setTimeout(checkForUpdatesSilent, 5000);
+        if (_isIOS && !_isStandalone) setTimeout(showInstallBanner, 2000);
     }
 
     // Re-render data tab when OAuth callback completes (from Electron deep link)
