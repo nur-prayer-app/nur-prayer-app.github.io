@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.212';
+    const APP_VERSION = '1.1.213';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/releases/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -3701,8 +3701,8 @@
                 syncNow.disabled = true;
                 syncNow.textContent = 'Syncing...';
                 try {
-                    const pulled = await Sync.pullFromCloud();
-                    if (!pulled) await Sync.pushToCloud(true);
+                    await Sync.pullFromCloud();
+                    await Sync.pushToCloud(true);
                     const meta = $('#sync-meta');
                     if (meta) meta.textContent = 'Last synced: just now';
                 } catch (e) {
