@@ -82,17 +82,17 @@
 
     function storeCodeVerifier(v) {
         if (window.electronAPI?.storeCodeVerifier) window.electronAPI.storeCodeVerifier(v);
-        else sessionStorage.setItem('nur-pkce-verifier', v);
+        else localStorage.setItem('nur-pkce-verifier', v);
     }
 
     function getCodeVerifier() {
         if (window.electronAPI?.getCodeVerifier) return window.electronAPI.getCodeVerifier();
-        return sessionStorage.getItem('nur-pkce-verifier');
+        return localStorage.getItem('nur-pkce-verifier');
     }
 
     function clearCodeVerifier() {
         if (window.electronAPI?.clearCodeVerifier) window.electronAPI.clearCodeVerifier();
-        else sessionStorage.removeItem('nur-pkce-verifier');
+        else localStorage.removeItem('nur-pkce-verifier');
     }
 
     function getOAuthRedirectUrl() {
@@ -211,7 +211,10 @@
 
     async function handleOAuthTokens(accessToken, refreshToken) {
         establishSession({ access_token: accessToken, refresh_token: refreshToken });
-        try { await pullFromCloud(); } catch (e) { console.warn('OAuth pull failed:', e); }
+        try {
+            await pullFromCloud();
+            await pushToCloud(true);
+        } catch (e) { console.warn('OAuth sync failed:', e); }
     }
 
     async function handleOAuthRedirect(url) {
@@ -376,12 +379,10 @@
             Storage.suppressDirty(true);
             try { Storage.importAll(merged); }
             finally { Storage.suppressDirty(false); }
-            if (Storage.getDirtyKeys().size > 0) await pushToCloud();
             location.reload();
             return true;
         }
 
-        if (Storage.getDirtyKeys().size > 0) await pushToCloud();
         return false;
     }
 
@@ -408,8 +409,8 @@
         const delay = Math.min(SYNC_INTERVAL * Math.pow(2, syncFailures), MAX_BACKOFF);
         syncTimer = setTimeout(async () => {
             try {
-                const pulled = await pullFromCloud();
-                if (!pulled) await pushToCloud();
+                await pullFromCloud();
+                await pushToCloud();
             } catch (e) {
                 console.warn('Auto-sync failed:', e);
                 syncFailures++;
