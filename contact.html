@@ -165,7 +165,7 @@
             <h1>Contact Us</h1>
             <p class="subtitle">Bug reports, feature ideas, or anything on your mind — we'd love to hear from you.</p>
 
-            <form id="feedback-form">
+            <form id="contact-form">
                 <div class="form-group">
                     <label>Type</label>
                     <div class="type-buttons">
@@ -213,7 +213,7 @@
             });
         });
 
-        document.getElementById('feedback-form').addEventListener('submit', async (e) => {
+        document.getElementById('contact-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('submit-btn');
             const status = document.getElementById('status');
@@ -227,7 +227,7 @@
             status.textContent = '';
 
             try {
-                const resp = await fetch(`${SUPABASE_URL}/rest/v1/feedback`, {
+                const resp = await fetch(`${SUPABASE_URL}/rest/v1/contacts`, {
                     method: 'POST',
                     headers: {
                         'apikey': SUPABASE_KEY,

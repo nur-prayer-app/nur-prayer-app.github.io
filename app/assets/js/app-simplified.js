@@ -3486,7 +3486,7 @@
                 </div>
                 <div class="about-link-list">
                     <a href="#" id="about-website" class="about-link">Website</a>
-                    <a href="#" id="about-feedback" class="about-link">Contact Us</a>
+                    <a href="#" id="about-contact" class="about-link">Contact Us</a>
                 </div>
                 <div class="about-footer">Installed ${installedStr}<br>Simple, private, and free.</div>`;
         }
@@ -3755,7 +3755,7 @@
         if (tab === 'about') {
             $('#check-update')?.addEventListener('click', checkForUpdates);
             $('#about-website')?.addEventListener('click', (e) => { e.preventDefault(); openUrl('https://nur-prayer-app.github.io/releases/'); });
-            $('#about-feedback')?.addEventListener('click', (e) => { e.preventDefault(); openUrl('https://nur-prayer-app.github.io/releases/contact.html'); });
+            $('#about-contact')?.addEventListener('click', (e) => { e.preventDefault(); openUrl('https://nur-prayer-app.github.io/releases/contact.html'); });
         }
     }
 
