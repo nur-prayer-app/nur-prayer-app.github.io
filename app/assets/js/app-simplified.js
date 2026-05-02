@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.223';
+    const APP_VERSION = '1.1.224';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -5539,19 +5539,46 @@
         toast('Requesting location…');
         navigator.geolocation.getCurrentPosition(
             (pos) => {
-                S.settings.location = {
-                    lat: pos.coords.latitude,
-                    lng: pos.coords.longitude,
-                    name: `${pos.coords.latitude.toFixed(3)}, ${pos.coords.longitude.toFixed(3)}`,
-                };
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                S.settings.location = { lat, lng, name: `${lat.toFixed(3)}, ${lng.toFixed(3)}` };
                 save(KEYS.SETTINGS, S.settings);
                 refreshAllTimes();
                 render();
                 if (S.settings.notifications) schedulePrayerNotifications();
                 toast('Location saved');
+                reverseGeocode(lat, lng);
             },
             () => toast('Location denied or unavailable')
         );
+    }
+
+    async function reverseGeocode(lat, lng) {
+        try {
+            const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=en`, {
+                headers: { 'User-Agent': 'NurPrayerApp/1.0' }
+            });
+            if (!resp.ok) return;
+            const data = await resp.json();
+            const addr = data.address || {};
+            const city = addr.city || addr.town || addr.village || addr.county || '';
+            const country = addr.country || '';
+            if (city || country) {
+                S.settings.location.name = city && country ? `${city}, ${country}` : (city || country);
+                save(KEYS.SETTINGS, S.settings);
+                refreshAllTimes();
+                render();
+            }
+            if (country && !S.settings._methodManuallySet) {
+                const method = COUNTRY_METHOD[country];
+                if (method) {
+                    S.settings.calcMethod = method;
+                    save(KEYS.SETTINGS, S.settings);
+                    invalidatePrayerTimesCache();
+                    refreshAllTimes();
+                }
+            }
+        } catch (_) {}
     }
 
     /* ── Notifications (prayer alerts) ─────────────────────────
