@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Install Nur — Prayer Tracker</title>
+    <meta name="description" content="How to install Nur on iPhone, Android, Windows, and Mac. Step-by-step guide.">
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #152238;
+            --bg-glass: rgba(255,255,255,0.04);
+            --border: rgba(255,255,255,0.06);
+            --border-h: rgba(255,255,255,0.12);
+            --green: #68d391;
+            --blue: #63b3ed;
+            --grad: linear-gradient(135deg, #68d391, #63b3ed);
+            --text: #e8edf4;
+            --text-2: rgba(255,255,255,0.7);
+            --text-3: rgba(255,255,255,0.30);
+            --display: 'Poppins', sans-serif;
+            --body: 'Inter', sans-serif;
+        }
+        *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:var(--body);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+
+        /* Nav (simplified) */
+        .nav{position:fixed;top:0;left:0;right:0;z-index:100;height:64px;background:rgba(21,34,56,.92);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);border-bottom:1px solid var(--border)}
+        .nav-inner{max-width:1120px;height:100%;margin:0 auto;padding:0 2rem;display:flex;align-items:center;gap:1.5rem}
+        .nav-brand{display:flex;align-items:center;gap:.55rem;font-family:var(--display);font-size:1.1rem;font-weight:700;color:var(--text);text-decoration:none}
+        .nav-ico{width:32px;height:32px;border-radius:8px}
+        .nav-back{font-size:.88rem;font-weight:500;color:var(--text-2);text-decoration:none;margin-left:auto;transition:color .2s}
+        .nav-back:hover{color:var(--text)}
+
+        /* Content */
+        .page{max-width:720px;margin:0 auto;padding:100px 2rem 4rem}
+        .page-badge{display:inline-flex;align-items:center;gap:6px;padding:.3rem .85rem;font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;border-radius:100px;color:var(--green);background:rgba(104,211,145,0.12);border:1px solid rgba(104,211,145,.15)}
+        .page-badge-dot{width:5px;height:5px;border-radius:50%;background:var(--green)}
+        .page h1{font-family:var(--display);font-size:2.2rem;font-weight:800;letter-spacing:-.8px;line-height:1.15;margin-top:.75rem}
+        .page h1 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .page-intro{color:var(--text-2);font-size:.92rem;line-height:1.7;margin-top:.75rem}
+
+        /* Platform cards */
+        .platforms{display:flex;flex-direction:column;gap:2rem;margin-top:2.5rem}
+        .platform{background:var(--bg-glass);border:1px solid var(--border);border-radius:16px;padding:2rem;transition:border-color .2s}
+        .platform:hover{border-color:var(--border-h)}
+        .platform-head{display:flex;align-items:center;gap:.75rem;margin-bottom:1.25rem}
+        .platform-icon{width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .platform-icon svg{width:22px;height:22px;color:var(--text-2)}
+        .platform h2{font-family:var(--display);font-size:1.2rem;font-weight:700;letter-spacing:-.3px}
+        .platform-tag{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;padding:.2rem .6rem;border-radius:100px;margin-left:.5rem}
+        .tag-rec{color:var(--green);background:rgba(104,211,145,0.12);border:1px solid rgba(104,211,145,.15)}
+        .tag-alt{color:var(--blue);background:rgba(99,179,237,0.10);border:1px solid rgba(99,179,237,.15)}
+
+        /* Steps */
+        .steps{display:flex;flex-direction:column;gap:.75rem}
+        .step{display:flex;gap:.85rem;align-items:flex-start}
+        .step-num{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.06);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:var(--text-2);flex-shrink:0;margin-top:1px}
+        .step p{font-size:.88rem;color:var(--text-2);line-height:1.6}
+        .step strong{color:var(--text);font-weight:600}
+        .step .key{display:inline-flex;align-items:center;gap:4px;padding:1px 8px;font-size:.78rem;font-weight:600;color:var(--text);background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:5px;font-family:var(--body)}
+
+        /* Inline icon */
+        .step svg{display:inline;vertical-align:-3px;width:16px;height:16px}
+
+        /* Note */
+        .platform-note{margin-top:1rem;padding:.75rem 1rem;background:rgba(104,211,145,0.06);border:1px solid rgba(104,211,145,.1);border-radius:10px;font-size:.82rem;color:var(--text-2);line-height:1.6}
+        .platform-note strong{color:var(--green)}
+
+        /* CTA */
+        .cta-row{margin-top:1.25rem}
+        .cta-btn{display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.3rem;font-size:.85rem;font-weight:600;font-family:var(--body);border-radius:8px;text-decoration:none;transition:all .2s;border:none;cursor:pointer;background:var(--grad);color:#0c1322}
+        .cta-btn:hover{box-shadow:0 4px 16px rgba(104,211,145,.2)}
+        .cta-btn svg{width:14px;height:14px}
+        .cta-outline{background:transparent;border:1px solid var(--border);color:var(--text-2)}
+        .cta-outline:hover{border-color:var(--border-h);color:var(--text);box-shadow:none}
+
+        /* Footer */
+        .foot{text-align:center;padding:3rem 2rem;font-size:.82rem;color:var(--text-3);border-top:1px solid var(--border)}
+        .foot a{color:var(--text-2);text-decoration:none}
+        .foot a:hover{color:var(--text)}
+
+        @media(max-width:600px){
+            .page{padding:88px 1.25rem 3rem}
+            .page h1{font-size:1.6rem}
+            .platform{padding:1.5rem}
+            .platform h2{font-size:1.05rem}
+        }
+    </style>
+</head>
+<body>
+
+<nav class="nav"><div class="nav-inner">
+    <a href="/" class="nav-brand"><img class="nav-ico" src="icon.png" alt="Nur" width="32" height="32"> Nur</a>
+    <a href="/" class="nav-back">&larr; Back to home</a>
+</div></nav>
+
+<div class="page">
+    <div class="page-badge"><span class="page-badge-dot"></span> Install Guide</div>
+    <h1>Get Nur on <em>any device</em></h1>
+    <p class="page-intro">Nur works everywhere — as a downloadable Windows app or an installable web app on your phone, tablet, or desktop browser. Pick your platform below.</p>
+
+    <div class="platforms">
+
+        <!-- iPhone / iPad -->
+        <div class="platform">
+            <div class="platform-head">
+                <div class="platform-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z" stroke="currentColor" stroke-width="1.5"/><path d="M16.5 7.5c0 1.5-2 4-4.5 4s-4.5-2.5-4.5-4S9.5 4 12 4s4.5 2 4.5 3.5zM8.5 14.5C7 15.5 6 17 6 18.5h12c0-1.5-1-3-2.5-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+                <h2>iPhone &amp; iPad</h2>
+                <span class="platform-tag tag-rec">Safari only</span>
+            </div>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <p>Open <a href="app/" style="color:var(--green)"><strong>nur-prayer-app.github.io/app</strong></a> in <strong>Safari</strong></p>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <p>Tap the <strong>Share</strong> button <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12M12 3l-4 4M12 3l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> at the bottom of the screen</p>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <p>Scroll down and tap <strong>"Add to Home Screen"</strong></p>
+                </div>
+                <div class="step">
+                    <div class="step-num">4</div>
+                    <p>Tap <strong>"Add"</strong> in the top right. Nur appears on your home screen as a full-screen app.</p>
+                </div>
+            </div>
+            <div class="platform-note">
+                <strong>Important:</strong> This only works in Safari. Chrome, Brave, and Firefox on iOS cannot install web apps. If you're using another browser, open the link in Safari first.
+            </div>
+        </div>
+
+        <!-- Android -->
+        <div class="platform">
+            <div class="platform-head">
+                <div class="platform-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="5" y="9" width="14" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M8 9V7a4 4 0 0 1 8 0v2M7 5L5 3M17 5l2-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="9" cy="14" r="1" fill="currentColor"/><circle cx="15" cy="14" r="1" fill="currentColor"/></svg></div>
+                <h2>Android</h2>
+                <span class="platform-tag tag-rec">Chrome / Brave / Edge</span>
+            </div>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <p>Open <a href="app/" style="color:var(--green)"><strong>nur-prayer-app.github.io/app</strong></a> in Chrome, Brave, or Edge</p>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <p>You should see an <strong>"Install Nur"</strong> banner at the bottom. Tap <strong>Install</strong>.</p>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <p>If no banner appears: tap the <strong>three-dot menu</strong> (top right) and select <strong>"Add to Home screen"</strong> or <strong>"Install app"</strong></p>
+                </div>
+            </div>
+            <div class="platform-note">
+                <strong>Tip:</strong> Once installed, Nur runs full-screen with no browser chrome — just like a native app. It works offline too.
+            </div>
+        </div>
+
+        <!-- Windows -->
+        <div class="platform">
+            <div class="platform-head">
+                <div class="platform-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M3 5.5l7.5-1v7H3V5.5zM12.5 4.2L21 3v8.5h-8.5V4.2zM3 13.5h7.5v7L3 19.5V13.5zM12.5 13.5H21V22l-8.5-1.2V13.5z" stroke="currentColor" stroke-width="1.3"/></svg></div>
+                <h2>Windows</h2>
+                <span class="platform-tag tag-alt">Desktop app</span>
+            </div>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <p>Download the installer from the <a href="https://github.com/nur-prayer-app/nur-prayer-app.github.io/releases/latest" style="color:var(--green)"><strong>latest release</strong></a></p>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <p>Run <strong>Nur Setup X.Y.Z.exe</strong> and follow the installer</p>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <p>Nur installs to Program Files with a desktop shortcut and system tray icon</p>
+                </div>
+            </div>
+            <div class="platform-note">
+                <strong>Note:</strong> Windows SmartScreen may show a warning on first run (the app isn't code-signed yet). Click "More info" then "Run anyway".
+            </div>
+        </div>
+
+        <!-- Mac / Linux / Desktop browser -->
+        <div class="platform">
+            <div class="platform-head">
+                <div class="platform-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="2" y="3" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M8 21h8M12 17v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+                <h2>Mac, Linux &amp; Desktop Browsers</h2>
+                <span class="platform-tag tag-alt">Chrome / Edge</span>
+            </div>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <p>Open <a href="app/" style="color:var(--green)"><strong>nur-prayer-app.github.io/app</strong></a> in Chrome or Edge</p>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <p>Click the <strong>install icon</strong> in the address bar (a monitor with a down arrow), or use the three-dot menu &rarr; <strong>"Install Nur"</strong></p>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <p>Nur opens as a standalone window — no tabs, no address bar. Find it in your app launcher.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="foot">
+    <a href="/">Nur</a> &middot; <a href="app/">Open Web App</a> &middot; <a href="contact.html">Contact</a>
+</div>
+
+</body>
+</html>
