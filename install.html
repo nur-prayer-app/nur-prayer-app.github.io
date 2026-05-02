@@ -171,11 +171,11 @@
             <div class="steps">
                 <div class="step">
                     <div class="step-num">1</div>
-                    <p>Download the installer from the <a href="https://github.com/nur-prayer-app/nur-prayer-app.github.io/releases/latest" style="color:var(--green)"><strong>latest release</strong></a></p>
+                    <p><a href="#" id="win-dl-link" style="color:var(--green)"><strong>Download the installer</strong></a> (one file, ~82 MB)</p>
                 </div>
                 <div class="step">
                     <div class="step-num">2</div>
-                    <p>Run <strong>Nur Setup X.Y.Z.exe</strong> and follow the installer</p>
+                    <p>Run the downloaded file and follow the setup wizard</p>
                 </div>
                 <div class="step">
                     <div class="step-num">3</div>
@@ -217,5 +217,11 @@
     <a href="/">Nur</a> &middot; <a href="app/">Open Web App</a> &middot; <a href="contact.html">Contact</a>
 </div>
 
+<script>
+fetch('version.json').then(r=>r.json()).then(d=>{
+    var a=document.getElementById('win-dl-link');
+    if(a&&d.url)a.href=d.url;
+}).catch(function(){});
+</script>
 </body>
 </html>
