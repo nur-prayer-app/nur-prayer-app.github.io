@@ -196,6 +196,55 @@
             justify-content: center;
             margin-bottom: 1rem;
         }
+        /* ── Screenshots ── */
+        .screenshots {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 2rem 4rem;
+        }
+        .screenshots-title {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #e2e8f0;
+            margin-bottom: 0.5rem;
+        }
+        .screenshots-sub {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-bottom: 2rem;
+        }
+        .screenshots-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.25rem;
+        }
+        @media (max-width: 700px) {
+            .screenshots-grid { grid-template-columns: 1fr; }
+        }
+        .screenshot-card {
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.06);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .screenshot-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.3);
+        }
+        .screenshot-card img {
+            width: 100%;
+            display: block;
+        }
+        .screenshot-label {
+            padding: 0.6rem 1rem;
+            background: rgba(255,255,255,0.03);
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #94a3b8;
+        }
+
         .footer-links a {
             font-size: 0.85rem;
             color: #94a3b8;
@@ -298,6 +347,29 @@
                 </div>
                 <h3>Islamic Reminders</h3>
                 <p>Special days, Surat Al-Kahf on Fridays, and clickable hadith references with sources.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="screenshots">
+        <h2 class="screenshots-title">See it in action</h2>
+        <p class="screenshots-sub">Beautiful dark theme designed for focus</p>
+        <div class="screenshots-grid">
+            <div class="screenshot-card">
+                <img src="screenshots/dashboard.png" alt="Nur Dashboard — prayer tracking, goals, and reminders" loading="lazy">
+                <div class="screenshot-label">Dashboard</div>
+            </div>
+            <div class="screenshot-card">
+                <img src="screenshots/stats.png" alt="Nur Statistics — punctuality ring, prayer bars, qadaa progress" loading="lazy">
+                <div class="screenshot-label">Statistics</div>
+            </div>
+            <div class="screenshot-card">
+                <img src="screenshots/calendar.png" alt="Nur Hijri Calendar — prayer indicators, special days" loading="lazy">
+                <div class="screenshot-label">Hijri Calendar</div>
+            </div>
+            <div class="screenshot-card">
+                <img src="screenshots/prayer-times-teal.png" alt="Nur Prayer Times — live timeline, countdown, fasting tracker" loading="lazy">
+                <div class="screenshot-label">Prayer Times</div>
             </div>
         </div>
     </section>
