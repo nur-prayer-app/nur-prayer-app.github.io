@@ -24,6 +24,13 @@
     let cachedSession = null;
     let lastPushedTimestamps = null;
     let syncFailures = 0;
+    let isSyncing = false;
+
+    try { lastPushedTimestamps = JSON.parse(localStorage.getItem('nur-push-timestamps')); } catch {}
+
+    function savePushTimestamps() {
+        localStorage.setItem('nur-push-timestamps', JSON.stringify(lastPushedTimestamps));
+    }
 
     /* ─── Helpers ───────────────────────────────────────────────── */
 
@@ -127,6 +134,7 @@
         });
         if (!resp.ok) {
             saveSession(null);
+            window.dispatchEvent(new CustomEvent('sync-session-lost'));
             return null;
         }
         const data = await resp.json();
@@ -188,7 +196,7 @@
         const data = await resp.json();
         if (!resp.ok) throw new Error(data.error_description || data.msg || 'Sign-in failed');
         establishSession(data);
-        await pullFromCloud();
+        if (await pullFromCloud()) location.reload();
         return data;
     }
 
@@ -212,8 +220,8 @@
     async function handleOAuthTokens(accessToken, refreshToken) {
         establishSession({ access_token: accessToken, refresh_token: refreshToken });
         try {
-            await pullFromCloud();
-            await pushToCloud(true);
+            if (await pullFromCloud()) location.reload();
+            else await pushToCloud(true);
         } catch (e) { console.warn('OAuth sync failed:', e); }
     }
 
@@ -287,6 +295,7 @@
 
     /* ─── Sync: push ───────────────────────────────────────────── */
 
+    // Last-push-wins: concurrent edits to the same key on different devices may overwrite
     function buildCloudPayload(dirtyKeys) {
         const snapshot = Storage.exportAll();
         const now = Date.now();
@@ -302,88 +311,100 @@
     }
 
     async function pushToCloud(force) {
-        const dirtyKeys = Storage.getDirtyKeys();
-        if (!force && lastPushedTimestamps !== null && dirtyKeys.size === 0) return;
+        if (isSyncing) return;
+        isSyncing = true;
+        try {
+            const dirtyKeys = Storage.getDirtyKeys();
+            if (!force && lastPushedTimestamps !== null && dirtyKeys.size === 0) return;
 
-        const token = await getValidToken();
-        if (!token) return;
-        const session = getSession();
+            const token = await getValidToken();
+            if (!token) return;
+            const session = getSession();
 
-        const payload = buildCloudPayload(dirtyKeys);
-        const resp = await fetch(`${REST_URL}/user_data?on_conflict=user_id`, {
-            method: 'POST',
-            headers: {
-                ...headers(token),
-                'Prefer': 'resolution=merge-duplicates',
-            },
-            body: JSON.stringify({
-                user_id: session.user.id,
-                data: payload,
-                updated_at: new Date().toISOString(),
-            }),
-        });
-        if (!resp.ok) {
-            const err = await resp.text();
-            throw new Error(`Push failed: ${err}`);
+            const payload = buildCloudPayload(dirtyKeys);
+            const resp = await fetch(`${REST_URL}/user_data?on_conflict=user_id`, {
+                method: 'POST',
+                headers: {
+                    ...headers(token),
+                    'Prefer': 'resolution=merge-duplicates',
+                },
+                body: JSON.stringify({
+                    user_id: session.user.id,
+                    data: payload,
+                    updated_at: new Date().toISOString(),
+                }),
+            });
+            if (!resp.ok) {
+                const err = await resp.text();
+                throw new Error(`Push failed: ${err}`);
+            }
+            const timestamps = {};
+            for (const [key, envelope] of Object.entries(payload)) timestamps[key] = envelope._ts;
+            lastPushedTimestamps = timestamps;
+            savePushTimestamps();
+            Storage.clearDirtyKeys();
+            syncFailures = 0;
+            return setLastSync();
+        } finally {
+            isSyncing = false;
         }
-        const timestamps = {};
-        for (const [key, envelope] of Object.entries(payload)) timestamps[key] = envelope._ts;
-        lastPushedTimestamps = timestamps;
-        Storage.clearDirtyKeys();
-        syncFailures = 0;
-        return setLastSync();
     }
 
     /* ─── Sync: pull + merge ───────────────────────────────────── */
 
     async function pullFromCloud() {
-        const token = await getValidToken();
-        if (!token) return;
-        const session = getSession();
+        if (isSyncing) return;
+        isSyncing = true;
+        try {
+            const token = await getValidToken();
+            if (!token) return;
+            const session = getSession();
 
-        const resp = await fetch(
-            `${REST_URL}/user_data?user_id=eq.${session.user.id}&select=data`,
-            { headers: headers(token) }
-        );
-        if (!resp.ok) return;
-        const rows = await resp.json();
-        if (!rows.length || !rows[0].data) return;
+            const resp = await fetch(
+                `${REST_URL}/user_data?user_id=eq.${session.user.id}&select=data`,
+                { headers: headers(token) }
+            );
+            if (!resp.ok) return;
+            const rows = await resp.json();
+            if (!rows.length || !rows[0].data) return;
 
-        const cloudData = rows[0].data;
-        const localSnapshot = Storage.exportAll();
-        const dirtyKeys = Storage.getDirtyKeys();
-        const lastSyncTs = getLastSync();
-        const lastSyncMs = lastSyncTs ? new Date(lastSyncTs).getTime() : 0;
-        let changed = false;
-        const merged = {};
+            const cloudData = rows[0].data;
+            const localSnapshot = Storage.exportAll();
+            const dirtyKeys = Storage.getDirtyKeys();
+            const lastSyncTs = getLastSync();
+            const lastSyncMs = lastSyncTs ? new Date(lastSyncTs).getTime() : 0;
+            let changed = false;
+            const merged = {};
 
-        for (const [key, envelope] of Object.entries(cloudData)) {
-            if (!envelope || typeof envelope !== 'object') continue;
-            if (dirtyKeys.has(key)) continue;
-            const cloudTs = envelope._ts || 0;
-            const cloudValue = envelope.value;
-            const raw = typeof cloudValue === 'string' ? cloudValue : JSON.stringify(cloudValue);
+            for (const [key, envelope] of Object.entries(cloudData)) {
+                if (!envelope || typeof envelope !== 'object') continue;
+                if (dirtyKeys.has(key)) continue;
+                const cloudTs = envelope._ts || 0;
+                const cloudValue = envelope.value;
+                const raw = typeof cloudValue === 'string' ? cloudValue : JSON.stringify(cloudValue);
 
-            if (key in localSnapshot) {
-                if (localSnapshot[key] !== raw && cloudTs > lastSyncMs) {
+                if (key in localSnapshot) {
+                    if (localSnapshot[key] !== raw && cloudTs > lastSyncMs) {
+                        merged[key] = raw;
+                        changed = true;
+                    }
+                } else {
                     merged[key] = raw;
                     changed = true;
                 }
-            } else {
-                merged[key] = raw;
-                changed = true;
             }
-        }
 
-        if (changed) {
-            Storage.suppressDirty(true);
-            try { Storage.importAll(merged); }
-            finally { Storage.suppressDirty(false); }
-            location.reload();
-            return true;
-        }
+            if (changed) {
+                Storage.suppressDirty(true);
+                try { Storage.importAll(merged); }
+                finally { Storage.suppressDirty(false); }
+                return true;
+            }
 
-        return false;
+            return false;
+        } finally {
+            isSyncing = false;
+        }
     }
 
     /* ─── Sync: clear cloud ────────────────────────────────────── */
@@ -408,12 +429,14 @@
     function scheduleNextSync() {
         const delay = Math.min(SYNC_INTERVAL * Math.pow(2, syncFailures), MAX_BACKOFF);
         syncTimer = setTimeout(async () => {
-            try {
-                await pullFromCloud();
-                await pushToCloud();
-            } catch (e) {
-                console.warn('Auto-sync failed:', e);
-                syncFailures++;
+            if (!isSyncing) {
+                try {
+                    if (await pullFromCloud()) location.reload();
+                    else await pushToCloud();
+                } catch (e) {
+                    console.warn('Auto-sync failed:', e);
+                    syncFailures++;
+                }
             }
             if (syncEnabled) scheduleNextSync();
         }, delay);

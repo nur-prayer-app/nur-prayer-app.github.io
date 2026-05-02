@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.213';
+    const APP_VERSION = '1.1.214';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/releases/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -3168,7 +3168,17 @@
                     <select class="app-input" data-setting="language">
                         <option value="en" ${getSetting('language', 'en') === 'en' ? 'selected' : ''}>English</option>
                     </select>
-                </div>`;
+                </div>
+                ${window.electronAPI?.getAutoStart ? `
+                <div class="settings-section">
+                    <div class="settings-row">
+                        <h4>Open at startup</h4>
+                        <label class="setting-toggle">
+                            <input type="checkbox" id="auto-start-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>` : ''}`;
         }
 
         if (tab === 'dashboard') {
@@ -3510,6 +3520,13 @@
             $('select[data-setting="language"]', content)?.addEventListener('change', (e) => {
                 setSetting('language', e.target.value);
             });
+            const autoStartEl = $('#auto-start-toggle', content);
+            if (autoStartEl && window.electronAPI?.getAutoStart) {
+                window.electronAPI.getAutoStart().then(v => { autoStartEl.checked = v; });
+                autoStartEl.addEventListener('change', () => {
+                    window.electronAPI.setAutoStart(autoStartEl.checked);
+                });
+            }
             return;
         }
 
@@ -3701,10 +3718,13 @@
                 syncNow.disabled = true;
                 syncNow.textContent = 'Syncing...';
                 try {
-                    await Sync.pullFromCloud();
-                    await Sync.pushToCloud(true);
-                    const meta = $('#sync-meta');
-                    if (meta) meta.textContent = 'Last synced: just now';
+                    if (await Sync.pullFromCloud()) {
+                        location.reload();
+                    } else {
+                        await Sync.pushToCloud(true);
+                        const meta = $('#sync-meta');
+                        if (meta) meta.textContent = 'Last synced: just now';
+                    }
                 } catch (e) {
                     toast('Sync failed: ' + e.message);
                 } finally {
@@ -3740,7 +3760,7 @@
             $('#export-data')?.addEventListener('click', exportData);
             $('#import-data')?.addEventListener('click', () => $('#import-file')?.click());
             $('#import-file')?.addEventListener('change', importData);
-            $('#clear-data')?.addEventListener('click', () => {
+            $('#clear-data')?.addEventListener('click', async () => {
                 const btn = $('#clear-data');
                 if (!btn.classList.contains('confirm')) {
                     btn.classList.add('confirm');
@@ -3748,6 +3768,7 @@
                     setTimeout(() => { btn.classList.remove('confirm'); btn.textContent = 'Clear all data'; }, 3000);
                     return;
                 }
+                if (Sync.getSession()) await Sync.signOut();
                 Storage.clearAll();
                 location.reload();
             });
@@ -3808,7 +3829,11 @@
             if (!resp.ok) return;
             const data = await resp.json();
             if (compareVersions(data.version, APP_VERSION) > 0) {
-                toast(`Update available: v${data.version}`);
+                const url = data.url || 'https://nur-prayer-app.github.io/releases/';
+                toast(`Update available: v${data.version}`, {
+                    label: 'Download',
+                    fn: () => openUrl(url),
+                });
             }
         } catch { /* silent */ }
     }
@@ -6174,6 +6199,10 @@
             wireSettingsTab('data');
         }
         toast('Signed in with Google');
+    });
+
+    window.addEventListener('sync-session-lost', () => {
+        toast('Session expired — please sign in again');
     });
 
     if (document.readyState === 'loading') {

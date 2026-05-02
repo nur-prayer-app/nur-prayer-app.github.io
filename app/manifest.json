@@ -1,0 +1,12 @@
+{
+  "name": "Nur — Prayer Tracker",
+  "short_name": "Nur",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0f1b2d",
+  "theme_color": "#0f1b2d",
+  "icons": [
+    { "src": "assets/icons/icon-avatar.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/icons/icon-avatar.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
