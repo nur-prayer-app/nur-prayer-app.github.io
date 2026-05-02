@@ -287,12 +287,13 @@
     function buildCloudPayload(dirtyKeys) {
         const snapshot = Storage.exportAll();
         const now = Date.now();
+        const firstPush = lastPushedTimestamps === null;
         const payload = {};
         for (const [key, raw] of Object.entries(snapshot)) {
             let value = raw;
             try { value = JSON.parse(raw); } catch {}
-            const prevTs = lastPushedTimestamps?.[key] || 0;
-            payload[key] = { value, _ts: dirtyKeys.has(key) ? now : prevTs };
+            const prevTs = lastPushedTimestamps?.[key] || now;
+            payload[key] = { value, _ts: (firstPush || dirtyKeys.has(key)) ? now : prevTs };
         }
         return payload;
     }
