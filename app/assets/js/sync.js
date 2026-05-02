@@ -237,18 +237,6 @@
                 return true;
             }
         }
-        // Legacy implicit flow fallback (pre-PKCE clients)
-        const fragment = url.split('#')[1];
-        if (fragment) {
-            const params = new URLSearchParams(fragment);
-            const accessToken = params.get('access_token');
-            const refreshToken = params.get('refresh_token');
-            if (accessToken && refreshToken) {
-                await handleOAuthTokens(accessToken, refreshToken);
-                window.dispatchEvent(new Event('sync-auth-changed'));
-                return true;
-            }
-        }
         return false;
     }
 

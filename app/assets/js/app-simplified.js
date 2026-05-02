@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.216';
+    const APP_VERSION = '1.1.217';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -43,23 +43,12 @@
         { id:'maghrib', name:'Maghrib', time:'6:20 PM' },
         { id:'isha',    name:'Isha',    time:'8:00 PM' },
     ];
-    /** Index lookup — avoids PRAYERS.find(p => p.id === id) repetition. */
-    const PRAYERS_BY_ID = new Map(PRAYERS.map(p => [p.id, p]));
-    const prayerById = (id) => PRAYERS_BY_ID.get(id);
-
-    // Extra daily activities (tracked per-day in S.prayers[key])
-    const EXTRAS = [
-        { id:'qyaam',   name:'Qyaam',   time:'Night' },
-        { id:'duha',    name:'Duha',    time:'Morning' },
-        { id:'shafaWitr', name:"Shaf'a & Witr", time:'Night' },
-        { id:'fasting', name:'Fasting', time:'All day' },
-    ];
 
     const PRAYER_MAP = Object.fromEntries(PRAYERS.map(p => [p.id, p]));
 
     function prayerName(id, gregDate) {
         if (id === 'dhuhr' && gregDate && gregDate.getDay() === 5) return "Jumu'ah";
-        return PRAYERS_BY_ID.get(id)?.name || id;
+        return PRAYER_MAP[id]?.name || id;
     }
     const isQadaaGoal = (g) => g.type === 'qadaa' || g.type === 'qadaa-auto';
 
@@ -121,7 +110,6 @@
     const fmtFullDate  = (d) => new Date(d).toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
     const fmtDateTime  = (d) => new Date(d).toLocaleString('en-US', { month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit' });
     const fmtMonthYear = (d) => new Date(d).toLocaleDateString('en-US', { month:'long', year:'numeric' });
-    const fmtMonthOnly = (d) => new Date(d).toLocaleDateString('en-US', { month:'long' });
     const fmtMonthShort = (d) => new Date(d).toLocaleDateString('en', { month:'short' });
     const fmtHijriLong = (h) => `${h.monthName} ${h.day}, ${h.year}`;
     const fmtHijriShort = (h) => `${h.monthName} ${h.day}`;
@@ -159,7 +147,6 @@
     /* ── Prayer List (icon grid) ────────────────────────────── */
     const PRAYER_ICONS = {
         fajr:    '<circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 1v3M21 12h-3M12 21v3M3 12h3" stroke="currentColor" stroke-width="1.5"/>',
-        sunrise: '<circle cx="12" cy="16" r="5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 5v3M4.22 11.22l2.12 2.12M19.78 11.22l-2.12 2.12M1 16h4M19 16h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
         dhuhr:   '<circle cx="12" cy="12" r="5" fill="currentColor"/><path d="M12 1v3M21 12h-3M12 21v3M3 12h3" stroke="currentColor" stroke-width="1.5"/>',
         asr:     '<circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 16l3 3" stroke="currentColor" stroke-width="1.5"/>',
         maghrib: '<path d="M17 18a5 5 0 0 0-10 0" stroke="currentColor" stroke-width="2"/><line x1="12" y1="9" x2="12" y2="3" stroke="currentColor" stroke-width="2"/>',
@@ -507,7 +494,7 @@
             if (pace5Label) pace5Label.textContent = isDirect ? `At 5/${unitLabel.slice(0,-1)}/day` : 'At 5/day';
             if (result) result.textContent = total.toLocaleString();
             if (label) label.textContent = unitLabel;
-            const pace1 = Math.ceil(total / 1);
+            const pace1 = total;
             const pace5 = Math.ceil(total / 5);
             const d1 = new Date(); d1.setDate(d1.getDate() + pace1);
             const d5 = new Date(); d5.setDate(d5.getDate() + pace5);
@@ -747,7 +734,7 @@
                     <h4>Activity</h4>
                     <div class="goal-notes">
                         ${g.notes.map((n, i) => ({ n, i })).filter(x => x.n).slice(-5).reverse().map(({ n, i }) => {
-                            const text = n.text || '—';
+                            const text = esc(n.text || '—');
                             const dateStr = n.date ? fmtShortDate(n.date) : '';
                             return `<button type="button" class="goal-note" data-note-idx="${i}">
                                 <div class="goal-note-body">
@@ -977,7 +964,7 @@
                     <h4>Recent activity <span class="info-tip" data-hint="Tap any row to undo that action.">?</span></h4>
                     <div class="goal-notes">
                         ${g.notes.map((n, i) => ({ n, i })).filter(x => x.n).slice(-8).reverse().map(({ n, i }) => {
-                            const text = n.text || '—';
+                            const text = esc(n.text || '—');
                             const dateStr = n.date ? fmtShortDate(n.date) : '';
                             return `<button type="button" class="goal-note" data-note-idx="${i}" title="Tap to undo this action">
                                 <div class="goal-note-body">
@@ -1032,7 +1019,7 @@
                 recordQadaaPrayers(g, pid, 1);
                 reopen();
                 renderGoals();
-                const pName = PRAYER_MAP[pid].name;
+                const pName = PRAYER_MAP[pid]?.name || pid;
                 toast(`Recorded 1 ${pName}`, { label: 'Undo', fn: () => {
                     g.perPrayer = snapshot.perPrayer;
                     g.remaining = snapshot.remaining;
@@ -1059,7 +1046,7 @@
                 g.notes = g.notes || [];
                 g.notes.push({
                     date: new Date().toISOString(),
-                    text: `Manual ${step > 0 ? '+' : ''}${delta} ${prayerById(pid).name}`,
+                    text: `Manual ${step > 0 ? '+' : ''}${delta} ${PRAYER_MAP[pid]?.name || pid}`,
                     amount: delta,
                     manual: true,
                     prayer: pid,
@@ -1163,17 +1150,6 @@
         $('#goal-record-3')?.addEventListener('click', () => recordN(3));
         $('#goal-record-5')?.addEventListener('click', () => recordN(5));
         $('#goal-record-10')?.addEventListener('click', () => recordN(10));
-
-        // Undo last (= +1)
-        $('#goal-undo')?.addEventListener('click', () => {
-            if (g.total - g.remaining <= 0) return;
-            g.remaining++;
-            if (g.remaining > g.total) g.remaining = g.total;
-            if (g.notes && g.notes.length) g.notes.pop();
-            saveGoals();
-            reopen();
-            renderGoals();
-        });
 
         // Delete with inline confirmation (ghost button in danger zone)
         $('#goal-delete')?.addEventListener('click', () => {
@@ -1532,26 +1508,12 @@
         return set;
     }
 
-    function hasAutoMissedGoalFor(hYear, hMonth, hDay) {
-        return getGoals().some(g => {
-            if (g.type !== 'qadaa-auto' || !g.missedOn) return false;
-            if (g.isManual) return false;
-            if ((g.remaining || 0) <= 0) return false;
-            const d = new Date(g.missedOn);
-            const h = HijriCalendar.gregorianToHijri(d);
-            return h.year === hYear && h.month === hMonth && h.day === hDay;
-        });
-    }
-
-
     function renderCellIndicator(dd, hijriInfo, autoMissedSet) {
         const show = S.settings.showIndicators !== false;
         if (!show) return '';
 
-        const hadQadaaMissed = hijriInfo
-            ? (autoMissedSet
-                ? autoMissedSet.has(`${hijriInfo.year}-${hijriInfo.month}-${hijriInfo.day}`)
-                : hasAutoMissedGoalFor(hijriInfo.year, hijriInfo.month, hijriInfo.day))
+        const hadQadaaMissed = hijriInfo && autoMissedSet
+            ? autoMissedSet.has(`${hijriInfo.year}-${hijriInfo.month}-${hijriInfo.day}`)
             : false;
         const qadaaCount = PRAYERS.filter(p => dd[`${p.id}_qadaa_recorded`]).length;
 
@@ -1769,17 +1731,8 @@
         if (primary === 'gregorian') return updateCalendarGregorian();
         const md = HijriCalendar.getMonthData(S.calY, S.calM);
 
-        // Gregorian range covered by this Hijri month
         const firstGreg = HijriCalendar.hijriToGregorian(S.calY, S.calM, 1);
         const lastGreg = HijriCalendar.hijriToGregorian(S.calY, S.calM, md.totalDays);
-        let gregRange;
-        if (firstGreg.getMonth() === lastGreg.getMonth() && firstGreg.getFullYear() === lastGreg.getFullYear()) {
-            gregRange = fmtMonthYear(firstGreg);
-        } else if (firstGreg.getFullYear() === lastGreg.getFullYear()) {
-            gregRange = `${fmtMonthOnly(firstGreg)} – ${fmtMonthYear(lastGreg)}`;
-        } else {
-            gregRange = `${fmtMonthYear(firstGreg)} – ${fmtMonthYear(lastGreg)}`;
-        }
 
         const hijriLabel = `${md.monthName} ${S.calY}`;
 
@@ -1834,11 +1787,12 @@
         const totalDays = md.totalDays;
         const firstWeekday = md.startWeekday; // 0=Sun
         const offset = (firstWeekday - weekStart + 7) % 7;
+        const cellByDay = {};
+        md.weeks.flat().forEach(c => { if (c && !c.empty) cellByDay[c.day] = c; });
         const allCells = [];
         for (let i = 0; i < offset; i++) allCells.push({ empty: true });
         for (let d = 1; d <= totalDays; d++) {
-            const cell = md.weeks.flat().find(c => !c.empty && c.day === d);
-            allCells.push(cell);
+            allCells.push(cellByDay[d]);
         }
         while (allCells.length % 7 !== 0) allCells.push({ empty: true });
         const rebuiltWeeks = [];
@@ -1923,14 +1877,6 @@
             container.innerHTML = '<div class="reminder-row"><div class="reminder-icon-box"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="reminder-text"><div class="reminder-title">No special days this month</div></div></div>';
             return;
         }
-
-        const iconMap = {
-            significance: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="currentColor"/>',
-            single:       '<path d="M12 2L14.09 8.26L20 10L14.09 11.74L12 18L9.91 11.74L4 10L9.91 8.26L12 2Z" fill="currentColor"/>',
-            range:        '<rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M8 3v4M16 3v4M3 11h18" stroke="currentColor" stroke-width="1.5"/>',
-            dynamic:      '<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
-            white:        '<circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="1.5"/>',
-        };
 
         container.innerHTML = specials.map(s => renderReminderRow(s, mn)).join('');
         wireReminderClicks(container);
@@ -2690,7 +2636,7 @@
                         }
                     }
 
-                    const pName = PRAYER_MAP[pid].name;
+                    const pName = PRAYER_MAP[pid]?.name || pid;
                     sessionLog.push({
                         text: `1 ${pName}`,
                         undo: () => {
@@ -2731,7 +2677,7 @@
             const todayStr = fmtShortDate(new Date());
             const sessionRows = sessionLog.map((entry, i) => `
                 <button type="button" class="aq-log-row aq-log-session" data-scope="session" data-i="${i}" title="Tap to undo">
-                    <span class="aq-log-text">${entry.text}</span>
+                    <span class="aq-log-text">${esc(entry.text)}</span>
                     <span class="aq-log-date">${todayStr}</span>
                     <span class="aq-undo-hint" aria-hidden="true">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 14l-4-4 4-4M5 10h9a5 5 0 0 1 0 10h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -2746,7 +2692,7 @@
                 const dateStr = n.date ? fmtShortDate(n.date) : '';
                 return `
                 <button type="button" class="aq-log-row aq-log-history" data-scope="history" data-i="${i}" title="Tap to undo">
-                    <span class="aq-log-text">${n.text || '—'}</span>
+                    <span class="aq-log-text">${esc(n.text || '—')}</span>
                     <span class="aq-log-date">${dateStr}</span>
                     <span class="aq-undo-hint" aria-hidden="true">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 14l-4-4 4-4M5 10h9a5 5 0 0 1 0 10h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -2878,11 +2824,11 @@
                 const d2 = dayData(key);
                 d2[`${pid}_missed`] = true; // mark on calendar
                 save(KEYS.PRAYERS, S.prayers);
-                addQadaaPrayers(pid, 1, 'qadaa', `Missed ${prayerById(pid).name} on ${md.monthName} ${d}`);
+                addQadaaPrayers(pid, 1, 'qadaa', `Missed ${PRAYER_MAP[pid]?.name || pid} on ${md.monthName} ${d}`);
                 renderGoals();
                 renderCalendar();
                 btn.disabled = true;
-                toast(`${prayerById(pid).name} added to Qadaa`);
+                toast(`${PRAYER_MAP[pid]?.name || pid} added to Qadaa`);
             });
         });
 
@@ -3261,7 +3207,7 @@
                 <div class="settings-section">
                     <h4>Location</h4>
                     <div class="settings-location-row">
-                        <span class="settings-location-name">${loc ? (loc.name || `${loc.lat.toFixed(3)}, ${loc.lng.toFixed(3)}`) : 'Not set'}</span>
+                        <span class="settings-location-name">${loc ? esc(loc.name || `${loc.lat.toFixed(3)}, ${loc.lng.toFixed(3)}`) : 'Not set'}</span>
                         <button type="button" class="btn btn-secondary btn-sm" id="set-location-btn">${loc ? 'Change' : 'Set'}</button>
                     </div>
                 </div>
@@ -3768,7 +3714,7 @@
                     setTimeout(() => { btn.classList.remove('confirm'); btn.textContent = 'Clear all data'; }, 3000);
                     return;
                 }
-                if (Sync.getSession()) await Sync.signOut();
+                if (typeof Sync !== 'undefined' && Sync.getSession()) await Sync.signOut();
                 Storage.clearAll();
                 location.reload();
             });
@@ -3782,6 +3728,7 @@
     }
 
     function openUrl(url) {
+        if (typeof url !== 'string' || !(url.startsWith('https://') || url.startsWith('http://'))) return;
         if (window.electronAPI?.openExternal) window.electronAPI.openExternal(url);
         else window.open(url, '_blank');
     }
@@ -3809,7 +3756,7 @@
             const data = await resp.json();
             const cmp = compareVersions(data.version, APP_VERSION);
             if (cmp > 0) {
-                if (statusEl) statusEl.innerHTML = `<strong>v${data.version} available</strong>`;
+                if (statusEl) statusEl.innerHTML = `<strong>v${esc(data.version)} available</strong>`;
                 if (window.electronAPI) {
                     if (btn) { btn.textContent = 'Download update'; btn.disabled = false; btn.onclick = () => {
                         openUrl(data.url || 'https://nur-prayer-app.github.io/');
@@ -4431,9 +4378,7 @@
 
     let _timesTicker = null;
     let _tickEls = null; // cached DOM refs for tickTimes — populated by renderPrayerTimes
-    // Day the timeline is viewing (0 = today, -1 = yesterday, +1 = tomorrow, etc.)
-    // Hero + schedule always show today; only the daybar re-renders when this changes.
-    let _dayOffset = 0;
+    let _timesAC = null; // AbortController for document-level listeners in renderPrayerTimes
 
     /* Cache today's prayer times — computeRawTimes does expensive trig and gets called
        via tickTimes every second. Invalidated when the calendar date changes. */
@@ -4502,6 +4447,9 @@
     function renderPrayerTimes() {
         const page = $('#times-page');
         if (!page) return;
+        if (_timesAC) _timesAC.abort();
+        _timesAC = new AbortController();
+        const _signal = _timesAC.signal;
 
         const loc = S.settings.location;
         if (!loc) {
@@ -4549,7 +4497,7 @@
                     <div>
                         <p class="times-location">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/></svg>
-                            ${loc.name || `${loc.lat.toFixed(3)}, ${loc.lng.toFixed(3)}`}
+                            ${esc(loc.name || `${loc.lat.toFixed(3)}, ${loc.lng.toFixed(3)}`)}
                         </p>
                     </div>
                     <div class="times-header-actions">
@@ -4765,14 +4713,13 @@
 
             // Build 3 consecutive days (yest/today/tom) of prayer times for rendering.
             // If location is missing we skip the render entirely (guarded upstream).
-            const loc0 = S.settings.location;
             const opts = getTimesOptions();
             const yestDate = new Date(todayMidnight); yestDate.setDate(yestDate.getDate() - 1);
             const tomDate = new Date(todayMidnight); tomDate.setDate(tomDate.getDate() + 1);
             const dayAfterDate = new Date(todayMidnight); dayAfterDate.setDate(dayAfterDate.getDate() + 2);
-            const yestTimes = computeRawTimesCached(loc0.lat, loc0.lng, yestDate, opts);
-            const tomTimes = computeRawTimesCached(loc0.lat, loc0.lng, tomDate, opts);
-            const dayAfterTimes = computeRawTimesCached(loc0.lat, loc0.lng, dayAfterDate, opts);
+            const yestTimes = computeRawTimesCached(loc.lat, loc.lng, yestDate, opts);
+            const tomTimes = computeRawTimesCached(loc.lat, loc.lng, tomDate, opts);
+            const dayAfterTimes = computeRawTimesCached(loc.lat, loc.lng, dayAfterDate, opts);
 
             // Each rendered day: its prayer times + the Fajr of the day after (for night-window math).
             // Order matters — must match the 3-day slide (yesterday at 0-33%, today at 33-67%, tomorrow at 67-100%).
@@ -4784,15 +4731,6 @@
 
             // Today's times (the hero/schedule context — still used for popover fallbacks)
             const t = times.today;
-
-            // windowEnds for TODAY specifically (used by popovers/click handlers that still exist today-only)
-            const windowEnds = {
-                fajr: t.sunrise,
-                dhuhr: t.asr,
-                asr: t.maghrib,
-                maghrib: t.isha,
-                isha: dayTimes.tomorrowFajr,
-            };
 
             // ── Build renderable arrays across all 3 days ──
             const prayerBandsAll = [];
@@ -4881,11 +4819,6 @@
                     startAt: slideStart, endAt: yestTimes.fajr,
                 });
             }
-
-            const prayerBands = prayerBandsAll;
-            const duhaSegs = duhaSegsAll;
-            const karahaSegs = karahaSegsAll;
-            const thirdSegs = thirdSegsAll;
 
             timelineEl.innerHTML = `
                 <!-- Top bar: legend icon only (recenter chip now lives below the track) -->
@@ -5030,7 +4963,7 @@
                     legendPop.classList.remove('active');
                     syncStack(false);
                 }
-            });
+            }, { signal: _signal });
 
             // Prayer markers — thin vertical bars with text labels above the track.
             // Render markers for all 3 days (yesterday + today + tomorrow).
@@ -5075,7 +5008,7 @@
                 // Esc closes
                 document.addEventListener('keydown', (e) => {
                     if (e.key === 'Escape' && pop?.classList.contains('active')) closePop();
-                });
+                }, { signal: _signal });
 
                 // Helper: render a popover with name + range + duration
                 const rangePopHtml = (title, from, to, hint) => {
@@ -5161,7 +5094,7 @@
                 document.addEventListener('click', (e) => {
                     if (!pop) return;
                     if (!pop.contains(e.target) && !timelineEl.contains(e.target)) closePop();
-                }, { capture: true });
+                }, { capture: true, signal: _signal });
             }
 
             // ── Drag-to-pan the timeline ──
@@ -6011,7 +5944,7 @@
             el.className = 'toast';
             document.body.appendChild(el);
         }
-        el.innerHTML = `<span>${message}</span>${action ? `<button type="button" class="toast-action">${action.label}</button>` : ''}`;
+        el.innerHTML = `<span>${esc(message)}</span>${action ? `<button type="button" class="toast-action">${esc(action.label)}</button>` : ''}`;
         el.classList.add('active');
         if (action) {
             el.querySelector('.toast-action').addEventListener('click', () => {
