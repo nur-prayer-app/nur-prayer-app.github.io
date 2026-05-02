@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'">
     <title>Nur — Signed In</title>
     <style>
         body {
@@ -30,9 +31,20 @@
         <p>You can close this tab and return to Nur.</p>
     </div>
     <script>
-        const hash = window.location.hash.substring(1);
-        if (hash) {
-            window.location.href = 'nur://oauth/callback#' + hash;
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
+        const error = params.get('error_description') || params.get('error');
+        if (error) {
+            document.querySelector('h1').textContent = 'Sign-in failed';
+            document.querySelector('h1').style.color = '#f56565';
+            document.querySelector('p').textContent = error;
+        } else if (code) {
+            window.location.href = 'nur://oauth/callback?code=' + encodeURIComponent(code);
+        } else {
+            const hash = window.location.hash.substring(1);
+            if (hash) {
+                window.location.href = 'nur://oauth/callback#' + hash;
+            }
         }
     </script>
 </body>
