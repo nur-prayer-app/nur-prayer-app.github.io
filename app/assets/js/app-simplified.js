@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '__APP_VERSION__';
+    const APP_VERSION = '1.1.215';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -3775,7 +3775,14 @@
         }
 
         if (tab === 'about') {
-            $('#check-update')?.addEventListener('click', checkForUpdates);
+            if (window.electronAPI) {
+                $('#check-update')?.addEventListener('click', checkForUpdates);
+            } else {
+                const btn = $('#check-update');
+                if (btn) { btn.textContent = 'Web version'; btn.disabled = true; }
+                const st = $('#update-status');
+                if (st) st.textContent = 'You\'re using the latest web version';
+            }
             $('#about-website')?.addEventListener('click', (e) => { e.preventDefault(); openUrl('https://nur-prayer-app.github.io/'); });
             $('#about-contact')?.addEventListener('click', (e) => { e.preventDefault(); openUrl('https://nur-prayer-app.github.io/contact.html'); });
         }
@@ -6190,7 +6197,7 @@
 
         if (S.settings.notifications) schedulePrayerNotifications();
 
-        setTimeout(checkForUpdatesSilent, 5000);
+        if (window.electronAPI) setTimeout(checkForUpdatesSilent, 5000);
     }
 
     // Re-render data tab when OAuth callback completes (from Electron deep link)
