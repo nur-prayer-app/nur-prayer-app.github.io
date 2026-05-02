@@ -3798,8 +3798,6 @@
         return 0;
     }
 
-    const isElectron = !!window.electronAPI;
-
     async function checkForUpdates() {
         const statusEl = $('#update-status');
         const btn = $('#check-update');
@@ -3812,7 +3810,7 @@
             const cmp = compareVersions(data.version, APP_VERSION);
             if (cmp > 0) {
                 if (statusEl) statusEl.innerHTML = `<strong>v${data.version} available</strong>`;
-                if (isElectron) {
+                if (window.electronAPI) {
                     if (btn) { btn.textContent = 'Download update'; btn.disabled = false; btn.onclick = () => {
                         openUrl(data.url || 'https://nur-prayer-app.github.io/');
                     }; }
@@ -3837,7 +3835,7 @@
             if (!resp.ok) return;
             const data = await resp.json();
             if (compareVersions(data.version, APP_VERSION) > 0) {
-                if (isElectron) {
+                if (window.electronAPI) {
                     toast(`Update available: v${data.version}`, {
                         label: 'Download',
                         fn: () => openUrl(data.url || 'https://nur-prayer-app.github.io/'),
