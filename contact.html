@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nur — Contact Us</title>
     <link rel="icon" type="image/png" href="icon.png">
+    <script defer data-domain="nur-prayer-app.github.io" src="https://plausible.io/js/script.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -104,6 +105,13 @@
         textarea::placeholder, input::placeholder {
             color: #475569;
         }
+        .honeypot {
+            position: absolute;
+            left: -9999px;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+        }
         .submit-btn {
             width: 100%;
             padding: 0.875rem;
@@ -177,13 +185,15 @@
 
                 <div class="form-group">
                     <label for="message">Message</label>
-                    <textarea id="message" placeholder="Describe the issue or share your idea..." required></textarea>
+                    <textarea id="message" placeholder="Describe the issue or share your idea..." maxlength="2000" required></textarea>
                 </div>
 
                 <div class="form-group">
                     <label for="email">Email <span class="optional">(optional — if you'd like a reply)</span></label>
-                    <input type="email" id="email" placeholder="you@example.com">
+                    <input type="email" id="email" placeholder="you@example.com" maxlength="254">
                 </div>
+
+                <input type="text" name="website" id="website" class="honeypot" tabindex="-1" autocomplete="off" aria-hidden="true">
 
                 <button type="submit" class="submit-btn" id="submit-btn">Send Message</button>
                 <div class="status" id="status"></div>
@@ -202,6 +212,7 @@
     <script>
         const SUPABASE_URL = 'https://qbyirkzdwzeetdugxyre.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_BgBlYMnxPhkWWEtbHNHzIg_h-RkMDda';
+        const RATE_LIMIT_SECONDS = 60;
 
         let selectedType = 'general';
 
@@ -213,14 +224,63 @@
             });
         });
 
+        function checkRateLimit() {
+            const lastSubmit = sessionStorage.getItem('lastSubmitTime');
+            if (!lastSubmit) return null;
+            const elapsed = Math.floor((Date.now() - parseInt(lastSubmit)) / 1000);
+            const remaining = RATE_LIMIT_SECONDS - elapsed;
+            return remaining > 0 ? remaining : null;
+        }
+
+        function startRateLimitCountdown() {
+            const btn = document.getElementById('submit-btn');
+            const status = document.getElementById('status');
+
+            const interval = setInterval(() => {
+                const remaining = checkRateLimit();
+                if (remaining === null) {
+                    clearInterval(interval);
+                    btn.disabled = false;
+                    btn.textContent = 'Send Message';
+                    status.textContent = '';
+                } else {
+                    btn.disabled = true;
+                    btn.textContent = `Please wait ${remaining}s`;
+                    status.textContent = `Rate limit: please wait ${remaining} seconds before submitting again.`;
+                    status.className = 'status';
+                }
+            }, 1000);
+        }
+
+        window.addEventListener('load', () => {
+            const remaining = checkRateLimit();
+            if (remaining !== null) {
+                startRateLimitCountdown();
+            }
+        });
+
         document.getElementById('contact-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('submit-btn');
             const status = document.getElementById('status');
             const message = document.getElementById('message').value.trim();
             const email = document.getElementById('email').value.trim();
+            const honeypot = document.getElementById('website').value;
 
             if (!message) { status.textContent = 'Please enter a message.'; status.className = 'status error'; return; }
+
+            const remaining = checkRateLimit();
+            if (remaining !== null) {
+                status.textContent = `Please wait ${remaining} seconds before submitting again.`;
+                status.className = 'status error';
+                return;
+            }
+
+            if (honeypot) {
+                document.getElementById('form-view').classList.add('hidden');
+                document.getElementById('success-view').classList.remove('hidden');
+                return;
+            }
 
             btn.disabled = true;
             btn.textContent = 'Sending...';
@@ -238,12 +298,13 @@
                         type: selectedType,
                         message,
                         email: email || null,
-                        app_version: null,
+                        app_version: 'web',
                     }),
                 });
 
                 if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
 
+                sessionStorage.setItem('lastSubmitTime', Date.now().toString());
                 document.getElementById('form-view').classList.add('hidden');
                 document.getElementById('success-view').classList.remove('hidden');
             } catch {

@@ -42,7 +42,16 @@
     const LocalStorageBackend = {
         name: 'localStorage',
         getItem(k)       { return localStorage.getItem(k); },
-        setItem(k, v)    { localStorage.setItem(k, v); },
+        setItem(k, v)    {
+            try {
+                localStorage.setItem(k, v);
+            } catch (e) {
+                if (e.name === 'QuotaExceededError') {
+                    window.dispatchEvent(new CustomEvent('storage-quota-exceeded', { detail: { key: k } }));
+                }
+                throw e;
+            }
+        },
         removeItem(k)    { localStorage.removeItem(k); },
         listKeys() {
             const out = [];

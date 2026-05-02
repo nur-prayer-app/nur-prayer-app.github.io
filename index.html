@@ -8,12 +8,30 @@
     <link rel="icon" type="image/png" href="icon.png">
     <meta property="og:title" content="Nur — Prayer Tracker">
     <meta property="og:description" content="Track daily prayers, fasting, qadaa goals, and more with Hijri calendar and prayer times.">
-    <meta property="og:image" content="https://nur-prayer-app.github.io/releases/icon.png">
+    <meta property="og:image" content="https://nur-prayer-app.github.io/releases/social-card.png">
     <meta property="og:url" content="https://nur-prayer-app.github.io/releases/">
     <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Nur — Prayer Tracker">
+    <meta name="twitter:description" content="A prayer tracker built for Muslims. Daily prayers, fasting tracker, Hijri calendar, prayer times, cloud sync, and more.">
+    <meta name="twitter:image" content="https://nur-prayer-app.github.io/releases/social-card.png">
+    <link rel="canonical" href="https://nur-prayer-app.github.io/releases/">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Nur",
+      "description": "Prayer tracker for Muslims",
+      "applicationCategory": "LifestyleApplication",
+      "operatingSystem": "Windows, Web",
+      "offers": { "@type": "Offer", "price": "0" }
+    }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script defer data-domain="nur-prayer-app.github.io" src="https://plausible.io/js/script.js"></script>
     <style>
         :root {
             --bg: #152238;
@@ -26,11 +44,15 @@
             --blue-dim: rgba(99,179,237,0.10);
             --grad: linear-gradient(135deg, #68d391, #63b3ed);
             --text: #e8edf4;
-            --text-2: rgba(255,255,255,0.55);
+            --text-2: rgba(255,255,255,0.7);
             --text-3: rgba(255,255,255,0.30);
             --display: 'Poppins', sans-serif;
             --body: 'Inter', sans-serif;
         }
+        /* ── Skip link ── */
+        .skip-link{position:absolute;top:-100%;left:50%;transform:translateX(-50%);background:var(--green);color:#0c1322;padding:.6rem 1.2rem;border-radius:8px;font-size:.88rem;font-weight:600;font-family:var(--body);z-index:9999;text-decoration:none;transition:top .2s}
+        .skip-link:focus{top:8px}
+
         *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
         html{scroll-behavior:smooth}
         body{font-family:var(--body);background:var(--bg);color:var(--text);overflow-x:hidden;-webkit-font-smoothing:antialiased}
@@ -77,6 +99,17 @@
         .btn-s-dl{background:var(--grad);color:#0c1322;font-weight:700;display:inline-flex;align-items:center;gap:.35rem}
         .btn-s-dl:hover{box-shadow:0 4px 16px rgba(104,211,145,.2)}
         .btn-s-dl svg{width:14px;height:14px}
+
+        /* ── Hamburger ── */
+        .nav-hamburger{display:none;background:none;border:none;cursor:pointer;padding:4px;color:var(--text-2);transition:color .2s}
+        .nav-hamburger:hover{color:var(--text)}
+        .nav-hamburger svg{width:24px;height:24px}
+        @media(max-width:900px){
+            .nav-hamburger{display:flex;align-items:center;justify-content:center;order:10}
+            .nav-links,.nav-sep{display:none;flex-direction:column;gap:0}
+            .nav-links.nav-open{display:flex;position:absolute;top:64px;left:0;right:0;background:rgba(21,34,56,.96);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);padding:1rem 2rem;gap:.5rem;z-index:99}
+            .nav-links.nav-open a{padding:.6rem 0;font-size:.95rem}
+        }
 
         /* ── Hero ── */
         .hero{min-height:100vh;display:flex;align-items:center;padding:6rem 0 5rem}
@@ -248,7 +281,7 @@
 
         /* ── Footer ── */
         footer{position:relative;z-index:1;border-top:1px solid var(--border)}
-        .foot-main{max-width:1120px;margin:0 auto;padding:3.5rem 2rem 2.5rem;display:grid;grid-template-columns:1.8fr 1fr 1fr 1fr;gap:2rem}
+        .foot-main{max-width:1120px;margin:0 auto;padding:3.5rem 2rem 2.5rem;display:grid;grid-template-columns:1.8fr 1fr 1fr 1fr 1fr;gap:2rem}
         .foot-col h4{font-family:var(--display);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-3);margin-bottom:.75rem}
         .foot-col a{display:block;font-size:.82rem;color:var(--text-2);text-decoration:none;padding:.22rem 0;transition:color .2s}
         .foot-col a:hover{color:var(--text)}
@@ -289,7 +322,7 @@
             .t-card{width:85vw}
             .t-card[data-pos="left"]{transform:translate(-75%,-50%) rotateY(8deg) scale(.75)}
             .t-card[data-pos="right"]{transform:translate(-25%,-50%) rotateY(-8deg) scale(.75)}
-            .nav-links,.nav-sep{display:none}
+            .nav-sep{display:none}
             .foot-main{grid-template-columns:1fr 1fr}
             .foot-brand-area{grid-column:1/-1}
         }
@@ -308,19 +341,24 @@
 </head>
 <body>
 
+<a href="#main" class="skip-link">Skip to content</a>
+
 <div class="ambient"><div class="amb amb-1"></div><div class="amb amb-2"></div><div class="amb amb-3"></div><div class="amb amb-4"></div><div class="amb amb-5"></div></div>
 <div class="stars"></div>
 
 <!-- Nav -->
-<nav class="nav"><div class="nav-inner">
-    <a href="#" class="nav-brand"><img class="nav-ico" src="icon.png" alt="Nur" width="32" height="32"> Nur</a>
+<nav class="nav" aria-label="Main navigation"><div class="nav-inner">
+    <a href="#top" class="nav-brand"><img class="nav-ico" src="icon.png" alt="Nur" width="32" height="32"> Nur</a>
     <div class="nav-sep"></div>
-    <div class="nav-links">
+    <div class="nav-links" id="nav-links">
         <a href="#features">Features</a>
         <a href="#about">About</a>
         <a href="#faq">FAQ</a>
     </div>
     <div class="nav-push"></div>
+    <button type="button" class="nav-hamburger" id="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
     <div class="nav-actions">
         <a href="app/" class="btn-s btn-s-g">Web App</a>
         <a href="https://github.com/nur-prayer-app/releases/releases/latest" class="btn-s btn-s-dl" id="nav-dl">
@@ -331,6 +369,7 @@
 </div></nav>
 
 <!-- Hero -->
+<main id="main">
 <section class="hero sec" id="top">
     <div class="wrap">
         <div class="hero-left">
@@ -403,7 +442,7 @@
                 <p>Mark each of your five daily prayers. Jumu'ah shows on Fridays. Missed prayers get flagged. Track Duha, Shaf'a &amp; Witr, and Qiyam alongside your daily salah.</p>
             </div>
             <div class="feat-img-wrap">
-                <div class="feat-frame"><div class="feat-frame-bar"><div class="feat-frame-dot"></div><div class="feat-frame-dot"></div><div class="feat-frame-dot"></div></div><img class="zoom-dash" src="screenshots/ocean-dashboard.png" alt="Prayer tracking" data-label="Dashboard · Ocean"></div>
+                <div class="feat-frame"><div class="feat-frame-bar"><div class="feat-frame-dot"></div><div class="feat-frame-dot"></div><div class="feat-frame-dot"></div></div><img class="zoom-dash" src="screenshots/ocean-dashboard.png" alt="Prayer tracking" data-label="Dashboard · Ocean" loading="lazy" width="1024" height="768"></div>
             </div>
         </div>
         <div class="feat-row reverse reveal">
@@ -413,7 +452,7 @@
                 <p>Calculated for your exact location. Live countdown to the next prayer with a 3-day timeline, per-prayer iqama offsets, and notification toggles.</p>
             </div>
             <div class="feat-img-wrap">
-                <div class="feat-frame"><div class="feat-frame-bar"><div class="feat-frame-dot"></div><div class="feat-frame-dot"></div><div class="feat-frame-dot"></div></div><img class="zoom-times" src="screenshots/ocean-prayer-times.png" alt="Prayer times" data-label="Prayer Times · Ocean"></div>
+                <div class="feat-frame"><div class="feat-frame-bar"><div class="feat-frame-dot"></div><div class="feat-frame-dot"></div><div class="feat-frame-dot"></div></div><img class="zoom-times" src="screenshots/ocean-prayer-times.png" alt="Prayer times" data-label="Prayer Times · Ocean" loading="lazy" width="1024" height="768"></div>
             </div>
         </div>
         <div class="feat-row reveal">
@@ -423,7 +462,7 @@
                 <p>Full Hijri calendar with prayer indicators and special days highlighted with hadith sources. Fasting progress bar from Fajr to Maghrib that activates during Ramadan.</p>
             </div>
             <div class="feat-img-wrap">
-                <div class="feat-frame"><div class="feat-frame-bar"><div class="feat-frame-dot"></div><div class="feat-frame-dot"></div><div class="feat-frame-dot"></div></div><img class="zoom-cal" src="screenshots/teal-dashboard.png" alt="Calendar and fasting" data-label="Dashboard · Teal"></div>
+                <div class="feat-frame"><div class="feat-frame-bar"><div class="feat-frame-dot"></div><div class="feat-frame-dot"></div><div class="feat-frame-dot"></div></div><img class="zoom-cal" src="screenshots/teal-dashboard.png" alt="Calendar and fasting" data-label="Dashboard · Teal" loading="lazy" width="1024" height="768"></div>
             </div>
         </div>
         <div class="feat-row reverse reveal">
@@ -433,7 +472,7 @@
                 <p>Set a target for missed prayers or fasting days. Log daily, see your estimated completion date. Completion ring and per-prayer statistics at a glance.</p>
             </div>
             <div class="feat-img-wrap">
-                <div class="feat-frame"><div class="feat-frame-bar"><div class="feat-frame-dot"></div><div class="feat-frame-dot"></div><div class="feat-frame-dot"></div></div><img class="zoom-stats" src="screenshots/warm-stats.png" alt="Goals and progress" data-label="Statistics · Warm"></div>
+                <div class="feat-frame"><div class="feat-frame-bar"><div class="feat-frame-dot"></div><div class="feat-frame-dot"></div><div class="feat-frame-dot"></div></div><img class="zoom-stats" src="screenshots/warm-stats.png" alt="Goals and progress" data-label="Statistics · Warm" loading="lazy" width="1024" height="768"></div>
             </div>
         </div>
     </div>
@@ -448,15 +487,15 @@
         </div>
         <div class="themes-stage reveal">
             <div class="t-card" data-pos="left" data-label="Dashboard · Teal">
-                <img src="screenshots/teal-dashboard.png" alt="Teal theme">
+                <img src="screenshots/teal-dashboard.png" alt="Teal theme" loading="lazy" width="1024" height="768">
                 <div class="t-card-label"><span class="t-dot t-dot-teal"></span> Teal</div>
             </div>
             <div class="t-card" data-pos="front" data-label="Dashboard · Ocean">
-                <img src="screenshots/ocean-dashboard.png" alt="Ocean theme">
+                <img src="screenshots/ocean-dashboard.png" alt="Ocean theme" loading="lazy" width="1024" height="768">
                 <div class="t-card-label"><span class="t-dot t-dot-ocean"></span> Ocean</div>
             </div>
             <div class="t-card" data-pos="right" data-label="Dashboard · Warm">
-                <img src="screenshots/warm-dashboard.png" alt="Warm theme">
+                <img src="screenshots/warm-dashboard.png" alt="Warm theme" loading="lazy" width="1024" height="768">
                 <div class="t-card-label"><span class="t-dot t-dot-warm"></span> Warm</div>
             </div>
         </div>
@@ -490,32 +529,34 @@
         </div>
         <div class="reveal">
             <div class="faq-item">
-                <button class="faq-q" type="button">Does Nur support my calculation method?<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+                <button class="faq-q" type="button" aria-expanded="false">Does Nur support my calculation method?<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
                 <div class="faq-a"><p>Yes. Nur includes ISNA, MWL, Egyptian General Authority, Umm al-Qura, Karachi, Dubai, Turkey, Kuwait, Tehran, and Jafari. Ten methods covering most regions.</p></div>
             </div>
             <div class="faq-item">
-                <button class="faq-q" type="button">Does it support Hanafi Asr timing?<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+                <button class="faq-q" type="button" aria-expanded="false">Does it support Hanafi Asr timing?<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
                 <div class="faq-a"><p>Yes. You choose between Standard (Shafi'i/Maliki/Hanbali) and Hanafi in settings. It applies instantly.</p></div>
             </div>
             <div class="faq-item">
-                <button class="faq-q" type="button">Can I use it without internet?<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+                <button class="faq-q" type="button" aria-expanded="false">Can I use it without internet?<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
                 <div class="faq-a"><p>Completely. Prayer times are calculated locally on your device. The only feature that needs internet is cloud sync, which is optional.</p></div>
             </div>
             <div class="faq-item">
-                <button class="faq-q" type="button">What happens to my data if I switch devices?<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+                <button class="faq-q" type="button" aria-expanded="false">What happens to my data if I switch devices?<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
                 <div class="faq-a"><p>If you've turned on cloud sync, your data restores when you sign in on the new device. Without sync, you can export everything as a JSON file from Settings and import it on the other device.</p></div>
             </div>
             <div class="faq-item">
-                <button class="faq-q" type="button">Is Nur really free?<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+                <button class="faq-q" type="button" aria-expanded="false">Is Nur really free?<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
                 <div class="faq-a"><p>No catch. No ads, no premium tier, no data collection. Nur is a personal project built to help Muslims pray consistently.</p></div>
             </div>
             <div class="faq-item">
-                <button class="faq-q" type="button">Does it work on Mac or mobile?<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+                <button class="faq-q" type="button" aria-expanded="false">Does it work on Mac or mobile?<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
                 <div class="faq-a"><p>The desktop app is for Windows. The web version works the same in any browser: Mac, iPhone, Android, Linux.</p></div>
             </div>
         </div>
     </div>
 </section>
+
+</main>
 
 <!-- Footer -->
 <footer>
@@ -533,6 +574,11 @@
             <h4>Resources</h4>
             <a href="#features">Features</a>
             <a href="#faq">FAQ</a>
+        </div>
+        <div class="foot-col">
+            <h4>Legal</h4>
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="terms.html">Terms of Service</a>
         </div>
         <div class="foot-col">
             <h4>Connect</h4>
@@ -560,6 +606,20 @@
         document.querySelectorAll('.nav-links a').forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+c);});
     });
 
+    // Hamburger menu
+    (function(){
+        var btn=document.getElementById('nav-toggle'),links=document.getElementById('nav-links');
+        if(btn&&links){
+            btn.onclick=function(){
+                var open=links.classList.toggle('nav-open');
+                btn.setAttribute('aria-expanded',open?'true':'false');
+            };
+            links.querySelectorAll('a').forEach(function(a){
+                a.addEventListener('click',function(){links.classList.remove('nav-open');btn.setAttribute('aria-expanded','false');});
+            });
+        }
+    })();
+
     // Reveal
     var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('vis');io.unobserve(e.target);}});},{threshold:.12});
     document.querySelectorAll('.reveal').forEach(function(e){io.observe(e);});
@@ -583,15 +643,27 @@
         var label=e.closest('[data-label]');
         imgs.push({src:e.src,label:label?label.dataset.label:e.alt||'',el:e});
     });
-    var lb=null,li=0;
-    function lbO(i){li=i;if(lb)lb.remove();lb=document.createElement('div');lb.className='lb';lbR();document.body.appendChild(lb);document.addEventListener('keydown',lbK);}
-    function lbR(){var t=imgs[li];lb.innerHTML='<button class="lb-x">&times;</button>'+(imgs.length>1?'<button class="lb-n lb-p">&#8249;</button>':'')+'<img src="'+t.src+'" alt="'+t.label+'">'+(imgs.length>1?'<button class="lb-n lb-nx">&#8250;</button>':'')+'<div class="lb-i">'+t.label+' &middot; '+(li+1)+'/'+imgs.length+'</div>';lb.querySelector('.lb-x').onclick=lbC;var p=lb.querySelector('.lb-p');if(p)p.onclick=function(e){e.stopPropagation();li=(li-1+imgs.length)%imgs.length;lbR();};var n=lb.querySelector('.lb-nx');if(n)n.onclick=function(e){e.stopPropagation();li=(li+1)%imgs.length;lbR();};lb.onclick=function(e){if(e.target===lb)lbC();};}
-    function lbC(){if(lb){lb.remove();lb=null;}document.removeEventListener('keydown',lbK);}
-    function lbK(e){if(e.key==='Escape')lbC();if(e.key==='ArrowLeft'){li=(li-1+imgs.length)%imgs.length;lbR();}if(e.key==='ArrowRight'){li=(li+1)%imgs.length;lbR();}}
+    var lb=null,li=0,lbPrevFocus=null;
+    function lbO(i){li=i;lbPrevFocus=document.activeElement;if(lb)lb.remove();lb=document.createElement('div');lb.className='lb';lb.setAttribute('role','dialog');lb.setAttribute('aria-modal','true');lb.setAttribute('aria-label','Image lightbox');lbR();document.body.appendChild(lb);document.addEventListener('keydown',lbK);lb.querySelector('.lb-x').focus();}
+    function lbR(){var t=imgs[li];lb.innerHTML='<button type="button" class="lb-x" aria-label="Close lightbox">&times;</button>'+(imgs.length>1?'<button type="button" class="lb-n lb-p" aria-label="Previous image">&#8249;</button>':'')+'<img src="'+t.src+'" alt="'+t.label+'">'+(imgs.length>1?'<button type="button" class="lb-n lb-nx" aria-label="Next image">&#8250;</button>':'')+'<div class="lb-i">'+t.label+' &middot; '+(li+1)+'/'+imgs.length+'</div>';lb.querySelector('.lb-x').onclick=lbC;var p=lb.querySelector('.lb-p');if(p)p.onclick=function(e){e.stopPropagation();li=(li-1+imgs.length)%imgs.length;lbR();};var n=lb.querySelector('.lb-nx');if(n)n.onclick=function(e){e.stopPropagation();li=(li+1)%imgs.length;lbR();};lb.onclick=function(e){if(e.target===lb)lbC();};}
+    function lbC(){if(lb){lb.remove();lb=null;}document.removeEventListener('keydown',lbK);if(lbPrevFocus)lbPrevFocus.focus();}
+    function lbK(e){
+        if(e.key==='Escape')lbC();
+        if(e.key==='ArrowLeft'){li=(li-1+imgs.length)%imgs.length;lbR();}
+        if(e.key==='ArrowRight'){li=(li+1)%imgs.length;lbR();}
+        if(e.key==='Tab'&&lb){
+            var focusable=lb.querySelectorAll('button');
+            if(focusable.length){
+                var first=focusable[0],last=focusable[focusable.length-1];
+                if(e.shiftKey){if(document.activeElement===first){e.preventDefault();last.focus();}}
+                else{if(document.activeElement===last){e.preventDefault();first.focus();}}
+            }
+        }
+    }
     imgs.forEach(function(t,i){t.el.onclick=function(){lbO(i);}});
 
     // FAQ
-    document.querySelectorAll('.faq-q').forEach(function(b){b.onclick=function(){var it=b.parentElement,w=it.classList.contains('open');document.querySelectorAll('.faq-item.open').forEach(function(e){e.classList.remove('open')});if(!w)it.classList.add('open');}});
+    document.querySelectorAll('.faq-q').forEach(function(b){b.onclick=function(){var it=b.parentElement,w=it.classList.contains('open');document.querySelectorAll('.faq-item.open').forEach(function(e){e.classList.remove('open');e.querySelector('.faq-q').setAttribute('aria-expanded','false');});if(!w){it.classList.add('open');b.setAttribute('aria-expanded','true');}else{b.setAttribute('aria-expanded','false');}}});
 
     // Version
     fetch('version.json').then(function(r){return r.json()}).then(function(d){
