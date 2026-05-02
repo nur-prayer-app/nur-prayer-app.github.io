@@ -83,6 +83,10 @@
 
     const backend = ElectronBackend || LocalStorageBackend;
 
+    /* ─── Dirty-key tracking (for delta sync) ──────────────────── */
+    const _dirtyKeys = new Set();
+    let _suppressDirty = false;
+
     /* ─── Public API ────────────────────────────────────────────── */
     function get(key, fallback) {
         const raw = backend.getItem(key);
@@ -99,9 +103,13 @@
     function set(key, value) {
         const payload = JSON_KEYS.has(key) ? JSON.stringify(value) : String(value);
         backend.setItem(key, payload);
+        if (!_suppressDirty) _dirtyKeys.add(key);
     }
 
-    function remove(key) { backend.removeItem(key); }
+    function remove(key) {
+        backend.removeItem(key);
+        if (!_suppressDirty) _dirtyKeys.add(key);
+    }
 
     /** Export all known keys as a single snapshot object — used by
      *  the Settings → Export flow. Reads raw values so import/export
@@ -117,7 +125,10 @@
 
     /** Import a previously-exported snapshot. Raw values go in as-is. */
     function importAll(snapshot) {
-        Object.entries(snapshot).forEach(([k, v]) => backend.setItem(k, v));
+        Object.entries(snapshot).forEach(([k, v]) => {
+            backend.setItem(k, v);
+            if (!_suppressDirty) _dirtyKeys.add(k);
+        });
     }
 
     /** Wipe everything the app owns (Settings → Danger zone). */
@@ -143,5 +154,8 @@
         importAll,
         clearAll,
         ensureInstalledAt,
+        getDirtyKeys()  { return new Set(_dirtyKeys); },
+        clearDirtyKeys() { _dirtyKeys.clear(); },
+        suppressDirty(on) { _suppressDirty = !!on; },
     });
 })();

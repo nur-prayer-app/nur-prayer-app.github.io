@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '__APP_VERSION__';
+    const APP_VERSION = '1.1.207';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/releases/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -3474,7 +3474,7 @@
                     <div class="about-title">Nur</div>
                     <div class="about-version">v${ver}</div>
                 </div>
-                <div class="about-description">A prayer tracker built for Muslims. Daily prayers, qadaa goals, fasting, qyaam, Hijri calendar, and prayer times.</div>
+                <div class="about-description">Made to help you stay consistent with your salah, day after day. Prayer times, Hijri calendar, fasting, qadaa goals, and more. Your data stays on your device. No ads, no tracking.</div>
                 <div class="about-stats-row">
                     <div class="about-stat"><span class="about-stat-num">${totalDays}</span><span class="about-stat-label">days tracked</span></div>
                     <div class="about-stat"><span class="about-stat-num">${totalPrayed.toLocaleString()}</span><span class="about-stat-label">prayers logged</span></div>
@@ -3486,9 +3486,9 @@
                 </div>
                 <div class="about-link-list">
                     <a href="#" id="about-website" class="about-link">Website</a>
-                    <a href="#" id="about-feedback" class="about-link">Send feedback</a>
+                    <a href="#" id="about-feedback" class="about-link">Contact Us</a>
                 </div>
-                <div class="about-footer">Installed ${installedStr}<br>Made with care for the Muslim community.</div>`;
+                <div class="about-footer">Installed ${installedStr}<br>Simple, private, and free.</div>`;
         }
 
         return '';
@@ -3676,8 +3676,13 @@
             syncSignin?.addEventListener('click', () => handleAuth('signin'));
             syncSignup?.addEventListener('click', () => handleAuth('signup'));
 
-            $('#sync-google')?.addEventListener('click', () => {
-                if (typeof Sync !== 'undefined') Sync.signInWithGoogle();
+            $('#sync-google')?.addEventListener('click', async () => {
+                try {
+                    if (typeof Sync !== 'undefined') await Sync.signInWithGoogle();
+                } catch (e) {
+                    console.warn('Google sign-in failed:', e);
+                    if (syncError) syncError.textContent = 'Google sign-in failed. Please try again.';
+                }
             });
 
             $('#sync-forgot')?.addEventListener('click', async (e) => {
