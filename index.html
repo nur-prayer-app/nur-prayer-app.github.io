@@ -11,608 +11,594 @@
     <meta property="og:image" content="https://nur-prayer-app.github.io/releases/icon.png">
     <meta property="og:url" content="https://nur-prayer-app.github.io/releases/">
     <meta property="og:type" content="website">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html { scroll-behavior: smooth; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0a0f1a;
-            color: #e2e8f0;
-            overflow-x: hidden;
+        :root {
+            --bg: #152238;
+            --bg-glass: rgba(255,255,255,0.04);
+            --border: rgba(255,255,255,0.06);
+            --border-h: rgba(255,255,255,0.12);
+            --green: #68d391;
+            --blue: #63b3ed;
+            --green-dim: rgba(104,211,145,0.12);
+            --blue-dim: rgba(99,179,237,0.10);
+            --grad: linear-gradient(135deg, #68d391, #63b3ed);
+            --text: #e8edf4;
+            --text-2: rgba(255,255,255,0.55);
+            --text-3: rgba(255,255,255,0.30);
+            --display: 'Poppins', sans-serif;
+            --body: 'Inter', sans-serif;
         }
+        *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+        html{scroll-behavior:smooth}
+        body{font-family:var(--body);background:var(--bg);color:var(--text);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+        /* ── Ambient ── */
+        .ambient{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+        .amb{position:absolute;border-radius:50%;filter:blur(120px);animation:drift 20s ease-in-out infinite alternate}
+        .amb-1{width:700px;height:700px;top:-10%;left:-8%;background:rgba(104,211,145,0.10)}
+        .amb-2{width:600px;height:600px;top:5%;right:-5%;background:rgba(99,179,237,0.08);animation-delay:-7s;animation-duration:25s}
+        .amb-3{width:500px;height:500px;top:55%;left:25%;background:rgba(104,211,145,0.06);animation-delay:-12s;animation-duration:22s}
+        .amb-4{width:450px;height:450px;top:30%;right:15%;background:rgba(99,179,237,0.05);animation-delay:-4s;animation-duration:18s}
+        .amb-5{width:350px;height:350px;top:80%;left:60%;background:rgba(104,211,145,0.04);animation-delay:-9s;animation-duration:20s}
+        @keyframes drift{to{transform:translate(40px,30px)scale(1.1)}}
+
+        .stars{position:fixed;inset:0;z-index:0;pointer-events:none}
+        .stars::before{content:'';position:absolute;inset:0;background-image:radial-gradient(1px 1px at 12% 8%,rgba(255,255,255,.18),transparent),radial-gradient(1px 1px at 45% 15%,rgba(255,255,255,.12),transparent),radial-gradient(1.2px 1.2px at 75% 6%,rgba(255,255,255,.15),transparent),radial-gradient(1px 1px at 6% 40%,rgba(255,255,255,.10),transparent),radial-gradient(1.2px 1.2px at 52% 35%,rgba(255,255,255,.14),transparent),radial-gradient(1px 1px at 80% 45%,rgba(255,255,255,.10),transparent),radial-gradient(1px 1px at 18% 65%,rgba(255,255,255,.08),transparent),radial-gradient(1.2px 1.2px at 62% 58%,rgba(255,255,255,.12),transparent),radial-gradient(1px 1px at 8% 85%,rgba(255,255,255,.12),transparent),radial-gradient(1px 1px at 68% 88%,rgba(255,255,255,.08),transparent)}
+
+        /* ── Shared ── */
+        .sec{position:relative;z-index:1}
+        .wrap{max-width:1120px;margin:0 auto;padding:0 2rem}
+        .badge{display:inline-flex;align-items:center;gap:6px;padding:.3rem .85rem;font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;border-radius:100px;color:var(--green);background:var(--green-dim);border:1px solid rgba(104,211,145,.15)}
+        .badge-dot{width:5px;height:5px;border-radius:50%;background:var(--green)}
+        .stitle{font-family:var(--display);font-size:2.2rem;font-weight:800;color:var(--text);letter-spacing:-.8px;line-height:1.15;margin-top:.75rem}
+        .stitle em{font-style:normal;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .reveal{opacity:0;transform:translateY(20px);transition:opacity .6s ease,transform .6s ease}
+        .reveal.vis{opacity:1;transform:none}
 
         /* ── Nav ── */
-        .nav {
-            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0.75rem 2rem;
-            background: rgba(10, 15, 26, 0.8);
-            -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-        }
-        .nav-brand {
-            display: flex; align-items: center; gap: 0.5rem;
-            font-size: 1.1rem; font-weight: 700; color: #e2e8f0; text-decoration: none;
-        }
-        .nav-brand svg { color: #68d391; }
-        .nav-links { display: flex; align-items: center; gap: 1.75rem; }
-        .nav-links a {
-            font-size: 0.85rem; font-weight: 500; color: #94a3b8;
-            text-decoration: none; transition: color 0.15s;
-        }
-        .nav-links a:hover, .nav-links a.active { color: #e2e8f0; }
-        .nav-actions { display: flex; align-items: center; gap: 0.75rem; }
-        .nav-btn {
-            padding: 0.5rem 1.25rem; font-size: 0.82rem; font-weight: 600;
-            border-radius: 8px; text-decoration: none; transition: all 0.15s; cursor: pointer; border: none;
-        }
-        .nav-btn-ghost { background: transparent; color: #94a3b8; }
-        .nav-btn-ghost:hover { color: #e2e8f0; }
-        .nav-btn-primary {
-            background: linear-gradient(135deg, #68d391, #63b3ed);
-            color: #0a0f1a; font-weight: 700;
-        }
-        .nav-btn-primary:hover { box-shadow: 0 4px 16px rgba(104,211,145,0.3); }
+        .nav{position:fixed;top:0;left:0;right:0;z-index:100;height:64px;background:rgba(21,34,56,.8);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);transition:box-shadow .3s}
+        .nav.scrolled{box-shadow:0 1px 16px rgba(0,0,0,.3)}
+        .nav-inner{max-width:1120px;height:100%;margin:0 auto;padding:0 2rem;display:flex;align-items:center;gap:2.5rem}
+        .nav-brand{display:flex;align-items:center;gap:.55rem;font-family:var(--display);font-size:1.1rem;font-weight:700;color:var(--text);text-decoration:none;flex-shrink:0}
+        .nav-ico{width:32px;height:32px;border-radius:8px}
+        .nav-sep{width:1px;height:20px;background:var(--border);flex-shrink:0}
+        .nav-links{display:flex;gap:2rem}
+        .nav-links a{font-size:.88rem;font-weight:500;color:var(--text-2);text-decoration:none;transition:color .2s;position:relative}
+        .nav-links a:hover,.nav-links a.active{color:var(--text)}
+        .nav-links a.active::after{content:'';position:absolute;bottom:-4px;left:0;right:0;height:2px;background:var(--grad);border-radius:1px}
+        .nav-push{flex:1}
+        .nav-actions{display:flex;align-items:center;gap:.6rem;flex-shrink:0}
+        .btn-s{padding:.5rem 1.2rem;font-size:.85rem;font-weight:600;font-family:var(--body);border-radius:8px;text-decoration:none;transition:all .2s;cursor:pointer;border:none}
+        .btn-s-g{background:transparent;color:var(--text-2)}
+        .btn-s-g:hover{color:var(--text)}
+        .btn-s-dl{background:var(--grad);color:#0c1322;font-weight:700;display:inline-flex;align-items:center;gap:.35rem}
+        .btn-s-dl:hover{box-shadow:0 4px 16px rgba(104,211,145,.2)}
+        .btn-s-dl svg{width:14px;height:14px}
 
         /* ── Hero ── */
-        .hero {
-            position: relative; min-height: 100vh;
-            display: flex; align-items: center; justify-content: center;
-            padding: 6rem 2rem 4rem; overflow: hidden;
-        }
-        .hero-bg {
-            position: absolute; inset: 0; z-index: 0;
-            background:
-                radial-gradient(ellipse at 20% 50%, rgba(104,211,145,0.12) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 30%, rgba(99,179,237,0.1) 0%, transparent 50%),
-                radial-gradient(ellipse at 60% 80%, rgba(45,212,191,0.06) 0%, transparent 40%),
-                radial-gradient(ellipse at 30% 20%, rgba(200,162,255,0.05) 0%, transparent 40%);
-        }
-        .hero-content {
-            position: relative; z-index: 1;
-            max-width: 1200px; width: 100%;
-            display: flex; align-items: center; gap: 4rem;
-        }
-        .hero-text { flex: 1; }
-        .hero-text h1 {
-            font-size: 3.5rem; font-weight: 800; line-height: 1.1;
-            letter-spacing: -1.5px; margin-bottom: 1.25rem;
-        }
-        .hero-text h1 span {
-            background: linear-gradient(135deg, #68d391, #63b3ed);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .hero-text p {
-            font-size: 1.1rem; color: #94a3b8; line-height: 1.7;
-            max-width: 460px; margin-bottom: 2rem;
-        }
-        .hero-ctas { display: flex; gap: 0.75rem; flex-wrap: wrap; }
-        .btn-lg {
-            display: inline-flex; align-items: center; gap: 0.5rem;
-            padding: 0.9rem 2rem; font-size: 1rem; font-weight: 700;
-            border-radius: 12px; text-decoration: none; transition: all 0.15s; border: none; cursor: pointer;
-        }
-        .btn-lg-primary {
-            background: linear-gradient(135deg, #68d391, #63b3ed); color: #0a0f1a;
-        }
-        .btn-lg-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(104,211,145,0.25); }
-        .btn-lg-ghost {
-            background: rgba(255,255,255,0.06); color: #e2e8f0;
-            border: 1px solid rgba(255,255,255,0.12);
-        }
-        .btn-lg-ghost:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
+        .hero{min-height:100vh;display:flex;align-items:center;padding:6rem 0 5rem}
+        .hero .wrap{display:flex;align-items:center;gap:3rem}
+        .hero-left{flex:1}
+        .hero-pill{display:inline-flex;align-items:center;gap:7px;padding:.35rem .9rem;border-radius:100px;background:var(--bg-glass);border:1px solid var(--border);font-size:.72rem;font-weight:500;color:var(--text-2);margin-bottom:1.5rem}
+        .hero-pill-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)}
+        .hero-h1{font-family:var(--display);font-size:4.5rem;font-weight:800;line-height:1.05;letter-spacing:-2.5px;color:var(--text);margin-bottom:1.25rem}
+        .hero-h1 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .hero-p{font-size:.98rem;color:var(--text-2);line-height:1.75;max-width:390px;margin-bottom:2rem}
+        .hero-ctas{display:flex;gap:.6rem;flex-wrap:wrap}
+        .btn{display:inline-flex;align-items:center;gap:.4rem;padding:.75rem 1.6rem;font-size:.88rem;font-weight:600;font-family:var(--body);border-radius:10px;text-decoration:none;transition:all .2s;border:none;cursor:pointer}
+        .btn svg{width:16px;height:16px}
+        .btn-w{background:var(--text);color:var(--bg)}
+        .btn-w:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(255,255,255,.1)}
+        .btn-o{background:transparent;color:var(--text-2);border:1px solid var(--border)}
+        .btn-o:hover{color:var(--text);border-color:var(--border-h);background:var(--bg-glass)}
+        .hero-meta{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-top:1rem;font-size:.72rem;color:var(--text-3)}
+        .hero-meta span{display:inline-flex;align-items:center;gap:4px}
+        .hero-meta .dot{width:3px;height:3px;border-radius:50%;background:var(--text-3);opacity:.5}
 
-        /* ── Hero demo ── */
-        .hero-demo {
-            flex: 0 0 380px; position: relative;
-        }
-        .demo-card {
-            background: rgba(15, 27, 45, 0.9);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 16px; padding: 1.5rem; backdrop-filter: blur(12px);
-            box-shadow: 0 24px 48px rgba(0,0,0,0.4);
-        }
-        .demo-header {
-            display: flex; align-items: center; justify-content: space-between;
-            margin-bottom: 1rem;
-        }
-        .demo-title { font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
-        .demo-date { font-size: 0.7rem; color: #475569; }
-        .demo-ring-row {
-            display: flex; align-items: center; gap: 1.5rem;
-            margin-bottom: 1.25rem;
-        }
-        .demo-ring {
-            width: 80px; height: 80px; position: relative;
-        }
-        .demo-ring svg { width: 80px; height: 80px; }
-        .demo-ring-text {
-            position: absolute; inset: 0;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        .demo-ring-num { font-size: 1.5rem; font-weight: 800; color: #68d391; line-height: 1; }
-        .demo-ring-label { font-size: 0.6rem; color: #64748b; }
-        .demo-prayers {
-            display: flex; flex-direction: column; gap: 0.4rem; flex: 1;
-        }
-        .demo-prayer {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0.3rem 0; font-size: 0.8rem;
-        }
-        .demo-prayer-name { color: #94a3b8; }
-        .demo-prayer-time { color: #475569; font-size: 0.75rem; font-variant-numeric: tabular-nums; }
-        .demo-prayer-check { color: #68d391; font-weight: 700; }
-        .demo-prayer-pending { color: #334155; }
-        .demo-divider { border: none; border-top: 1px solid rgba(255,255,255,0.06); margin: 0.75rem 0; }
-        .demo-next {
-            text-align: center;
-        }
-        .demo-next-label { font-size: 0.65rem; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
-        .demo-next-name { font-size: 0.9rem; font-weight: 700; color: #e2e8f0; margin: 0.25rem 0; }
-        .demo-next-countdown {
-            font-size: 1.75rem; font-weight: 800;
-            background: linear-gradient(135deg, #68d391, #63b3ed);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            background-clip: text; font-variant-numeric: tabular-nums;
-        }
-        .demo-glow {
-            position: absolute; top: -30%; right: -30%; width: 300px; height: 300px;
-            background: radial-gradient(circle, rgba(104,211,145,0.08) 0%, transparent 70%);
-            pointer-events: none; z-index: -1;
-        }
+        /* Hero visual */
+        .hero-right{flex:0 0 500px;position:relative;height:500px}
+        .orbit{position:absolute;top:50%;left:50%;border:1px solid rgba(255,255,255,.05);border-radius:50%;transform:translate(-50%,-50%)}
+        .orbit-1{width:300px;height:300px}
+        .orbit-2{width:420px;height:420px;border-color:rgba(255,255,255,.035)}
+        .orbit-3{width:500px;height:500px;border-color:rgba(255,255,255,.025)}
+        .orbit-spinner{position:absolute;top:50%;left:50%;width:100%;height:100%;transform-origin:center;animation:spin var(--dur,14s) linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .orbit-dot{position:absolute;top:-4px;left:50%;transform:translateX(-50%);width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 12px var(--green)}
+        .orbit-2 .orbit-dot{background:var(--blue);box-shadow:0 0 12px var(--blue)}
+        .orbit-3 .orbit-dot{width:6px;height:6px;top:auto;bottom:-3px}
+        .orbit-2 .orbit-spinner{--dur:20s;animation-direction:reverse}
+        .orbit-3 .orbit-spinner{--dur:16s}
 
-        /* ── Features ── */
-        .features { max-width: 1100px; margin: 0 auto; padding: 5rem 2rem; }
-        .section-badge {
-            display: inline-block; padding: 0.35rem 1rem;
-            font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;
-            color: #68d391; background: rgba(104,211,145,0.08);
-            border: 1px solid rgba(104,211,145,0.2); border-radius: 20px;
-            margin-bottom: 1rem;
-        }
-        .section-title { font-size: 2rem; font-weight: 800; color: #e2e8f0; margin-bottom: 0.5rem; letter-spacing: -0.5px; }
-        .section-sub { font-size: 1rem; color: #64748b; margin-bottom: 3rem; max-width: 500px; }
-        .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
-        @media (max-width: 800px) { .features-grid { grid-template-columns: 1fr; } }
-        .feature-card {
-            padding: 1.75rem; background: rgba(255,255,255,0.02);
-            border: 1px solid rgba(255,255,255,0.06); border-radius: 14px;
-            transition: all 0.2s;
-        }
-        .feature-card:hover { background: rgba(255,255,255,0.04); border-color: rgba(104,211,145,0.15); transform: translateY(-2px); }
-        .feature-icon {
-            width: 40px; height: 40px; border-radius: 10px;
-            display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;
-        }
-        .feature-icon svg { width: 20px; height: 20px; }
-        .fi-green  { background: rgba(104,211,145,0.1); color: #68d391; }
-        .fi-blue   { background: rgba(99,179,237,0.1);  color: #63b3ed; }
-        .fi-amber  { background: rgba(251,191,36,0.1);  color: #fbbf24; }
-        .fi-purple { background: rgba(200,162,255,0.1);  color: #c8a2ff; }
-        .fi-teal   { background: rgba(45,212,191,0.1);   color: #2dd4bf; }
-        .fi-red    { background: rgba(252,129,129,0.1);  color: #fc8181; }
-        .feature-card h3 { font-size: 1rem; font-weight: 700; color: #e2e8f0; margin-bottom: 0.4rem; }
-        .feature-card p { font-size: 0.85rem; color: #94a3b8; line-height: 1.6; }
+        /* Floating cards */
+        .fc{position:absolute;z-index:3;padding:1rem 1.25rem;background:rgba(255,255,255,.05);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);border:1px solid var(--border-h);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+        .fc-tl{top:0;left:-14%;animation:gfl 7s ease-in-out infinite}
+        .fc-br{bottom:6%;right:-12%;animation:gfl 6s ease-in-out 2s infinite}
+        @keyframes gfl{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+        .fc-bar-card{min-width:180px}
+        .fc-bar-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+        .fc-bar-lbl{font-family:var(--display);font-size:.82rem;font-weight:700;color:#fbbf24}
+        .fc-bar-time{font-size:.72rem;font-weight:600;color:var(--text-2);font-variant-numeric:tabular-nums}
+        .fc-bar-track{height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden}
+        .fc-bar-fill{width:72%;height:100%;background:linear-gradient(90deg,#fbbf24,#68d391);border-radius:3px;box-shadow:0 0 10px rgba(251,191,36,.2)}
+        .fc-bar-ends{display:flex;justify-content:space-between;margin-top:4px;font-size:.58rem;color:var(--text-3)}
+        .fc-next{display:flex;align-items:center;gap:10px}
+        .fc-next-ico{width:40px;height:40px;border-radius:10px;background:var(--green-dim);color:var(--green);display:flex;align-items:center;justify-content:center}
+        .fc-next-ico svg{width:18px;height:18px}
+        .fc-next-info{display:flex;flex-direction:column}
+        .fc-next-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-3)}
+        .fc-next-val{font-family:var(--display);font-size:1.1rem;font-weight:700;color:var(--text);line-height:1.2}
 
-        /* ── Themes showcase ── */
-        .themes { max-width: 1100px; margin: 0 auto; padding: 3rem 2rem 5rem; }
-        .themes-row { display: flex; align-items: center; gap: 4rem; }
-        .themes-text { flex: 0 0 300px; }
-        .themes-text h2 {
-            font-size: 2rem; font-weight: 800; margin-bottom: 0.75rem; letter-spacing: -0.5px;
+        /* Hero counter card — POPPED */
+        .hcard{
+            position:absolute;top:50%;left:50%;
+            transform:translate(-50%,-50%) perspective(800px) rotateX(2deg);
+            width:340px;z-index:2;
+            padding:1.75rem 1.5rem;text-align:center;
+            background:rgba(255,255,255,.06);
+            -webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);
+            border:1px solid rgba(104,211,145,.15);
+            border-radius:18px;
+            display:flex;flex-direction:column;gap:10px;
+            box-shadow:0 0 0 1px rgba(104,211,145,.06),0 0 40px rgba(104,211,145,.10),0 12px 48px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.08);
+            transition:transform .4s ease,box-shadow .4s ease;
         }
-        .themes-text h2 span {
-            background: linear-gradient(135deg, #68d391, #63b3ed);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        .hcard:hover{
+            transform:translate(-50%,-50%) perspective(800px) rotateX(0deg);
+            box-shadow:0 0 0 1px rgba(104,211,145,.1),0 0 50px rgba(104,211,145,.14),0 16px 56px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.1);
         }
-        .themes-text p { font-size: 0.95rem; color: #94a3b8; line-height: 1.7; margin-bottom: 1.5rem; }
-        .theme-badges { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-        .theme-badge {
-            padding: 0.4rem 0.85rem; font-size: 0.75rem; font-weight: 600;
-            border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);
-        }
-        .tb-ocean  { color: #63b3ed; background: rgba(99,179,237,0.08); border-color: rgba(99,179,237,0.2); }
-        .tb-warm   { color: #fbbf24; background: rgba(251,191,36,0.08); border-color: rgba(251,191,36,0.2); }
-        .tb-teal   { color: #2dd4bf; background: rgba(45,212,191,0.08); border-color: rgba(45,212,191,0.2); }
-        .themes-stack { flex: 1; position: relative; height: 380px; min-width: 0; }
-        .stack-img {
-            position: absolute; width: 72%; border-radius: 12px;
-            box-shadow: 0 16px 48px rgba(0,0,0,0.4);
-            border: 1px solid rgba(255,255,255,0.08);
-            cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .stack-img:nth-child(1) { top: 0; left: 0; transform: rotate(-3deg); z-index: 3; }
-        .stack-img:nth-child(2) { top: 40px; left: 14%; transform: rotate(1.5deg); z-index: 2; }
-        .stack-img:nth-child(3) { top: 80px; left: 26%; transform: rotate(5deg); z-index: 1; }
-        .stack-img:hover { box-shadow: 0 24px 60px rgba(0,0,0,0.5); z-index: 4; }
-        .stack-img:nth-child(1):hover { transform: rotate(-3deg) translateY(-6px); }
-        .stack-img:nth-child(2):hover { transform: rotate(1.5deg) translateY(-6px); }
-        .stack-img:nth-child(3):hover { transform: rotate(5deg) translateY(-6px); }
+        .hcard::before{content:'';position:absolute;top:-50%;left:-20%;width:140%;height:200%;background:radial-gradient(ellipse at center,rgba(104,211,145,.12) 0%,transparent 60%);pointer-events:none;z-index:0}
+        .hcard>*{position:relative;z-index:1}
+        .hc-lbl{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-3);font-weight:500}
+        .hc-cd{font-family:var(--display);font-size:54px;font-weight:700;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-1.5px}
+        .hc-ends{display:flex;justify-content:space-between}
+        .hc-end{display:flex;flex-direction:column;gap:1px}
+        .hc-end-r{text-align:right}
+        .hc-en{font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-3);font-weight:500}
+        .hc-et{font-size:11px;font-weight:600;color:var(--text-2);font-variant-numeric:tabular-nums}
+        .hc-bar{height:8px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;margin:6px 0 8px}
+        .hc-fill{height:100%;background:var(--grad);border-radius:4px;transition:width 1s linear;box-shadow:0 0 16px rgba(104,211,145,.35),0 0 6px rgba(104,211,145,.2)}
+        .hc-sub{padding:5px 10px;background:rgba(255,255,255,.03);border-radius:8px}
+        .hc-sv{font-size:13px;font-weight:600;color:var(--text-2);font-variant-numeric:tabular-nums}
+        .hc-sl{font-size:8px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-3);margin-top:1px}
 
-        /* ── More screenshots ── */
-        .gallery { max-width: 1100px; margin: 0 auto; padding: 0 2rem 5rem; }
-        .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-        @media (max-width: 700px) { .gallery-grid { grid-template-columns: 1fr; } }
-        .gallery-card {
-            border-radius: 10px; overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.06);
-            cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .gallery-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.3); }
-        .gallery-card img { width: 100%; display: block; }
-        .gallery-label {
-            padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.03);
-            font-size: 0.75rem; font-weight: 600; color: #64748b;
-        }
+        /* ── Features: scroll rows ── */
+        .features{padding:7rem 0}
+        .features-head{margin-bottom:4rem}
+        .feat-row{display:flex;align-items:center;gap:3rem;margin-bottom:4rem}
+        .feat-row:last-child{margin-bottom:0}
+        .feat-row.reverse{flex-direction:row-reverse}
+        .feat-text{flex:0 0 340px}
+        .feat-num{font-family:var(--display);font-size:.78rem;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:2px;margin-bottom:.6rem}
+        .feat-text h3{font-family:var(--display);font-size:1.8rem;font-weight:800;color:var(--text);margin-bottom:.7rem;letter-spacing:-.5px;line-height:1.15}
+        .feat-text p{font-size:.88rem;color:var(--text-2);line-height:1.75}
+        .feat-img-wrap{flex:1}
+        .feat-frame{width:100%;background:rgba(0,0,0,.15);border-radius:12px;border:1px solid var(--border);overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,.25)}
+        .feat-frame-bar{height:28px;display:flex;align-items:center;padding:0 12px;gap:6px;background:rgba(0,0,0,.12)}
+        .feat-frame-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.08)}
+        .feat-frame img{width:100%;height:380px;object-fit:cover;display:block}
+        .feat-frame img.zoom-dash{object-position:15% 15%;transform:scale(1.15);transform-origin:15% 15%}
+        .feat-frame img.zoom-times{object-position:25% 30%;transform:scale(1.15);transform-origin:25% 30%}
+        .feat-frame img.zoom-cal{object-position:45% 65%;transform:scale(1.15);transform-origin:45% 65%}
+        .feat-frame img.zoom-stats{object-position:45% 20%;transform:scale(1.15);transform-origin:45% 20%}
 
-        /* ── CTA ── */
-        .cta-section {
-            text-align: center; padding: 5rem 2rem;
-            position: relative; overflow: hidden;
+        /* ── Themes: 3D card stack ── */
+        .themes{padding:4rem 0 8rem}
+        .themes-head{text-align:center;margin-bottom:3rem}
+        .themes-head .stitle{font-size:2.8rem}
+        .themes-stage{position:relative;height:520px;max-width:900px;margin:0 auto;-webkit-perspective:1200px;perspective:1200px}
+        .t-card{
+            position:absolute;top:50%;left:50%;
+            width:680px;max-width:82vw;
+            border-radius:16px;overflow:hidden;
+            border:1px solid var(--border);
+            box-shadow:0 24px 64px rgba(0,0,0,.35);
+            cursor:pointer;
+            transition:all .6s cubic-bezier(.4,0,.2,1);
         }
-        .cta-section::before {
-            content: ''; position: absolute; inset: 0;
-            background: radial-gradient(ellipse at 50% 50%, rgba(104,211,145,0.06) 0%, transparent 60%);
-            pointer-events: none;
+        .t-card img{width:100%;display:block}
+        .t-card-label{
+            padding:.7rem 1.1rem;display:flex;align-items:center;gap:8px;
+            font-family:var(--display);font-size:.9rem;font-weight:700;
+            background:rgba(0,0,0,.12);
         }
-        .cta-section > * { position: relative; z-index: 1; }
-        .cta-section h2 { font-size: 2.25rem; font-weight: 800; margin-bottom: 0.75rem; letter-spacing: -0.5px; }
-        .cta-section h2 span {
-            background: linear-gradient(135deg, #68d391, #63b3ed);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        .t-dot{width:10px;height:10px;border-radius:50%}
+        .t-dot-ocean{background:var(--blue)}
+        .t-dot-warm{background:#fbbf24}
+        .t-dot-teal{background:#2dd4bf}
+        .t-card[data-pos="front"]{transform:translate(-50%,-50%) rotateY(0) scale(1);z-index:3;opacity:1}
+        .t-card[data-pos="left"]{transform:translate(-88%,-50%) rotateY(14deg) scale(.78);z-index:2;opacity:.45}
+        .t-card[data-pos="right"]{transform:translate(-12%,-50%) rotateY(-14deg) scale(.78);z-index:1;opacity:.45}
+        .t-card[data-pos="front"] .t-card-label{color:var(--text)}
+        .t-card[data-pos="left"] .t-card-label,.t-card[data-pos="right"] .t-card-label{color:var(--text-3)}
+        .themes-arrows{display:flex;justify-content:center;gap:1rem;margin-top:1.5rem}
+        .t-arrow{
+            width:44px;height:44px;border-radius:50%;
+            background:rgba(255,255,255,.06);border:1px solid var(--border);
+            color:var(--text-2);font-size:1.3rem;cursor:pointer;
+            display:flex;align-items:center;justify-content:center;
+            font-family:var(--body);transition:all .2s;
         }
-        .cta-section p { font-size: 1rem; color: #64748b; margin-bottom: 2rem; }
-        .cta-btns { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+        .t-arrow:hover{background:rgba(255,255,255,.12);color:var(--text)}
 
-        /* ── Lightbox ── */
-        .lightbox {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.92);
-            display: flex; align-items: center; justify-content: center;
-            z-index: 9999; padding: 2rem; -webkit-user-select: none; user-select: none;
-            animation: fadeIn 0.15s ease;
-        }
-        .lightbox img {
-            max-width: 90%; max-height: 85vh; border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5); pointer-events: none;
-            animation: scaleIn 0.15s ease;
-        }
-        .lb-close {
-            position: absolute; top: 1.25rem; right: 1.5rem;
-            background: none; border: none; color: #64748b;
-            font-size: 2rem; cursor: pointer; line-height: 1; z-index: 10;
-        }
-        .lb-close:hover { color: #fff; }
-        .lb-nav {
-            position: absolute; top: 50%; transform: translateY(-50%);
-            background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.18);
-            color: #fff; width: 52px; height: 52px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; font-size: 1.5rem; transition: all 0.15s; z-index: 10;
-        }
-        .lb-nav:hover { background: rgba(255,255,255,0.25); }
-        .lb-prev { left: calc(50% - 48vw); }
-        .lb-next { right: calc(50% - 48vw); }
-        @media (min-width: 1200px) { .lb-prev { left: calc(50% - 550px); } .lb-next { right: calc(50% - 550px); } }
-        .lb-counter {
-            position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
-            font-size: 0.8rem; color: #64748b;
-        }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        /* ── About ── */
+        .about{padding:6rem 0}
+        .about .wrap{max-width:660px;text-align:center}
+        .about p{font-size:.88rem;color:var(--text-2);line-height:1.8;margin-top:.75rem}
+        .about-acts{display:flex;gap:.5rem;justify-content:center;margin-top:1.5rem;flex-wrap:wrap}
+        .about-a{display:inline-flex;align-items:center;gap:.35rem;padding:.5rem 1.1rem;font-size:.82rem;font-weight:500;font-family:var(--body);color:var(--text-2);text-decoration:none;border:1px solid var(--border);border-radius:8px;transition:all .2s}
+        .about-a:hover{color:var(--text);border-color:var(--border-h);background:var(--bg-glass)}
+        .about-a svg{width:14px;height:14px}
+
+        /* ── FAQ ── */
+        .faq{padding:5rem 0 6rem}
+        .faq .wrap{max-width:640px}
+        .faq-head{text-align:center;margin-bottom:2rem}
+        .faq-item{border-top:1px solid var(--border)}
+        .faq-item:last-child{border-bottom:1px solid var(--border)}
+        .faq-q{width:100%;display:flex;align-items:center;justify-content:space-between;padding:1.1rem 0;min-height:48px;background:none;border:none;cursor:pointer;color:var(--text);font-size:.88rem;font-weight:600;font-family:var(--body);text-align:left;transition:color .2s}
+        .faq-q:hover{color:var(--green)}
+        .faq-q svg{flex-shrink:0;width:16px;height:16px;color:var(--text-3);transition:transform .3s}
+        .faq-item.open .faq-q svg{transform:rotate(45deg)}
+        .faq-a{max-height:0;overflow:hidden;transition:max-height .3s ease}
+        .faq-item.open .faq-a{max-height:300px}
+        .faq-a p{font-size:.82rem;color:var(--text-2);line-height:1.7;padding-bottom:1rem}
 
         /* ── Footer ── */
-        footer { text-align: center; padding: 2rem; border-top: 1px solid rgba(255,255,255,0.04); }
-        .footer-links { display: flex; gap: 2rem; justify-content: center; margin-bottom: 1rem; }
-        .footer-links a { font-size: 0.85rem; color: #94a3b8; text-decoration: none; transition: color 0.15s; }
-        .footer-links a:hover { color: #e2e8f0; }
-        .footer-note { font-size: 0.75rem; color: #475569; }
+        footer{position:relative;z-index:1;border-top:1px solid var(--border)}
+        .foot-main{max-width:1120px;margin:0 auto;padding:3.5rem 2rem 2.5rem;display:grid;grid-template-columns:1.8fr 1fr 1fr 1fr;gap:2rem}
+        .foot-col h4{font-family:var(--display);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-3);margin-bottom:.75rem}
+        .foot-col a{display:block;font-size:.82rem;color:var(--text-2);text-decoration:none;padding:.22rem 0;transition:color .2s}
+        .foot-col a:hover{color:var(--text)}
+        .foot-brand-area{display:flex;flex-direction:column}
+        .foot-brand{display:flex;align-items:center;gap:.5rem;font-family:var(--display);font-size:1.05rem;font-weight:700;color:var(--text)}
+        .foot-brand img{width:28px;height:28px;border-radius:7px}
+        .foot-desc{font-size:.8rem;color:var(--text-3);line-height:1.6;margin:.6rem 0 0;max-width:260px}
+        .foot-bottom{max-width:1120px;margin:0 auto;padding:1.25rem 2rem;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);font-size:.7rem;color:var(--text-3);opacity:.6}
+
+        /* ── Lightbox ── */
+        .lb{position:fixed;inset:0;background:rgba(0,0,0,.95);display:flex;align-items:center;justify-content:center;z-index:9999;padding:2rem;-webkit-user-select:none;user-select:none;animation:lbI .15s ease}
+        .lb img{max-width:90%;max-height:85vh;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.5);pointer-events:none}
+        .lb-x{position:absolute;top:1rem;right:1.5rem;background:none;border:none;color:var(--text-3);font-size:2rem;cursor:pointer;line-height:1}
+        .lb-x:hover{color:#fff}
+        .lb-n{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.08);border:1px solid var(--border-h);color:#fff;width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.2rem;transition:all .15s;z-index:10}
+        .lb-n:hover{background:rgba(255,255,255,.18)}
+        .lb-p{left:calc(50% - 48vw)}
+        .lb-nx{right:calc(50% - 48vw)}
+        @media(min-width:1200px){.lb-p{left:calc(50% - 540px)}.lb-nx{right:calc(50% - 540px)}}
+        .lb-i{position:absolute;bottom:1.25rem;left:50%;transform:translateX(-50%);font-size:.72rem;color:var(--text-3)}
+        @keyframes lbI{from{opacity:0}to{opacity:1}}
 
         /* ── Responsive ── */
-        @media (max-width: 900px) {
-            .hero-content { flex-direction: column; text-align: center; }
-            .hero-text h1 { font-size: 2.5rem; }
-            .hero-text p { margin-left: auto; margin-right: auto; }
-            .hero-ctas { justify-content: center; }
-            .hero-demo { flex: none; width: 100%; max-width: 380px; }
-            .themes-row { flex-direction: column; }
-            .themes-text { flex: none; text-align: center; }
-            .theme-badges { justify-content: center; }
-            .themes-stack { height: 280px; width: 100%; }
-            .stack-img { width: 80%; }
-            .nav-links { display: none; }
+        @media(max-width:900px){
+            .hero .wrap{flex-direction:column;text-align:center}
+            .hero-h1{font-size:2.8rem;letter-spacing:-1.5px}
+            .hero-p{margin-left:auto;margin-right:auto}
+            .hero-ctas{justify-content:center}
+            .hero-meta{justify-content:center}
+            .hero-right{flex:none;width:100%;max-width:380px;height:380px}
+            .orbit-1{width:180px;height:180px}.orbit-2{width:280px;height:280px}.orbit-3{width:360px;height:360px}
+            .hcard{width:260px;padding:1.25rem 1rem}.hc-cd{font-size:38px}
+            .fc-tl{left:2%}.fc-br{right:2%}
+            .feat-row,.feat-row.reverse{flex-direction:column;gap:1.5rem}
+            .feat-text{flex:none}
+            .feat-frame img{height:280px;transform:none}
+            .themes-stage{height:380px}
+            .t-card{width:85vw}
+            .t-card[data-pos="left"]{transform:translate(-75%,-50%) rotateY(8deg) scale(.75)}
+            .t-card[data-pos="right"]{transform:translate(-25%,-50%) rotateY(-8deg) scale(.75)}
+            .nav-links,.nav-sep{display:none}
+            .foot-main{grid-template-columns:1fr 1fr}
+            .foot-brand-area{grid-column:1/-1}
+        }
+        @media(max-width:480px){
+            .hero-h1{font-size:2.2rem;letter-spacing:-1px}
+            .hero-right{height:320px}
+            .fc-tl,.fc-br{display:none}
+            .hcard{width:230px;padding:1rem .85rem}.hc-cd{font-size:30px}
+            .feat-frame img{height:220px}
+            .foot-main{grid-template-columns:1fr}
+        }
+        @media(max-width:600px){
+            .foot-bottom{flex-direction:column;text-align:center;gap:.5rem}
         }
     </style>
 </head>
 <body>
 
+<div class="ambient"><div class="amb amb-1"></div><div class="amb amb-2"></div><div class="amb amb-3"></div><div class="amb amb-4"></div><div class="amb amb-5"></div></div>
+<div class="stars"></div>
+
 <!-- Nav -->
-<nav class="nav">
-    <a href="#" class="nav-brand">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M12 2L14.09 8.26L20 10L14.09 11.74L12 18L9.91 11.74L4 10L9.91 8.26L12 2Z" fill="currentColor"/>
-            <path d="M19 14C17.34 14 16 15.34 16 17C16 18.66 17.34 20 19 20C20.66 20 22 18.66 22 17C22 15.34 20.66 14 19 14Z" fill="currentColor"/>
-        </svg>
-        Nur
-    </a>
+<nav class="nav"><div class="nav-inner">
+    <a href="#" class="nav-brand"><img class="nav-ico" src="icon.png" alt="Nur" width="32" height="32"> Nur</a>
+    <div class="nav-sep"></div>
     <div class="nav-links">
         <a href="#features">Features</a>
-        <a href="#themes">Themes</a>
-        <a href="#gallery">Screenshots</a>
+        <a href="#about">About</a>
+        <a href="#faq">FAQ</a>
     </div>
+    <div class="nav-push"></div>
     <div class="nav-actions">
-        <a href="app/" class="nav-btn nav-btn-ghost">Open in Browser</a>
-        <a href="https://github.com/nur-prayer-app/releases/releases/latest" class="nav-btn nav-btn-primary" id="nav-download">Download</a>
+        <a href="app/" class="btn-s btn-s-g">Web App</a>
+        <a href="https://github.com/nur-prayer-app/releases/releases/latest" class="btn-s btn-s-dl" id="nav-dl">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Download
+        </a>
     </div>
-</nav>
+</div></nav>
 
 <!-- Hero -->
-<section class="hero" id="top">
-    <div class="hero-bg"></div>
-    <div class="hero-content">
-        <div class="hero-text">
-            <h1>Track Your Prayers,<br><span>Stay Connected</span></h1>
-            <p>A beautiful prayer tracker for Muslims. Log daily prayers, track fasting, set qadaa goals, and never miss a prayer time — all with an accurate Hijri calendar.</p>
+<section class="hero sec" id="top">
+    <div class="wrap">
+        <div class="hero-left">
+            <div class="hero-pill"><span class="hero-pill-dot"></span> A simple prayer companion</div>
+            <h1 class="hero-h1">Never Miss<br><em>a Prayer Again</em></h1>
+            <p class="hero-p">Prayer times, Hijri calendar, fasting, and qadaa. Everything in one place. No account needed. Runs offline. Always free.</p>
             <div class="hero-ctas">
-                <a href="https://github.com/nur-prayer-app/releases/releases/latest" class="btn-lg btn-lg-primary" id="hero-download">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <a href="https://github.com/nur-prayer-app/releases/releases/latest" class="btn btn-w" id="hero-dl">
+                    <svg viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     Download for Windows
                 </a>
-                <a href="app/" class="btn-lg btn-lg-ghost">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke="currentColor" stroke-width="1.5"/></svg>
-                    Open in Browser
-                </a>
+                <a href="app/" class="btn btn-o">Open in Browser</a>
+            </div>
+            <div class="hero-meta">
+                <span id="hero-ver">v1.1.206</span>
+                <span class="dot"></span>
+                <span>Windows 10/11</span>
+                <span class="dot"></span>
+                <span>~85 MB</span>
             </div>
         </div>
-        <div class="hero-demo">
-            <div class="demo-glow"></div>
-            <div class="demo-card">
-                <div class="demo-header">
-                    <span class="demo-title">Today's Prayers</span>
-                    <span class="demo-date" id="demo-date"></span>
-                </div>
-                <div class="demo-ring-row">
-                    <div class="demo-ring">
-                        <svg viewBox="0 0 80 80">
-                            <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="6"/>
-                            <circle cx="40" cy="40" r="34" fill="none" stroke="url(#demo-grad)" stroke-width="6"
-                                stroke-linecap="round" stroke-dasharray="171.0 213.6" transform="rotate(-90 40 40)"/>
-                            <defs><linearGradient id="demo-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#68d391"/><stop offset="100%" stop-color="#63b3ed"/></linearGradient></defs>
-                        </svg>
-                        <div class="demo-ring-text">
-                            <span class="demo-ring-num">4</span>
-                            <span class="demo-ring-label">/ 5</span>
-                        </div>
+        <div class="hero-right">
+            <div class="orbit orbit-1"><div class="orbit-spinner"><div class="orbit-dot"></div></div></div>
+            <div class="orbit orbit-2"><div class="orbit-spinner"><div class="orbit-dot"></div></div></div>
+            <div class="orbit orbit-3"><div class="orbit-spinner"><div class="orbit-dot"></div></div></div>
+            <div class="fc fc-tl">
+                <div class="fc-bar-card">
+                    <div class="fc-bar-head">
+                        <span class="fc-bar-lbl">Fasting</span>
+                        <span class="fc-bar-time">3h 41m left</span>
                     </div>
-                    <div class="demo-prayers">
-                        <div class="demo-prayer"><span class="demo-prayer-name">Fajr</span><span class="demo-prayer-time">4:37 AM</span><span class="demo-prayer-check">&#10003;</span></div>
-                        <div class="demo-prayer"><span class="demo-prayer-name">Dhuhr</span><span class="demo-prayer-time">12:53 PM</span><span class="demo-prayer-check">&#10003;</span></div>
-                        <div class="demo-prayer"><span class="demo-prayer-name">Asr</span><span class="demo-prayer-time">4:29 PM</span><span class="demo-prayer-check">&#10003;</span></div>
-                        <div class="demo-prayer"><span class="demo-prayer-name">Maghrib</span><span class="demo-prayer-time">7:32 PM</span><span class="demo-prayer-check">&#10003;</span></div>
-                        <div class="demo-prayer"><span class="demo-prayer-name">Isha</span><span class="demo-prayer-time">8:57 PM</span><span class="demo-prayer-pending">&#9675;</span></div>
+                    <div class="fc-bar-track"><div class="fc-bar-fill"></div></div>
+                    <div class="fc-bar-ends">
+                        <span>Fajr · 4:37 AM</span>
+                        <span>Maghrib · 7:32 PM</span>
                     </div>
                 </div>
-                <hr class="demo-divider">
-                <div class="demo-next">
-                    <div class="demo-next-label">Next Prayer</div>
-                    <div class="demo-next-name">Isha</div>
-                    <div class="demo-next-countdown" id="demo-countdown">01:23:45</div>
+            </div>
+            <div class="fc fc-br">
+                <div class="fc-next">
+                    <div class="fc-next-ico"><svg viewBox="0 0 24 24" fill="none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="1.5"/></svg></div>
+                    <div class="fc-next-info"><div class="fc-next-lbl">Next up</div><div class="fc-next-val">Isha · 8:57 PM</div></div>
                 </div>
+            </div>
+            <div class="hcard">
+                <div class="hc-lbl">TIME TO ISHA</div>
+                <div class="hc-cd" id="hc-cd">00:34:00</div>
+                <div class="hc-bar"><div class="hc-fill" id="hc-fill"></div></div>
+                <div class="hc-ends">
+                    <span class="hc-end"><span class="hc-en">Maghrib</span><span class="hc-et">7:32 PM</span></span>
+                    <span class="hc-end hc-end-r"><span class="hc-en">Isha</span><span class="hc-et">8:57 PM</span></span>
+                </div>
+                <div class="hc-sub"><div class="hc-sv" id="hc-since">00:51:00</div><div class="hc-sl">Since Maghrib</div></div>
             </div>
         </div>
     </div>
 </section>
 
 <!-- Features -->
-<section class="features" id="features">
-    <span class="section-badge">Features</span>
-    <h2 class="section-title">Everything you need</h2>
-    <p class="section-sub">Built with care for the Muslim community</p>
-    <div class="features-grid">
-        <div class="feature-card">
-            <div class="feature-icon fi-green"><svg viewBox="0 0 24 24" fill="none"><polyline points="20,6 9,17 4,12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-            <h3>Daily Prayer Tracking</h3>
-            <p>Log all 5 prayers with a single tap. Jumu'ah on Fridays. Auto-detect missed prayers.</p>
+<section class="features sec" id="features">
+    <div class="wrap">
+        <div class="features-head reveal">
+            <div class="badge"><span class="badge-dot"></span> Features</div>
+            <h2 class="stitle">What Nur offers</h2>
         </div>
-        <div class="feature-card">
-            <div class="feature-icon fi-blue"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="1.5"/></svg></div>
-            <h3>Hijri Calendar</h3>
-            <p>Umm al-Qura calendar with special Islamic days, reminders, and hadith references.</p>
+        <div class="feat-row reveal">
+            <div class="feat-text">
+                <div class="feat-num">01 · Prayer Tracking</div>
+                <h3>Log your salah with a tap</h3>
+                <p>Mark each of your five daily prayers. Jumu'ah shows on Fridays. Missed prayers get flagged. Track Duha, Shaf'a &amp; Witr, and Qiyam alongside your daily salah.</p>
+            </div>
+            <div class="feat-img-wrap">
+                <div class="feat-frame"><div class="feat-frame-bar"><div class="feat-frame-dot"></div><div class="feat-frame-dot"></div><div class="feat-frame-dot"></div></div><img class="zoom-dash" src="screenshots/ocean-dashboard.png" alt="Prayer tracking" data-label="Dashboard · Ocean"></div>
+            </div>
         </div>
-        <div class="feature-card">
-            <div class="feature-icon fi-amber"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
-            <h3>Prayer Times</h3>
-            <p>Accurate calculation with live timeline, countdown, fasting tracker, and iqama offsets.</p>
+        <div class="feat-row reverse reveal">
+            <div class="feat-text">
+                <div class="feat-num">02 · Prayer Times</div>
+                <h3>Know when each salah begins</h3>
+                <p>Calculated for your exact location. Live countdown to the next prayer with a 3-day timeline, per-prayer iqama offsets, and notification toggles.</p>
+            </div>
+            <div class="feat-img-wrap">
+                <div class="feat-frame"><div class="feat-frame-bar"><div class="feat-frame-dot"></div><div class="feat-frame-dot"></div><div class="feat-frame-dot"></div></div><img class="zoom-times" src="screenshots/ocean-prayer-times.png" alt="Prayer times" data-label="Prayer Times · Ocean"></div>
+            </div>
         </div>
-        <div class="feature-card">
-            <div class="feature-icon fi-amber"><svg viewBox="0 0 24 24" fill="none"><path d="M6 2h12M6 22h12M6 2c0 4 4 5 4 8s-4 4-4 8h12c0-4-4-5-4-8s4-4 4-8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-            <h3>Fasting Tracker</h3>
-            <p>Live Fajr-to-Maghrib countdown with progress bar. Auto-enables during Ramadan.</p>
+        <div class="feat-row reveal">
+            <div class="feat-text">
+                <div class="feat-num">03 · Calendar &amp; Fasting</div>
+                <h3>The Islamic year at a glance</h3>
+                <p>Full Hijri calendar with prayer indicators and special days highlighted with hadith sources. Fasting progress bar from Fajr to Maghrib that activates during Ramadan.</p>
+            </div>
+            <div class="feat-img-wrap">
+                <div class="feat-frame"><div class="feat-frame-bar"><div class="feat-frame-dot"></div><div class="feat-frame-dot"></div><div class="feat-frame-dot"></div></div><img class="zoom-cal" src="screenshots/teal-dashboard.png" alt="Calendar and fasting" data-label="Dashboard · Teal"></div>
+            </div>
         </div>
-        <div class="feature-card">
-            <div class="feature-icon fi-purple"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2L14.09 8.26L20 10L14.09 11.74L12 18L9.91 11.74L4 10L9.91 8.26L12 2Z" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></div>
-            <h3>Qadaa Goals</h3>
-            <p>Track missed prayers and fasting. Set goals, record progress, see completion estimates.</p>
-        </div>
-        <div class="feature-card">
-            <div class="feature-icon fi-teal"><svg viewBox="0 0 24 24" fill="none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></div>
-            <h3>Extras</h3>
-            <p>Log Duha, Shaf'a & Witr, Qiyam with raka'at, and fasting — all tracked in stats.</p>
-        </div>
-        <div class="feature-card">
-            <div class="feature-icon fi-green"><svg viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="1.5"/></svg></div>
-            <h3>Cloud Sync</h3>
-            <p>Sign in with Google to sync across devices. Local-first — works fully offline.</p>
-        </div>
-        <div class="feature-card">
-            <div class="feature-icon fi-blue"><svg viewBox="0 0 24 24" fill="none"><path d="M18 20V10M12 20V4M6 20v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
-            <h3>Statistics</h3>
-            <p>Punctuality ring, per-prayer reliability, volunteer acts, and qadaa progress.</p>
-        </div>
-        <div class="feature-card">
-            <div class="feature-icon fi-red"><svg viewBox="0 0 24 24" fill="none"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke="currentColor" stroke-width="1.5"/></svg></div>
-            <h3>Islamic Reminders</h3>
-            <p>Special days, Surat Al-Kahf on Fridays, and clickable hadith references with sources.</p>
+        <div class="feat-row reverse reveal">
+            <div class="feat-text">
+                <div class="feat-num">04 · Goals &amp; Progress</div>
+                <h3>See where you stand</h3>
+                <p>Set a target for missed prayers or fasting days. Log daily, see your estimated completion date. Completion ring and per-prayer statistics at a glance.</p>
+            </div>
+            <div class="feat-img-wrap">
+                <div class="feat-frame"><div class="feat-frame-bar"><div class="feat-frame-dot"></div><div class="feat-frame-dot"></div><div class="feat-frame-dot"></div></div><img class="zoom-stats" src="screenshots/warm-stats.png" alt="Goals and progress" data-label="Statistics · Warm"></div>
+            </div>
         </div>
     </div>
 </section>
 
 <!-- Themes -->
-<section class="themes" id="themes">
-    <div class="themes-row">
-        <div class="themes-text">
-            <span class="section-badge">Themes</span>
-            <h2>Your Style,<br><span>Your Focus</span></h2>
-            <p>Choose the look that suits your mood. Each theme is crafted for readability and focus during your prayer journey.</p>
-            <div class="theme-badges">
-                <span class="theme-badge tb-ocean">Ocean</span>
-                <span class="theme-badge tb-warm">Warm</span>
-                <span class="theme-badge tb-teal">Teal</span>
+<section class="themes sec">
+    <div class="wrap">
+        <div class="themes-head reveal">
+            <div class="badge"><span class="badge-dot"></span> Themes</div>
+            <h2 class="stitle">Pick a look</h2>
+        </div>
+        <div class="themes-stage reveal">
+            <div class="t-card" data-pos="left" data-label="Dashboard · Teal">
+                <img src="screenshots/teal-dashboard.png" alt="Teal theme">
+                <div class="t-card-label"><span class="t-dot t-dot-teal"></span> Teal</div>
+            </div>
+            <div class="t-card" data-pos="front" data-label="Dashboard · Ocean">
+                <img src="screenshots/ocean-dashboard.png" alt="Ocean theme">
+                <div class="t-card-label"><span class="t-dot t-dot-ocean"></span> Ocean</div>
+            </div>
+            <div class="t-card" data-pos="right" data-label="Dashboard · Warm">
+                <img src="screenshots/warm-dashboard.png" alt="Warm theme">
+                <div class="t-card-label"><span class="t-dot t-dot-warm"></span> Warm</div>
             </div>
         </div>
-        <div class="themes-stack" id="themes-stack">
-            <img class="stack-img" src="screenshots/ocean-dashboard.png" data-label="Dashboard · Ocean" alt="Dashboard — Ocean">
-            <img class="stack-img" src="screenshots/warm-dashboard.png" data-label="Dashboard · Warm" alt="Dashboard — Warm">
-            <img class="stack-img" src="screenshots/teal-dashboard.png" data-label="Dashboard · Teal" alt="Dashboard — Teal">
+        <div class="themes-arrows">
+            <button type="button" class="t-arrow" id="t-prev" aria-label="Previous theme">&#8249;</button>
+            <button type="button" class="t-arrow" id="t-next" aria-label="Next theme">&#8250;</button>
         </div>
     </div>
 </section>
 
-<!-- Gallery -->
-<section class="gallery" id="gallery">
-    <div class="gallery-grid" id="gallery-grid">
-        <div class="gallery-card" data-src="screenshots/ocean-stats.png" data-label="Statistics · Ocean">
-            <img src="screenshots/ocean-stats.png" alt="Statistics — Ocean" loading="lazy">
-            <div class="gallery-label">Statistics · Ocean</div>
-        </div>
-        <div class="gallery-card" data-src="screenshots/warm-prayer-times.png" data-label="Prayer Times · Warm">
-            <img src="screenshots/warm-prayer-times.png" alt="Prayer Times — Warm" loading="lazy">
-            <div class="gallery-label">Prayer Times · Warm</div>
-        </div>
-        <div class="gallery-card" data-src="screenshots/teal-stats.png" data-label="Statistics · Teal">
-            <img src="screenshots/teal-stats.png" alt="Statistics — Teal" loading="lazy">
-            <div class="gallery-label">Statistics · Teal</div>
-        </div>
-        <div class="gallery-card" data-src="screenshots/ocean-prayer-times.png" data-label="Prayer Times · Ocean">
-            <img src="screenshots/ocean-prayer-times.png" alt="Prayer Times — Ocean" loading="lazy">
-            <div class="gallery-label">Prayer Times · Ocean</div>
-        </div>
-        <div class="gallery-card" data-src="screenshots/warm-stats.png" data-label="Statistics · Warm">
-            <img src="screenshots/warm-stats.png" alt="Statistics — Warm" loading="lazy">
-            <div class="gallery-label">Statistics · Warm</div>
-        </div>
-        <div class="gallery-card" data-src="screenshots/teal-prayer-times.png" data-label="Prayer Times · Teal">
-            <img src="screenshots/teal-prayer-times.png" alt="Prayer Times — Teal" loading="lazy">
-            <div class="gallery-label">Prayer Times · Teal</div>
+<!-- About -->
+<section class="about sec" id="about">
+    <div class="wrap reveal">
+        <div class="badge"><span class="badge-dot"></span> About</div>
+        <h2 class="stitle">Made to help you stay consistent</h2>
+        <p>Nur was built with one purpose: to make it easier to keep up with your salah, day after day. Whether you're making up missed prayers, fasting, or just trying to be more consistent, this is a simple tool to help you stay on track.</p>
+        <p>Your data is yours alone. Everything is stored on your device with no account required. Cloud sync is optional if you want your data on multiple devices. No ads, no tracking, ever.</p>
+        <div class="about-acts">
+            <a href="feedback.html" class="about-a"><svg viewBox="0 0 24 24" fill="none"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Contact Us</a>
+            <a href="app/" class="about-a"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M2 12h20" stroke="currentColor" stroke-width="1.5"/></svg> Try the Web App</a>
         </div>
     </div>
 </section>
 
-<!-- CTA -->
-<section class="cta-section">
-    <h2>Ready to <span>start tracking?</span></h2>
-    <p>Download for desktop or use it right in your browser.</p>
-    <div class="cta-btns">
-        <a href="https://github.com/nur-prayer-app/releases/releases/latest" class="btn-lg btn-lg-primary" id="cta-download">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Download for Windows
-        </a>
-        <a href="app/" class="btn-lg btn-lg-ghost">Open in Browser</a>
+<!-- FAQ -->
+<section class="faq sec" id="faq">
+    <div class="wrap">
+        <div class="faq-head reveal">
+            <div class="badge"><span class="badge-dot"></span> FAQ</div>
+            <h2 class="stitle">Questions</h2>
+        </div>
+        <div class="reveal">
+            <div class="faq-item">
+                <button class="faq-q" type="button">Does Nur support my calculation method?<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+                <div class="faq-a"><p>Yes. Nur includes ISNA, MWL, Egyptian General Authority, Umm al-Qura, Karachi, Dubai, Turkey, Kuwait, Tehran, and Jafari. Ten methods covering most regions.</p></div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-q" type="button">Does it support Hanafi Asr timing?<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+                <div class="faq-a"><p>Yes. You choose between Standard (Shafi'i/Maliki/Hanbali) and Hanafi in settings. It applies instantly.</p></div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-q" type="button">Can I use it without internet?<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+                <div class="faq-a"><p>Completely. Prayer times are calculated locally on your device. The only feature that needs internet is cloud sync, which is optional.</p></div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-q" type="button">What happens to my data if I switch devices?<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+                <div class="faq-a"><p>If you've turned on cloud sync, your data restores when you sign in on the new device. Without sync, you can export everything as a JSON file from Settings and import it on the other device.</p></div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-q" type="button">Is Nur really free?<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+                <div class="faq-a"><p>No catch. No ads, no premium tier, no data collection. Nur is a personal project built to help Muslims pray consistently.</p></div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-q" type="button">Does it work on Mac or mobile?<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+                <div class="faq-a"><p>The desktop app is for Windows. The web version works the same in any browser: Mac, iPhone, Android, Linux.</p></div>
+            </div>
+        </div>
     </div>
 </section>
 
 <!-- Footer -->
 <footer>
-    <div class="footer-links">
-        <a href="app/">Web App</a>
-        <a href="feedback.html">Send Feedback</a>
-        <a href="https://github.com/nur-prayer-app/releases/releases/latest">Download</a>
+    <div class="foot-main">
+        <div class="foot-brand-area">
+            <div class="foot-brand"><img src="icon.png" alt="Nur" width="28" height="28"> Nur</div>
+            <p class="foot-desc">A prayer tracker made for Muslims. Simple, private, and free.</p>
+        </div>
+        <div class="foot-col">
+            <h4>Product</h4>
+            <a href="https://github.com/nur-prayer-app/releases/releases/latest" id="foot-dl">Download</a>
+            <a href="app/">Web App</a>
+        </div>
+        <div class="foot-col">
+            <h4>Resources</h4>
+            <a href="#features">Features</a>
+            <a href="#faq">FAQ</a>
+        </div>
+        <div class="foot-col">
+            <h4>Connect</h4>
+            <a href="feedback.html">Contact Us</a>
+        </div>
     </div>
-    <div class="footer-note">Made with care for the Muslim community.</div>
+    <div class="foot-bottom">
+        <span>&copy; 2026 Nur</span>
+        <span id="foot-ver">v1.1.206</span>
+    </div>
 </footer>
 
 <script>
-    // Demo date
-    const now = new Date();
-    const hijriFormatter = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', { day: 'numeric', month: 'long', year: 'numeric' });
-    document.getElementById('demo-date').textContent = hijriFormatter.format(now);
+    // Countdown
+    var cd=2040,si=3060,wt=85*60;
+    function p(n){return String(n).padStart(2,'0')}
+    function f(s){return p(s/3600|0)+':'+p((s%3600)/60|0)+':'+p(s%60)}
+    function tk(){cd--;si++;if(cd<0){cd=5400;si=0;}var a=document.getElementById('hc-cd');if(a)a.textContent=f(cd);var b=document.getElementById('hc-fill');if(b)b.style.width=Math.min(100,((wt-cd)/wt)*100).toFixed(1)+'%';var c=document.getElementById('hc-since');if(c)c.textContent=f(si);}
+    tk();setInterval(tk,1000);
 
-    // Demo countdown (fake ticking)
-    let demoSec = 5025;
-    function tickDemo() {
-        demoSec--;
-        if (demoSec < 0) demoSec = 5400;
-        const h = Math.floor(demoSec / 3600);
-        const m = Math.floor((demoSec % 3600) / 60);
-        const s = demoSec % 60;
-        const el = document.getElementById('demo-countdown');
-        if (el) el.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-    }
-    tickDemo();
-    setInterval(tickDemo, 1000);
-
-    // Nav active state on scroll
-    const sections = ['features', 'themes', 'gallery'];
-    window.addEventListener('scroll', () => {
-        const y = window.scrollY + 100;
-        let active = '';
-        sections.forEach(id => {
-            const el = document.getElementById(id);
-            if (el && el.offsetTop <= y) active = id;
-        });
-        document.querySelectorAll('.nav-links a').forEach(a => {
-            a.classList.toggle('active', a.getAttribute('href') === '#' + active);
-        });
+    // Nav scroll + active
+    window.addEventListener('scroll',function(){
+        document.querySelector('.nav').classList.toggle('scrolled',scrollY>20);
+        var y=scrollY+120,c='';['features','about','faq'].forEach(function(id){var e=document.getElementById(id);if(e&&e.offsetTop<=y)c=id;});
+        document.querySelectorAll('.nav-links a').forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+c);});
     });
 
-    // Lightbox
-    const allImages = [
-        ...document.querySelectorAll('.stack-img'),
-        ...document.querySelectorAll('.gallery-card[data-src]')
-    ].map(el => ({ src: el.dataset?.src || el.src, label: el.dataset?.label || el.alt || '', el }));
+    // Reveal
+    var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('vis');io.unobserve(e.target);}});},{threshold:.12});
+    document.querySelectorAll('.reveal').forEach(function(e){io.observe(e);});
 
-    let lbEl = null, lbIdx = 0;
-    function openLB(idx) {
-        lbIdx = idx; if (lbEl) lbEl.remove();
-        lbEl = document.createElement('div'); lbEl.className = 'lightbox';
-        renderLB(); document.body.appendChild(lbEl);
-        document.addEventListener('keydown', lbKey);
+    // Theme card rotation
+    var tCards=document.querySelectorAll('.t-card');
+    var tPositions=['left','front','right'];
+    function rotateThemes(dir){
+        if(dir>0) tPositions.push(tPositions.shift());
+        else tPositions.unshift(tPositions.pop());
+        tCards.forEach(function(c,i){c.dataset.pos=tPositions[i]});
     }
-    function renderLB() {
-        const item = allImages[lbIdx];
-        lbEl.innerHTML = `
-            <button type="button" class="lb-close">&times;</button>
-            ${allImages.length > 1 ? '<button type="button" class="lb-nav lb-prev">&#8249;</button>' : ''}
-            <img src="${item.src}" alt="${item.label}">
-            ${allImages.length > 1 ? '<button type="button" class="lb-nav lb-next">&#8250;</button>' : ''}
-            <div class="lb-counter">${item.label} &middot; ${lbIdx + 1} / ${allImages.length}</div>`;
-        lbEl.querySelector('.lb-close').addEventListener('click', closeLB);
-        lbEl.querySelector('.lb-prev')?.addEventListener('click', (e) => { e.stopPropagation(); lbIdx = (lbIdx - 1 + allImages.length) % allImages.length; renderLB(); });
-        lbEl.querySelector('.lb-next')?.addEventListener('click', (e) => { e.stopPropagation(); lbIdx = (lbIdx + 1) % allImages.length; renderLB(); });
-        lbEl.addEventListener('click', (e) => { if (e.target === lbEl) closeLB(); });
-    }
-    function closeLB() { if (lbEl) { lbEl.remove(); lbEl = null; } document.removeEventListener('keydown', lbKey); }
-    function lbKey(e) {
-        if (e.key === 'Escape') closeLB();
-        if (e.key === 'ArrowLeft') { lbIdx = (lbIdx - 1 + allImages.length) % allImages.length; renderLB(); }
-        if (e.key === 'ArrowRight') { lbIdx = (lbIdx + 1) % allImages.length; renderLB(); }
-    }
-    document.addEventListener('touchstart', (e) => { if (lbEl) lbEl._tx = e.touches[0].clientX; }, { passive: true });
-    document.addEventListener('touchend', (e) => {
-        if (!lbEl || !lbEl._tx) return;
-        const dx = e.changedTouches[0].clientX - lbEl._tx;
-        if (Math.abs(dx) > 50) { lbIdx = dx < 0 ? (lbIdx + 1) % allImages.length : (lbIdx - 1 + allImages.length) % allImages.length; renderLB(); }
-        lbEl._tx = null;
-    }, { passive: true });
-    allImages.forEach((item, i) => { item.el.addEventListener('click', () => openLB(i)); });
+    document.getElementById('t-prev').onclick=function(){rotateThemes(-1)};
+    document.getElementById('t-next').onclick=function(){rotateThemes(1)};
+    tCards.forEach(function(c){c.onclick=function(){if(c.dataset.pos!=='front')rotateThemes(c.dataset.pos==='left'?-1:1)}});
+    setInterval(function(){rotateThemes(1)},4500);
+
+    // Lightbox — all feature + theme screenshots
+    var imgs=[];
+    document.querySelectorAll('.feat-frame img, .t-card img').forEach(function(e){
+        var label=e.closest('[data-label]');
+        imgs.push({src:e.src,label:label?label.dataset.label:e.alt||'',el:e});
+    });
+    var lb=null,li=0;
+    function lbO(i){li=i;if(lb)lb.remove();lb=document.createElement('div');lb.className='lb';lbR();document.body.appendChild(lb);document.addEventListener('keydown',lbK);}
+    function lbR(){var t=imgs[li];lb.innerHTML='<button class="lb-x">&times;</button>'+(imgs.length>1?'<button class="lb-n lb-p">&#8249;</button>':'')+'<img src="'+t.src+'" alt="'+t.label+'">'+(imgs.length>1?'<button class="lb-n lb-nx">&#8250;</button>':'')+'<div class="lb-i">'+t.label+' &middot; '+(li+1)+'/'+imgs.length+'</div>';lb.querySelector('.lb-x').onclick=lbC;var p=lb.querySelector('.lb-p');if(p)p.onclick=function(e){e.stopPropagation();li=(li-1+imgs.length)%imgs.length;lbR();};var n=lb.querySelector('.lb-nx');if(n)n.onclick=function(e){e.stopPropagation();li=(li+1)%imgs.length;lbR();};lb.onclick=function(e){if(e.target===lb)lbC();};}
+    function lbC(){if(lb){lb.remove();lb=null;}document.removeEventListener('keydown',lbK);}
+    function lbK(e){if(e.key==='Escape')lbC();if(e.key==='ArrowLeft'){li=(li-1+imgs.length)%imgs.length;lbR();}if(e.key==='ArrowRight'){li=(li+1)%imgs.length;lbR();}}
+    imgs.forEach(function(t,i){t.el.onclick=function(){lbO(i);}});
+
+    // FAQ
+    document.querySelectorAll('.faq-q').forEach(function(b){b.onclick=function(){var it=b.parentElement,w=it.classList.contains('open');document.querySelectorAll('.faq-item.open').forEach(function(e){e.classList.remove('open')});if(!w)it.classList.add('open');}});
 
     // Version
-    fetch('version.json').then(r => r.json()).then(d => {
-        ['nav-download', 'hero-download', 'cta-download'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el && d.url) el.href = d.url;
-        });
-    }).catch(() => {});
+    fetch('version.json').then(function(r){return r.json()}).then(function(d){
+        ['nav-dl','hero-dl','foot-dl'].forEach(function(id){var e=document.getElementById(id);if(e&&d.url)e.href=d.url;});
+        var v1=document.getElementById('hero-ver');if(v1&&d.version)v1.textContent='v'+d.version;
+        var v2=document.getElementById('foot-ver');if(v2&&d.version)v2.textContent='v'+d.version;
+    }).catch(function(){});
 </script>
 </body>
 </html>
