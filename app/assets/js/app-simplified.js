@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.235';
+    const APP_VERSION = '1.1.236';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -3953,6 +3953,7 @@
         let rangeOnTime = 0;
         let rangeLate = 0;
         let rangeTotalSlots = 0;
+        let todayTracked = false;
         const trackLate = !!S.settings.trackLatePrayers;
 
         const todayPassed = computePassedPrayers(new Date());
@@ -3964,6 +3965,7 @@
             const hasPrayers = PRAYERS.some(p => data[p.id]);
             if (hasPrayers) {
                 rangeTrackedDays++;
+                if (isToday) todayTracked = true;
                 PRAYERS.forEach(p => {
                     if (isToday && !todayPassed[p.id]) return;
                     rangeTotalSlots++;
@@ -3989,7 +3991,7 @@
         }
         const activeDays = Math.max(1, rangeTrackedDays);
         const rangeSlotTotal = Math.max(1, rangeTotalSlots);
-        const overallOnTimePct = Math.round((rangeOnTime / rangeSlotTotal) * 100);
+        const overallOnTimePct = Math.min(100, Math.round((rangeOnTime / rangeSlotTotal) * 100));
 
         // ── Qadaa remaining (all qadaa + qadaa-auto goals combined) ──
         const goals = getGoals();
@@ -4060,9 +4062,9 @@
                         ${PRAYERS.map(p => {
                             const done = rangeOnTimePer[p.id];
                             const late = rangeLatePer[p.id];
-                            const denom = todayPassed[p.id] ? activeDays : Math.max(1, activeDays - 1);
-                            const pct = denom > 0 ? Math.round((done / denom) * 100) : 0;
-                            const latePct = trackLate && denom > 0 ? Math.round((late / denom) * 100) : 0;
+                            const denom = (!todayTracked || todayPassed[p.id]) ? activeDays : Math.max(1, activeDays - 1);
+                            const pct = denom > 0 ? Math.min(100, Math.round((done / denom) * 100)) : 0;
+                            const latePct = trackLate && denom > 0 ? Math.min(100 - pct, Math.round((late / denom) * 100)) : 0;
                             const color = PRAYER_COLORS[p.id];
                             return `
                             <div class="prayer-bar-row">
@@ -6358,7 +6360,7 @@
         // Reconcile orphaned qadaa-auto goals: if the prayer is already marked done
         // but the goal was never resolved (due to earlier missedPrayer field bug),
         // resolve it now so the calendar stops showing a stale MISSED badge.
-        if (!Storage.get('_migrated_orphan_goals')) {
+        if (!Storage.get('_migrated_orphan_goals_v2')) {
             let fixed = 0;
             getGoals().forEach(g => {
                 if (g.type !== 'qadaa-auto' || !g.missedOn || (g.remaining || 0) <= 0) return;
@@ -6373,7 +6375,7 @@
                 }
             });
             if (fixed > 0) saveGoals();
-            Storage.set('_migrated_orphan_goals', true);
+            Storage.set('_migrated_orphan_goals_v2', true);
         }
 
         initEvents();
