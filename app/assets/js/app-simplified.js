@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.231';
+    const APP_VERSION = '1.1.232';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -587,7 +587,6 @@
                     // Build one combined manual qadaa goal
                     const greg = new Date(now);
                     const dateLabel = fmtShortDate(greg);
-                    const hijriLabel = fmtHijriShort(toHijri(greg));
                     const prayerNames = selected
                         .map(pid => PRAYER_MAP[pid]?.name)
                         .filter(Boolean);
@@ -1730,9 +1729,6 @@
         const primary = S.settings.primaryCalendar || 'hijri';
         if (primary === 'gregorian') return updateCalendarGregorian();
         const md = HijriCalendar.getMonthData(S.calY, S.calM);
-
-        const firstGreg = HijriCalendar.hijriToGregorian(S.calY, S.calM, 1);
-        const lastGreg = HijriCalendar.hijriToGregorian(S.calY, S.calM, md.totalDays);
 
         const hijriLabel = `${md.monthName} ${S.calY}`;
 
@@ -3224,7 +3220,7 @@
                 <div class="settings-section">
                     <h4>Asr school <span class="info-tip" data-hint="Hanafi = shadow factor 2 (later Asr). Standard = shadow factor 1.">?</span></h4>
                     <div class="seg-toggle">
-                        ${Object.entries(ASR_SCHOOLS).map(([id, s]) =>
+                        ${Object.entries(ASR_SCHOOLS).map(([id]) =>
                             `<button type="button" class="seg-toggle-btn${id === asrSchool ? ' active' : ''}" data-setting="asrSchool" data-value="${id}">${id === 'standard' ? 'Standard' : 'Hanafi'}</button>`
                         ).join('')}
                     </div>
@@ -3536,6 +3532,7 @@
                 cur[id] = val;
                 setSetting('iqamaOffsets', cur);
                 refreshAllTimes();
+                resyncPushSubscription();
             };
             const persistAdjust = (id, val) => {
                 const cur = getSetting('timeAdjustments', {}) || {};
@@ -3554,13 +3551,12 @@
             const persistNumSetting = (key, val) => {
                 S.settings[key] = val;
                 save(KEYS.SETTINGS, S.settings);
-                if (S.settings.notifications) schedulePrayerNotifications();
+                if (S.settings.notifications) { schedulePrayerNotifications(); resyncPushSubscription(); }
             };
-            // Save a boolean setting from a checkbox (e.g. notifPreEnabled)
             const persistBoolSetting = (key, val) => {
                 S.settings[key] = val;
                 save(KEYS.SETTINGS, S.settings);
-                if (S.settings.notifications) schedulePrayerNotifications();
+                if (S.settings.notifications) { schedulePrayerNotifications(); resyncPushSubscription(); }
             };
             // Raw number inputs (used by notif sub-settings)
             $$('input[data-setting-num]', content).forEach(inp => {
@@ -3925,10 +3921,8 @@
         let rangeShafaWitrNights = 0;
         let rangeQyaamNights = 0;
         let rangeQyaamRakaat = 0;
-        let rangeCompleted = 0;
         let rangeOnTime = 0;
         let rangeTotalSlots = 0;
-        let rangeOnTimeSlots = 0;
 
         const todayPassed = computePassedPrayers(new Date());
 
@@ -3944,11 +3938,9 @@
                     rangeTotalSlots++;
                     if (data[p.id]) {
                         rangePerPrayer[p.id]++;
-                        rangeCompleted++;
                         if (!data[`${p.id}_auto_missed`]) {
                             rangeOnTimePer[p.id]++;
                             rangeOnTime++;
-                            rangeOnTimeSlots++;
                         }
                     }
                 });
@@ -4330,7 +4322,7 @@
                 list.innerHTML = '<div class="city-empty">No matches</div>';
                 return;
             }
-            list.innerHTML = matches.map((c, i) => `
+            list.innerHTML = matches.map((c) => `
                 <button type="button" class="city-row" data-idx="${CITY_PRESETS.indexOf(c)}">
                     <div class="city-name">${c.name}</div>
                     <div class="city-country">${c.country}</div>
@@ -4490,10 +4482,8 @@
         }
 
         const times = getTodayPrayerTimes();
-        const schedule = buildPrayerSchedule(times);
         const methodName = CALC_METHODS[S.settings.calcMethod || 'ISNA'].name;
         const asrName = ASR_SCHOOLS[S.settings.asrSchool || 'standard'].name;
-        const iqamaOffsets = S.settings.iqamaOffsets || {};
         const notifOn = !!S.settings.notifications;
         const hijriNow = HijriCalendar.gregorianToHijri(new Date());
         const isRamadan = hijriNow.month === 9;
@@ -4679,7 +4669,7 @@
                                 ? '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>'
                                 : '<path d="M13.73 21a2 2 0 0 1-3.46 0M18.63 13A17.89 17.89 0 0 1 18 8M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14M18 8a6 6 0 0 0-9.33-5M1 1l22 22" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>'}
                         </svg>`;
-                    if (S.settings.notifications) schedulePrayerNotifications();
+                    if (S.settings.notifications) { schedulePrayerNotifications(); resyncPushSubscription(); }
                     toast(`${PRAYER_TIME_LABELS[pid]} ${nowOn ? 'on' : 'muted'}`);
                 });
             });
@@ -4711,7 +4701,6 @@
         const timelineEl = $('#times-daybar');
         if (timelineEl) {
             const renderNow = new Date();
-            const dayTimes = times;
             const todayMidnight = new Date(renderNow.getFullYear(), renderNow.getMonth(), renderNow.getDate());
 
             // ── Continuous 3-day slide: yesterday + today + tomorrow mapped onto a 72h range.
@@ -4739,9 +4728,6 @@
                 { times: times.today, nextFajr: times.tomorrowFajr, label: 'Today',     dateKey: 'today' },
                 { times: tomTimes,  nextFajr: dayAfterTimes.fajr,  label: 'Tomorrow',  dateKey: 'tom' },
             ];
-
-            // Today's times (the hero/schedule context — still used for popover fallbacks)
-            const t = times.today;
 
             // ── Build renderable arrays across all 3 days ──
             const prayerBandsAll = [];
@@ -5589,7 +5575,7 @@
                     refreshAllTimes();
                 }
             }
-        } catch (_) {}
+        } catch {}
     }
 
     /* ── Notifications (prayer alerts) ─────────────────────────
@@ -5722,7 +5708,7 @@
         }
         // Browser fallback
         if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-            try { new Notification(title, { body, tag: 'nur-prayer' }); } catch (_) {}
+            try { new Notification(title, { body, tag: 'nur-prayer' }); } catch {}
         }
     }
 
@@ -5746,7 +5732,7 @@
                 });
             }
             await savePushSubscription(sub);
-        } catch (_) {}
+        } catch {}
     }
 
     function urlBase64ToUint8Array(base64String) {
@@ -5788,6 +5774,15 @@
             lng: loc?.lng || null,
             timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
             calc_method: S.settings.calcMethod || 'ISNA',
+            notif_settings: {
+                preEnabled: S.settings.notifPreEnabled !== false,
+                preMinutes: parseInt(S.settings.notifPreMinutes, 10) || 15,
+                adhanEnabled: S.settings.notifAdhanEnabled !== false,
+                preIqamaEnabled: S.settings.notifPreIqamaEnabled === true,
+                preIqamaMinutes: parseInt(S.settings.notifPreIqamaMinutes, 10) || 5,
+                iqamaOffsets: S.settings.iqamaOffsets || {},
+                prayerNotifs: S.settings.prayerNotifs || {},
+            },
             schedule_computed_for: null,
             updated_at: new Date().toISOString(),
         };
@@ -5812,10 +5807,15 @@
                 headers: planHeaders,
                 body: JSON.stringify(session ? { user_id: session.user.id } : { device_id: deviceId }),
             }).catch(() => {});
-        } catch (_) {}
+        } catch {}
     }
 
-    async function resyncPushSubscription() {
+    let _resyncTimer = null;
+    function resyncPushSubscription() {
+        clearTimeout(_resyncTimer);
+        _resyncTimer = setTimeout(_doResyncPush, 2000);
+    }
+    async function _doResyncPush() {
         if (!S.settings.notifications) return;
         if (isElectron || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
         if (Notification.permission !== 'granted') return;
@@ -5823,7 +5823,7 @@
             const reg = await navigator.serviceWorker.ready;
             const sub = await reg.pushManager.getSubscription();
             if (sub) await savePushSubscription(sub);
-        } catch (_) {}
+        } catch {}
     }
 
     /* ── Auto-missed prayers ─────────────────────────────────── */

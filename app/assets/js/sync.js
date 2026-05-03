@@ -164,7 +164,7 @@
 
     /* ─── Auth ─────────────────────────────────────────────────── */
 
-    function establishSession(data, opts) {
+    function establishSession(data) {
         const session = {
             access_token: data.access_token,
             refresh_token: data.refresh_token,
