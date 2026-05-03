@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.229';
+    const APP_VERSION = '1.1.230';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -5734,10 +5734,8 @@
     const VAPID_PUBLIC_KEY = 'BIsqq-SJ771xRfwcELAJGXwO0WY3dPi0cpbihv3yKNRjmYODeu3M3q70-eL9o_lYHBQjqLyMwa5oIqrySCveykM';
 
     async function subscribeToPush() {
-        if (isElectron) return;
-        if (!('serviceWorker' in navigator)) { toast('[debug] No SW support'); return; }
-        if (!('PushManager' in window)) { toast('[debug] No PushManager'); return; }
-        if (Notification.permission !== 'granted') { toast('[debug] Permission: ' + Notification.permission); return; }
+        if (isElectron || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+        if (Notification.permission !== 'granted') return;
         try {
             const reg = await navigator.serviceWorker.ready;
             let sub = await reg.pushManager.getSubscription();
@@ -5747,12 +5745,8 @@
                     applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
                 });
             }
-            toast('[debug] Saving to Supabase...');
             await savePushSubscription(sub);
-            toast('[debug] Push subscription saved!');
-        } catch (e) {
-            toast('[debug] Push error: ' + e.message);
-        }
+        } catch (_) {}
     }
 
     function urlBase64ToUint8Array(base64String) {
@@ -5784,13 +5778,13 @@
             'apikey': PUSH_SUPABASE_ANON_KEY,
             'Prefer': 'resolution=merge-duplicates',
         };
+        // Only set Authorization with a real JWT — publishable keys are not JWTs
         if (session) {
             headers['Authorization'] = `Bearer ${session.access_token}`;
-        } else {
-            headers['Authorization'] = `Bearer ${PUSH_SUPABASE_ANON_KEY}`;
         }
 
         const body = {
+            device_id: deviceId,
             endpoint: sub.endpoint,
             keys: JSON.stringify(sub.toJSON().keys),
             lat: loc?.lat || null,
@@ -5803,9 +5797,6 @@
 
         if (session) {
             body.user_id = session.user.id;
-            body.device_id = deviceId;
-        } else {
-            body.device_id = deviceId;
         }
 
         try {
@@ -5815,12 +5806,11 @@
                 body: JSON.stringify(body),
             });
             // Trigger schedule re-computation
+            const planHeaders = { 'Content-Type': 'application/json', 'apikey': PUSH_SUPABASE_ANON_KEY };
+            if (session) planHeaders['Authorization'] = `Bearer ${session.access_token}`;
             fetch(`${PUSH_SUPABASE_URL}/functions/v1/plan-prayer-schedule`, {
                 method: 'POST',
-                headers: {
-                    'Authorization': headers['Authorization'],
-                    'Content-Type': 'application/json',
-                },
+                headers: planHeaders,
                 body: JSON.stringify(session ? { user_id: session.user.id } : { device_id: deviceId }),
             }).catch(() => {});
         } catch (_) {}
