@@ -1,5 +1,5 @@
 // Nur — Service Worker (cache-first, version stamped by build-web.js)
-const CACHE_VERSION = 'nur-v227';
+const CACHE_VERSION = 'nur-v228';
 const CACHE_NAME = CACHE_VERSION;
 
 const PRECACHE_URLS = [
@@ -46,6 +46,11 @@ self.addEventListener('activate', event => {
       ))
       .then(() => self.clients.claim())
   );
+});
+
+// Skip waiting when app requests it
+self.addEventListener('message', event => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 // Push — show notification from server even when app is closed
