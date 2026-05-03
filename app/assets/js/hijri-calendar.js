@@ -90,7 +90,7 @@ const HijriCalendar = (() => {
                 ? window.Storage.get('app-settings', {})
                 : {};
             if (typeof settings.hijriOffset === 'number') _offset = settings.hijriOffset;
-        } catch (_) { /* keep default */ }
+        } catch { /* keep default */ }
     })();
     function setOffset(n) { _offset = n; }
 
