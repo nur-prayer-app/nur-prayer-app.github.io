@@ -1,5 +1,5 @@
 {
-  "version": "1.1.226",
-  "url": "https://github.com/nur-prayer-app/nur-prayer-app.github.io/releases/download/v1.1.226/Nur.Setup.1.1.226.exe",
-  "notes": "Cloudflare Web Analytics, SEO & accessibility fixes, native FAQ, PWA meta tags"
+  "version": "1.1.227",
+  "url": "https://github.com/nur-prayer-app/nur-prayer-app.github.io/releases/download/v1.1.227/Nur.Setup.1.1.227.exe",
+  "notes": "Accurate push notifications (within ~1s), anonymous push support, Cloudflare analytics, SEO fixes"
 }
