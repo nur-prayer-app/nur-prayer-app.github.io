@@ -1,5 +1,5 @@
 {
-  "version": "1.1.225",
-  "url": "https://github.com/nur-prayer-app/nur-prayer-app.github.io/releases/download/v1.1.225/Nur.Setup.1.1.225.exe",
-  "notes": "Background push scaffold, native widget directories, VAPID keys"
+  "version": "1.1.226",
+  "url": "https://github.com/nur-prayer-app/nur-prayer-app.github.io/releases/download/v1.1.226/Nur.Setup.1.1.226.exe",
+  "notes": "Cloudflare Web Analytics, SEO & accessibility fixes, native FAQ, PWA meta tags"
 }
