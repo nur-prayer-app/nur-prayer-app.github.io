@@ -133,9 +133,12 @@
         .hero-meta{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-top:1rem;font-size:.72rem;color:var(--text-3)}
         .hero-meta span{display:inline-flex;align-items:center;gap:4px}
         .hero-meta .dot{width:3px;height:3px;border-radius:50%;background:var(--text-3);opacity:.5}
-        .hero-install{display:inline-flex;align-items:center;gap:5px;margin-top:.75rem;font-size:.78rem;font-weight:500;color:var(--text-3);text-decoration:none;transition:color .2s}
-        .hero-install:hover{color:var(--green)}
-        .hero-install svg{width:13px;height:13px}
+        .hero-install{display:inline-flex;align-items:center;gap:8px;margin-top:.85rem;padding:.45rem 1rem .45rem .85rem;font-size:.76rem;font-weight:500;color:var(--text-3);text-decoration:none;border:1px solid var(--border);border-radius:100px;transition:all .2s;background:transparent}
+        .hero-install:hover{color:var(--text-2);border-color:var(--border-h);background:var(--bg-glass)}
+        .hero-install-icons{display:inline-flex;align-items:center;gap:6px}
+        .hero-install-icons svg{width:14px;height:14px;opacity:.45;transition:opacity .2s}
+        .hero-install:hover .hero-install-icons svg{opacity:.7}
+        .hero-install-sep{width:1px;height:12px;background:var(--border);flex-shrink:0}
 
         /* Hero visual */
         .hero-right{flex:0 0 500px;position:relative;height:500px}
@@ -335,6 +338,7 @@
             .hero-ctas{flex-direction:column-reverse;align-items:center}
             .hero-ctas .btn-w{background:transparent;color:var(--text-3);border:1px solid var(--border);font-size:.8rem;padding:.55rem 1.2rem;box-shadow:none}
             .hero-ctas .btn-o{background:var(--grad);color:#0c1322;border-color:transparent;font-weight:700}
+            .hero-install{justify-content:center}
             .foot-main{grid-template-columns:1fr 1fr}
             .foot-brand-area{grid-column:1/-1}
         }
@@ -417,8 +421,13 @@
                 <span>~85 MB</span>
             </div>
             <a href="install.html" class="hero-install">
-                <svg viewBox="0 0 24 24" fill="none"><path d="M9 17H7A5 5 0 0 1 7 7h2M15 17h2a5 5 0 0 0 0-10h-2M8 12h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-                Install on iPhone, Android, Mac &amp; Linux
+                <span class="hero-install-icons">
+                    <svg viewBox="0 0 384 512" fill="currentColor"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-27.1-46.5-42.1-82.5-45.1-14.4-1.5-32.1 4.2-48.4 10.7-20 7.9-30.5 7.9-50.5 0-16.3-6.5-34-12.2-48.4-10.7-52.8 4.4-97.8 46.6-97.8 119.1 0 63.2 46 153.5 105.1 193.8 13.6 9.3 31.3 9.1 44.8 0 25.2-17 44.8-42.5 60.5-68.4 12.8-21.1 22.6-44.3 29.5-68.8 5.6-20-3.2-40.8-12.3-45.8zM224 48c26.5 0 48-21.5 48-48h-16c0 17.7-14.3 32-32 32s-32-14.3-32-32h-16c0 26.5 21.5 48 48 48z"/></svg>
+                    <svg viewBox="0 0 576 512" fill="currentColor"><path d="M420.55 301.93a24 24 0 1 1 24-24 24 24 0 0 1-24 24m-265.1 0a24 24 0 1 1 24-24 24 24 0 0 1-24 24m273.7-144.48 47.94-83a10 10 0 1 0-17.27-10l-48.54 84.07a301 301 0 0 0-246.56 0L116.18 64.45a10 10 0 1 0-17.27 10l47.94 83C64.53 202.22 8.24 285.55 0 384h576c-8.24-98.45-64.54-181.78-146.85-226.55"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none"><rect x="2" y="3" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M8 21h8M12 17v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                </span>
+                <span class="hero-install-sep"></span>
+                Also on iPhone, Android, Mac &amp; Linux
             </a>
         </div>
         <div class="hero-right">
