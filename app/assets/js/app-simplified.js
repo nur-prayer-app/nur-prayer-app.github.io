@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.233';
+    const APP_VERSION = '1.1.234';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -119,8 +119,9 @@
     /** Clear the auto-missed flag for `prayerId` on the Hijri day that `dateIso`
      *  falls on. Called when the user marks an auto-missed prayer as prayed or
      *  dismisses the goal. Idempotent — no-op if the flag is absent. */
-    function clearAutoMissedFlag(prayerId, dateIso) {
+    function clearAutoMissedFlag(prayerId, dateIso, force) {
         if (!prayerId || !dateIso) return;
+        if (!force && S.settings.trackLatePrayers) return;
         const mH = toHijri(dateIso);
         const dKey = hk(mH.year, mH.month, mH.day);
         const dd = S.prayers[dKey];
@@ -194,7 +195,9 @@
                 d[pid] = cb.checked;
                 // If just marked prayed and it was auto-missed, clear the flag + resolve the goal
                 if (wasOff && d[pid] && d[`${pid}_auto_missed`]) {
-                    delete d[`${pid}_auto_missed`];
+                    if (!S.settings.trackLatePrayers) {
+                        delete d[`${pid}_auto_missed`];
+                    }
                     const matchingGoal = getGoals().find(g => {
                         if (g.type !== 'qadaa-auto' || !g.missedOn) return false;
                         const gh = toHijri(g.missedOn);
@@ -838,7 +841,7 @@
             S.goalsArchive.push({ ...g, archivedAt: new Date().toISOString() });
             save(KEYS.GOALS_ARCHIVE, S.goalsArchive);
             goals.splice(idx, 1);
-            clearAutoMissedFlag(g.missedPrayer, g.missedOn);
+            clearAutoMissedFlag(g.missedPrayer, g.missedOn, true);
             saveGoals();
             closeAllModals();
             renderGoals();
@@ -1529,6 +1532,10 @@
             badges.push(`<span class="cell-badge cell-badge-qyaam" title="Qyaam ${rak} rakaat"><svg viewBox="0 0 24 24" fill="none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="currentColor"/></svg>Qyaam${rak ? ' ' + rak : ''}</span>`);
         }
         if (hadQadaaMissed) badges.push('<span class="cell-badge cell-badge-qadaa-missed" title="Auto-missed prayer on this day"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2L14 8.5L20 9L15 13.5L16 20L12 17L8 20L9 13.5L4 9L10 8.5Z" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>Missed</span>');
+        if (S.settings.trackLatePrayers && !hadQadaaMissed) {
+            const hasLate = PRAYERS.some(p => dd[p.id] && dd[`${p.id}_auto_missed`]);
+            if (hasLate) badges.push('<span class="cell-badge cell-badge-qadaa-late" title="Prayer completed late"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2L14 8.5L20 9L15 13.5L16 20L12 17L8 20L9 13.5L4 9L10 8.5Z" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>Late</span>');
+        }
         if (qadaaCount > 0) badges.push(`<span class="cell-badge cell-badge-qadaa-done" title="${qadaaCount} qadaa prayer${qadaaCount === 1 ? '' : 's'} recorded this day"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2L14 8.5L20 9L15 13.5L16 20L12 17L8 20L9 13.5L4 9L10 8.5Z" fill="currentColor"/></svg>Qadaa ${qadaaCount}</span>`);
 
         const badgesRow = badges.length > 0 ? `<div class="cell-badges-row">${badges.join('')}</div>` : '';
@@ -2023,13 +2030,17 @@
                     <div class="modal-prayer-icons">
                         ${PRAYERS.map(p => {
                             const done = dd[p.id];
-                            const autoMissed = dd[`${p.id}_auto_missed`] && !done;
+                            const hasAutoMissed = !!dd[`${p.id}_auto_missed`];
+                            const autoMissed = hasAutoMissed && !done;
+                            const isLate = done && hasAutoMissed && S.settings.trackLatePrayers;
                             const future = !prayerPassed[p.id] && !done;
                             const name = prayerName(p.id, greg);
-                            const missedTag = autoMissed
+                            const statusTag = autoMissed
                                 ? '<span class="mpi-missed-tag" title="This prayer was flagged as missed for this day">MISSED</span>'
+                                : isLate
+                                ? '<span class="mpi-late-tag" title="This prayer was logged after the next adhan">LATE</span>'
                                 : '';
-                            const cls = done ? ' completed' : autoMissed ? ' missed' : future ? ' future' : '';
+                            const cls = done ? (isLate ? ' completed late' : ' completed') : autoMissed ? ' missed' : future ? ' future' : '';
                             return `
                             <button type="button" class="modal-prayer-icon${cls}" data-prayer="${p.id}" data-key="${key}" ${future ? 'disabled' : ''}>
                                 <div class="mpi-circle">
@@ -2037,7 +2048,7 @@
                                 </div>
                                 <span class="mpi-name">${name}</span>
                                 <span class="mpi-time">${p.time}</span>
-                                ${missedTag}
+                                ${statusTag}
                             </button>`;
                         }).join('')}
                     </div>
@@ -2155,19 +2166,18 @@
                 const wasOn = !!d2[pid];
                 d2[pid] = !wasOn;
 
-                // If we just marked a prayer as PRAYED and that same prayer was auto-missed
-                // on this day, reconcile: clear the flag and decrement the matching qadaa-auto
-                // goal so the calendar MISSED badge disappears immediately (no page refresh needed).
                 if (!wasOn && d2[pid]) {
                     if (d2[`${pid}_auto_missed`]) {
-                        delete d2[`${pid}_auto_missed`];
+                        if (!S.settings.trackLatePrayers) {
+                            delete d2[`${pid}_auto_missed`];
+                        }
                         const matchingGoal = getGoals().find(g => {
                             if (g.type !== 'qadaa-auto' || !g.missedOn) return false;
                             const gd = new Date(g.missedOn);
                             const gh = HijriCalendar.gregorianToHijri(gd);
                             const [y, m, day] = k.split('-').map(Number);
                             return gh.year === y && gh.month === m && gh.day === day
-                                && ((g.perPrayer && g.perPrayer[pid] > 0) || g.prayerId === pid);
+                                && ((g.perPrayer && g.perPrayer[pid] > 0) || g.missedPrayer === pid);
                         });
                         if (matchingGoal) recordQadaaPrayers(matchingGoal, pid, 1);
                     }
@@ -2295,7 +2305,14 @@
         
         content.querySelector('[data-action="alldone"]')?.addEventListener('click', () => {
             const d2 = dayData(key);
-            PRAYERS.forEach(p => { if (prayerPassed[p.id]) d2[p.id] = true; });
+            PRAYERS.forEach(p => {
+                if (prayerPassed[p.id]) {
+                    d2[p.id] = true;
+                    if (d2[`${p.id}_auto_missed`] && !S.settings.trackLatePrayers) {
+                        delete d2[`${p.id}_auto_missed`];
+                    }
+                }
+            });
             save(KEYS.PRAYERS, S.prayers);
             render();
             openDayModal(key);
@@ -3185,6 +3202,7 @@
 
         if (tab === 'prayers') {
             const autoMiss = getSetting('autoMarkMissed', true);
+            const trackLate = getSetting('trackLatePrayers', false);
             const calcMethod = getSetting('calcMethod', 'ISNA');
             const asrSchool = getSetting('asrSchool', 'standard');
             const iqama = getSetting('iqamaOffsets', {});
@@ -3341,6 +3359,16 @@
                         <h4>Auto-mark missed <span class="info-tip" data-hint="If you don't log a prayer before the next one comes in, it gets added to your Qadaa goals automatically.">?</span></h4>
                         <label class="setting-toggle">
                             <input type="checkbox" data-setting="autoMarkMissed" ${autoMiss ? 'checked' : ''}>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <div class="settings-row">
+                        <h4>Track late prayers <span class="info-tip" data-hint="Track prayers logged after the next adhan as 'late'. Off = all completed prayers count as on-time.">?</span></h4>
+                        <label class="setting-toggle">
+                            <input type="checkbox" data-setting="trackLatePrayers" ${trackLate ? 'checked' : ''}>
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
@@ -3507,7 +3535,7 @@
         $$('input[type="checkbox"][data-setting]', content).forEach(cb => {
             cb.addEventListener('change', () => {
                 setSetting(cb.dataset.setting, cb.checked);
-                if (['showGregorian', 'showIndicators'].includes(cb.dataset.setting)) {
+                if (['showGregorian', 'showIndicators', 'trackLatePrayers'].includes(cb.dataset.setting)) {
                     renderCalendar();
                 }
             });
@@ -3915,6 +3943,7 @@
         // the user didn't log it before the next adhan — i.e. it's being paid back as qadaa.
         const rangePerPrayer = { fajr:0, dhuhr:0, asr:0, maghrib:0, isha:0 };
         const rangeOnTimePer = { fajr:0, dhuhr:0, asr:0, maghrib:0, isha:0 };
+        const rangeLatePer = { fajr:0, dhuhr:0, asr:0, maghrib:0, isha:0 };
         let rangeTrackedDays = 0;
         let rangeFastingDays = 0;
         let rangeDuhaDays = 0;
@@ -3922,7 +3951,9 @@
         let rangeQyaamNights = 0;
         let rangeQyaamRakaat = 0;
         let rangeOnTime = 0;
+        let rangeLate = 0;
         let rangeTotalSlots = 0;
+        const trackLate = !!S.settings.trackLatePrayers;
 
         const todayPassed = computePassedPrayers(new Date());
 
@@ -3938,7 +3969,10 @@
                     rangeTotalSlots++;
                     if (data[p.id]) {
                         rangePerPrayer[p.id]++;
-                        if (!data[`${p.id}_auto_missed`]) {
+                        if (data[`${p.id}_auto_missed`] && trackLate) {
+                            rangeLatePer[p.id]++;
+                            rangeLate++;
+                        } else {
                             rangeOnTimePer[p.id]++;
                             rangeOnTime++;
                         }
@@ -4018,23 +4052,27 @@
                         </svg>
                         <div class="donut-center">
                             <div class="donut-pct">${overallOnTimePct}%</div>
-                            <div class="donut-sub">completed</div>
+                            <div class="donut-sub">${trackLate ? 'on time' : 'completed'}</div>
                         </div>
                     </div>
                     <div class="punct-bars">
+                        ${trackLate ? `<div class="punct-breakdown">${rangeOnTime} on time · ${rangeLate} late · ${rangeTotalSlots - rangeOnTime - rangeLate} missed</div>` : ''}
                         ${PRAYERS.map(p => {
                             const done = rangeOnTimePer[p.id];
+                            const late = rangeLatePer[p.id];
                             const denom = todayPassed[p.id] ? activeDays : Math.max(1, activeDays - 1);
                             const pct = denom > 0 ? Math.round((done / denom) * 100) : 0;
+                            const latePct = trackLate && denom > 0 ? Math.round((late / denom) * 100) : 0;
                             const color = PRAYER_COLORS[p.id];
                             return `
                             <div class="prayer-bar-row">
                                 <span class="pbr-name" style="color:${color}">${p.name}</span>
                                 <div class="pbr-track">
-                                    <div class="pbr-fill" style="width:${pct}%;background:linear-gradient(90deg, ${color}, ${color}cc)"></div>
+                                    <div class="pbr-fill" style="width:${pct + latePct}%;background:linear-gradient(90deg, ${color}, ${color}cc)"></div>
+                                    ${trackLate && latePct > 0 ? `<div class="pbr-fill pbr-fill-late" style="width:${latePct}%;left:${pct}%"></div>` : ''}
                                 </div>
                                 <span class="pbr-pct">${pct}%</span>
-                                <span class="pbr-ratio">${done}/${denom}</span>
+                                <span class="pbr-ratio">${done}/${denom}${trackLate && late > 0 ? ` <span class="pbr-ratio-late">(+${late})</span>` : ''}</span>
                             </div>`;
                         }).join('')}
                     </div>
