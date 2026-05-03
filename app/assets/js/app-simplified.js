@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.234';
+    const APP_VERSION = '1.1.235';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -6353,6 +6353,27 @@
         if (Object.keys(legacyFasting).length > 0) {
             Storage.remove(KEYS.LEGACY_FASTING);
             save(KEYS.PRAYERS, S.prayers);
+        }
+
+        // Reconcile orphaned qadaa-auto goals: if the prayer is already marked done
+        // but the goal was never resolved (due to earlier missedPrayer field bug),
+        // resolve it now so the calendar stops showing a stale MISSED badge.
+        if (!Storage.get('_migrated_orphan_goals')) {
+            let fixed = 0;
+            getGoals().forEach(g => {
+                if (g.type !== 'qadaa-auto' || !g.missedOn || (g.remaining || 0) <= 0) return;
+                const mH = toHijri(g.missedOn);
+                const dKey = hk(mH.year, mH.month, mH.day);
+                const dd = S.prayers[dKey];
+                if (!dd) return;
+                const pid = g.missedPrayer;
+                if (pid && dd[pid]) {
+                    recordQadaaPrayers(g, pid, 1, { silent: true });
+                    fixed++;
+                }
+            });
+            if (fixed > 0) saveGoals();
+            Storage.set('_migrated_orphan_goals', true);
         }
 
         initEvents();
