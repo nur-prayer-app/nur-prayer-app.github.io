@@ -27,6 +27,20 @@
       "offers": { "@type": "Offer", "price": "0" }
     }
     </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {"@type": "Question", "name": "Does Nur support my calculation method?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Nur includes ISNA, MWL, Egyptian General Authority, Umm al-Qura, Karachi, Dubai, Turkey, Kuwait, Tehran, and Jafari. Ten methods covering most regions."}},
+        {"@type": "Question", "name": "Does it support Hanafi Asr timing?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. You choose between Standard (Shafi'i/Maliki/Hanbali) and Hanafi in settings. It applies instantly."}},
+        {"@type": "Question", "name": "Can I use it without internet?", "acceptedAnswer": {"@type": "Answer", "text": "Completely. Prayer times are calculated locally on your device. The only feature that needs internet is cloud sync, which is optional."}},
+        {"@type": "Question", "name": "What happens to my data if I switch devices?", "acceptedAnswer": {"@type": "Answer", "text": "If you've turned on cloud sync, your data restores when you sign in on the new device. Without sync, you can export everything as a JSON file from Settings and import it on the other device."}},
+        {"@type": "Question", "name": "Is Nur really free?", "acceptedAnswer": {"@type": "Answer", "text": "No catch. No ads, no premium tier, no data collection. Nur is a personal project built to help Muslims pray consistently."}},
+        {"@type": "Question", "name": "Does it work on Mac or mobile?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. On iPhone, Android, Mac, and Linux, install Nur as a web app from your browser. It works offline and looks like a native app."}}
+      ]
+    }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap">
@@ -280,12 +294,12 @@
         .faq-head{text-align:center;margin-bottom:2rem}
         .faq-item{border-top:1px solid var(--border)}
         .faq-item:last-child{border-bottom:1px solid var(--border)}
-        .faq-q{width:100%;display:flex;align-items:center;justify-content:space-between;padding:1.1rem 0;min-height:48px;background:none;border:none;cursor:pointer;color:var(--text);font-size:.88rem;font-weight:600;font-family:var(--body);text-align:left;transition:color .2s}
-        .faq-q:hover{color:var(--green)}
-        .faq-q svg{flex-shrink:0;width:16px;height:16px;color:var(--text-3);transition:transform .3s}
-        .faq-item.open .faq-q svg{transform:rotate(45deg)}
-        .faq-a{max-height:0;overflow:hidden;transition:max-height .3s ease}
-        .faq-item.open .faq-a{max-height:300px}
+        .faq-item summary{display:flex;align-items:center;justify-content:space-between;padding:1.1rem 0;min-height:48px;cursor:pointer;color:var(--text);font-size:.88rem;font-weight:600;font-family:var(--body);text-align:left;transition:color .2s;list-style:none}
+        .faq-item summary::-webkit-details-marker{display:none}
+        .faq-item summary::marker{display:none;content:''}
+        .faq-item summary:hover{color:var(--green)}
+        .faq-item summary svg{flex-shrink:0;width:16px;height:16px;color:var(--text-3);transition:transform .3s}
+        .faq-item[open] summary svg{transform:rotate(45deg)}
         .faq-a p{font-size:.82rem;color:var(--text-2);line-height:1.7;padding-bottom:1rem}
 
         /* ── Footer ── */
@@ -391,7 +405,7 @@
     </button>
     <div class="nav-actions">
         <a href="app/" class="btn-s btn-s-g"><svg class="btn-s-ico" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10A15.3 15.3 0 0 1 12 2z" stroke="currentColor" stroke-width="1.5"/></svg> Use in Browser</a>
-        <a href="https://github.com/nur-prayer-app/nur-prayer-app.github.io/releases/latest" class="btn-s btn-s-dl" id="nav-dl">
+        <a href="https://github.com/nur-prayer-app/nur-prayer-app.github.io/releases/latest" rel="noopener noreferrer" class="btn-s btn-s-dl" id="nav-dl">
             <svg viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Download
         </a>
@@ -407,7 +421,7 @@
             <h1 class="hero-h1">Never Miss<br><em>a Prayer Again</em></h1>
             <p class="hero-p">Prayer times, Hijri calendar, fasting, and qadaa. Everything in one place. No account needed. Runs offline. Always free.</p>
             <div class="hero-ctas">
-                <a href="https://github.com/nur-prayer-app/nur-prayer-app.github.io/releases/latest" class="btn btn-w" id="hero-dl">
+                <a href="https://github.com/nur-prayer-app/nur-prayer-app.github.io/releases/latest" rel="noopener noreferrer" class="btn btn-w" id="hero-dl">
                     <svg viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     Download for Windows
                 </a>
@@ -567,30 +581,30 @@
             <h2 class="stitle">Questions</h2>
         </div>
         <div class="reveal">
-            <div class="faq-item">
-                <button class="faq-q" type="button" aria-expanded="false">Does Nur support my calculation method?<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+            <details class="faq-item">
+                <summary>Does Nur support my calculation method?<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></summary>
                 <div class="faq-a"><p>Yes. Nur includes ISNA, MWL, Egyptian General Authority, Umm al-Qura, Karachi, Dubai, Turkey, Kuwait, Tehran, and Jafari. Ten methods covering most regions.</p></div>
-            </div>
-            <div class="faq-item">
-                <button class="faq-q" type="button" aria-expanded="false">Does it support Hanafi Asr timing?<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+            </details>
+            <details class="faq-item">
+                <summary>Does it support Hanafi Asr timing?<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></summary>
                 <div class="faq-a"><p>Yes. You choose between Standard (Shafi'i/Maliki/Hanbali) and Hanafi in settings. It applies instantly.</p></div>
-            </div>
-            <div class="faq-item">
-                <button class="faq-q" type="button" aria-expanded="false">Can I use it without internet?<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+            </details>
+            <details class="faq-item">
+                <summary>Can I use it without internet?<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></summary>
                 <div class="faq-a"><p>Completely. Prayer times are calculated locally on your device. The only feature that needs internet is cloud sync, which is optional.</p></div>
-            </div>
-            <div class="faq-item">
-                <button class="faq-q" type="button" aria-expanded="false">What happens to my data if I switch devices?<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+            </details>
+            <details class="faq-item">
+                <summary>What happens to my data if I switch devices?<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></summary>
                 <div class="faq-a"><p>If you've turned on cloud sync, your data restores when you sign in on the new device. Without sync, you can export everything as a JSON file from Settings and import it on the other device.</p></div>
-            </div>
-            <div class="faq-item">
-                <button class="faq-q" type="button" aria-expanded="false">Is Nur really free?<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+            </details>
+            <details class="faq-item">
+                <summary>Is Nur really free?<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></summary>
                 <div class="faq-a"><p>No catch. No ads, no premium tier, no data collection. Nur is a personal project built to help Muslims pray consistently.</p></div>
-            </div>
-            <div class="faq-item">
-                <button class="faq-q" type="button" aria-expanded="false">Does it work on Mac or mobile?<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+            </details>
+            <details class="faq-item">
+                <summary>Does it work on Mac or mobile?<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></summary>
                 <div class="faq-a"><p>Yes. On iPhone, Android, Mac, and Linux, install Nur as a web app from your browser. It works offline and looks like a native app. See the <a href="install.html" style="color:#68d391">install guide</a> for step-by-step instructions.</p></div>
-            </div>
+            </details>
         </div>
     </div>
 </section>
@@ -606,7 +620,7 @@
         </div>
         <div class="foot-col">
             <h4>Product</h4>
-            <a href="https://github.com/nur-prayer-app/nur-prayer-app.github.io/releases/latest" id="foot-dl">Download</a>
+            <a href="https://github.com/nur-prayer-app/nur-prayer-app.github.io/releases/latest" rel="noopener noreferrer" id="foot-dl">Download</a>
             <a href="app/">Use in Browser</a>
         </div>
         <div class="foot-col">
@@ -701,9 +715,6 @@
         }
     }
     imgs.forEach(function(t,i){t.el.onclick=function(){lbO(i);}});
-
-    // FAQ
-    document.querySelectorAll('.faq-q').forEach(function(b){b.onclick=function(){var it=b.parentElement,w=it.classList.contains('open');document.querySelectorAll('.faq-item.open').forEach(function(e){e.classList.remove('open');e.querySelector('.faq-q').setAttribute('aria-expanded','false');});if(!w){it.classList.add('open');b.setAttribute('aria-expanded','true');}else{b.setAttribute('aria-expanded','false');}}});
 
     // Version
     fetch('version.json').then(function(r){return r.json()}).then(function(d){
