@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  secret-scan:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: gitleaks/gitleaks-action@v2.3.9
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  trivy:
+    name: Vulnerability Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trivy scan (fail on HIGH/CRITICAL)
+        uses: aquasecurity/trivy-action@0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          format: table
+          exit-code: 1
+          ignore-unfixed: true
+
+      - name: Trivy scan (upload SARIF)
+        uses: aquasecurity/trivy-action@0.36.0
+        if: always()
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          format: sarif
+          output: trivy-results.sarif
+          ignore-unfixed: true
+
+      - uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
+
+  lint-html:
+    name: HTMLHint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npx htmlhint@1.9.2 index.html install.html privacy.html terms.html contact.html app/index.html
+
+  lighthouse:
+    name: Lighthouse
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Start local server
+        run: npx http-server . -p 8080 &
+
+      - name: Wait for server
+        run: npx wait-on http://localhost:8080 --timeout 10000
+
+      - uses: treosh/lighthouse-ci-action@12.6.2
+        with:
+          urls: |
+            http://localhost:8080/
+            http://localhost:8080/app/
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+          configPath: .lighthouserc.json
+
+  version-check:
+    name: Version Consistency
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate version.json
+        run: python3 -m json.tool version.json > /dev/null
+
+      - name: Check versions match
+        run: |
+          VER=$(python3 -c "import json; print(json.load(open('version.json'))['version'])")
+          HERO=$(grep -oP 'id="hero-ver">v\K[0-9.]+' index.html || echo "MISSING")
+          FOOT=$(grep -oP 'id="foot-ver">v\K[0-9.]+' index.html || echo "MISSING")
+          echo "version.json: $VER | hero: $HERO | footer: $FOOT"
+          if [ "$HERO" != "$VER" ] || [ "$FOOT" != "$VER" ]; then
+            echo "::warning::Landing page fallback version is stale (JS overlay fixes at runtime)"
+          fi
