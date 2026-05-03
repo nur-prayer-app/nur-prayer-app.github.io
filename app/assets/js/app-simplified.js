@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.226';
+    const APP_VERSION = '1.1.227';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -3524,6 +3524,7 @@
                 S.settings._methodManuallySet = true;
                 save(KEYS.SETTINGS, S.settings);
                 refreshAllTimes();
+                resyncPushSubscription();
             });
             // Asr school segmented buttons trigger recompute via re-wire above — add recompute hook
             $$('.seg-toggle-btn[data-setting="asrSchool"]', content).forEach(btn => {
@@ -4338,7 +4339,7 @@
                     invalidatePrayerTimesCache();
                     refreshAllTimes();
                     render();
-                    if (S.settings.notifications) schedulePrayerNotifications();
+                    if (S.settings.notifications) { schedulePrayerNotifications(); resyncPushSubscription(); }
                     toast(`Location: ${c.name}`);
                 });
             });
@@ -5545,7 +5546,7 @@
                 save(KEYS.SETTINGS, S.settings);
                 refreshAllTimes();
                 render();
-                if (S.settings.notifications) schedulePrayerNotifications();
+                if (S.settings.notifications) { schedulePrayerNotifications(); resyncPushSubscription(); }
                 toast('Location saved');
                 reverseGeocode(lat, lng);
             },
@@ -5745,31 +5746,78 @@
         return Uint8Array.from(raw, c => c.charCodeAt(0));
     }
 
+    function getDeviceId() {
+        let id = localStorage.getItem('nur-device-id');
+        if (!id) {
+            id = crypto.randomUUID();
+            localStorage.setItem('nur-device-id', id);
+        }
+        return id;
+    }
+
+    const PUSH_SUPABASE_URL = 'https://qbyirkzdwzeetdugxyre.supabase.co';
+    const PUSH_SUPABASE_ANON_KEY = 'sb_publishable_BgBlYMnxPhkWWEtbHNHzIg_h-RkMDda';
+
     async function savePushSubscription(sub) {
-        if (typeof Sync === 'undefined' || !Sync.getSession) return;
-        const session = Sync.getSession();
-        if (!session) return;
         const loc = S.settings.location;
+        const session = (typeof Sync !== 'undefined' && Sync.getSession) ? Sync.getSession() : null;
+        const deviceId = getDeviceId();
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'apikey': PUSH_SUPABASE_ANON_KEY,
+            'Prefer': 'resolution=merge-duplicates',
+        };
+        if (session) {
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+        } else {
+            headers['Authorization'] = `Bearer ${PUSH_SUPABASE_ANON_KEY}`;
+        }
+
+        const body = {
+            endpoint: sub.endpoint,
+            keys: JSON.stringify(sub.toJSON().keys),
+            lat: loc?.lat || null,
+            lng: loc?.lng || null,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            calc_method: S.settings.calcMethod || 'ISNA',
+            schedule_computed_for: null,
+            updated_at: new Date().toISOString(),
+        };
+
+        if (session) {
+            body.user_id = session.user.id;
+            body.device_id = deviceId;
+        } else {
+            body.device_id = deviceId;
+        }
+
         try {
-            await fetch(`${Sync.SUPABASE_URL}/rest/v1/push_subscriptions`, {
+            await fetch(`${PUSH_SUPABASE_URL}/rest/v1/push_subscriptions`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(body),
+            });
+            // Trigger schedule re-computation
+            fetch(`${PUSH_SUPABASE_URL}/functions/v1/plan-prayer-schedule`, {
                 method: 'POST',
                 headers: {
+                    'Authorization': headers['Authorization'],
                     'Content-Type': 'application/json',
-                    'apikey': Sync.SUPABASE_KEY,
-                    'Authorization': `Bearer ${session.access_token}`,
-                    'Prefer': 'resolution=merge-duplicates',
                 },
-                body: JSON.stringify({
-                    user_id: session.user.id,
-                    endpoint: sub.endpoint,
-                    keys: JSON.stringify(sub.toJSON().keys),
-                    lat: loc?.lat || null,
-                    lng: loc?.lng || null,
-                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                    calc_method: S.settings.calcMethod || 'ISNA',
-                    updated_at: new Date().toISOString(),
-                }),
-            });
+                body: JSON.stringify(session ? { user_id: session.user.id } : { device_id: deviceId }),
+            }).catch(() => {});
+        } catch (_) {}
+    }
+
+    async function resyncPushSubscription() {
+        if (!S.settings.notifications) return;
+        if (isElectron || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+        if (Notification.permission !== 'granted') return;
+        try {
+            const reg = await navigator.serviceWorker.ready;
+            const sub = await reg.pushManager.getSubscription();
+            if (sub) await savePushSubscription(sub);
         } catch (_) {}
     }
 
