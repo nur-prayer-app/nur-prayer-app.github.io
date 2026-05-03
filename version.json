@@ -1,5 +1,5 @@
 {
-  "version": "1.1.230",
-  "url": "https://github.com/nur-prayer-app/nur-prayer-app.github.io/releases/download/v1.1.230/Nur.Setup.1.1.230.exe",
-  "notes": "Fix push subscription: Supabase new publishable key not a JWT, cannot use in Authorization header"
+  "version": "1.1.231",
+  "url": "https://github.com/nur-prayer-app/nur-prayer-app.github.io/releases/download/v1.1.231/Nur.Setup.1.1.231.exe",
+  "notes": "Accurate push notifications (~1s), anonymous push, legacy JWT key fix, full docs overhaul"
 }

@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.230';
+    const APP_VERSION = '1.1.231';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -5766,7 +5766,7 @@
     }
 
     const PUSH_SUPABASE_URL = 'https://qbyirkzdwzeetdugxyre.supabase.co';
-    const PUSH_SUPABASE_ANON_KEY = 'sb_publishable_BgBlYMnxPhkWWEtbHNHzIg_h-RkMDda';
+    const PUSH_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFieWlya3pkd3plZXRkdWd4eXJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2MTc3MjUsImV4cCI6MjA5MzE5MzcyNX0.0qeixr2powpuRZKiUkTINAOyN9MlyfYZ5Gc2SJUSeKA';
 
     async function savePushSubscription(sub) {
         const loc = S.settings.location;
@@ -5776,12 +5776,9 @@
         const headers = {
             'Content-Type': 'application/json',
             'apikey': PUSH_SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${session ? session.access_token : PUSH_SUPABASE_ANON_KEY}`,
             'Prefer': 'resolution=merge-duplicates',
         };
-        // Only set Authorization with a real JWT — publishable keys are not JWTs
-        if (session) {
-            headers['Authorization'] = `Bearer ${session.access_token}`;
-        }
 
         const body = {
             device_id: deviceId,
@@ -5806,8 +5803,10 @@
                 body: JSON.stringify(body),
             });
             // Trigger schedule re-computation
-            const planHeaders = { 'Content-Type': 'application/json', 'apikey': PUSH_SUPABASE_ANON_KEY };
-            if (session) planHeaders['Authorization'] = `Bearer ${session.access_token}`;
+            const planHeaders = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session ? session.access_token : PUSH_SUPABASE_ANON_KEY}`,
+            };
             fetch(`${PUSH_SUPABASE_URL}/functions/v1/plan-prayer-schedule`, {
                 method: 'POST',
                 headers: planHeaders,
