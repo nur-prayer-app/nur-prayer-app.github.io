@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.232';
+    const APP_VERSION = '1.1.233';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -4718,15 +4718,14 @@
             const tomDate = new Date(todayMidnight); tomDate.setDate(tomDate.getDate() + 1);
             const dayAfterDate = new Date(todayMidnight); dayAfterDate.setDate(dayAfterDate.getDate() + 2);
             const yestTimes = computeRawTimesCached(loc.lat, loc.lng, yestDate, opts);
+            const todayTimes = computeRawTimesCached(loc.lat, loc.lng, todayMidnight, opts);
             const tomTimes = computeRawTimesCached(loc.lat, loc.lng, tomDate, opts);
             const dayAfterTimes = computeRawTimesCached(loc.lat, loc.lng, dayAfterDate, opts);
 
-            // Each rendered day: its prayer times + the Fajr of the day after (for night-window math).
-            // Order matters — must match the 3-day slide (yesterday at 0-33%, today at 33-67%, tomorrow at 67-100%).
             const days = [
-                { times: yestTimes, nextFajr: times.today.fajr, label: 'Yesterday', dateKey: 'yest' },
-                { times: times.today, nextFajr: times.tomorrowFajr, label: 'Today',     dateKey: 'today' },
-                { times: tomTimes,  nextFajr: dayAfterTimes.fajr,  label: 'Tomorrow',  dateKey: 'tom' },
+                { times: yestTimes, nextFajr: todayTimes.fajr,    label: 'Yesterday', dateKey: 'yest' },
+                { times: todayTimes, nextFajr: tomTimes.fajr,     label: 'Today',     dateKey: 'today' },
+                { times: tomTimes,  nextFajr: dayAfterTimes.fajr, label: 'Tomorrow',  dateKey: 'tom' },
             ];
 
             // ── Build renderable arrays across all 3 days ──
