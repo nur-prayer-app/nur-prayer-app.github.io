@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.227';
+    const APP_VERSION = '1.1.228';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -3763,7 +3763,11 @@
                         openUrl(data.url || 'https://nur-prayer-app.github.io/');
                     }; }
                 } else {
-                    if (btn) { btn.textContent = 'Reload to update'; btn.disabled = false; btn.onclick = () => {
+                    if (btn) { btn.textContent = 'Reload to update'; btn.disabled = false; btn.onclick = async () => {
+                        if ('serviceWorker' in navigator) {
+                            const reg = await navigator.serviceWorker.getRegistration();
+                            if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' }); }
+                        }
                         location.reload();
                     }; }
                 }
@@ -3791,7 +3795,13 @@
                 } else {
                     toast(`Update available: v${data.version}`, {
                         label: 'Reload',
-                        fn: () => location.reload(),
+                        fn: async () => {
+                            if ('serviceWorker' in navigator) {
+                                const reg = await navigator.serviceWorker.getRegistration();
+                                if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' }); }
+                            }
+                            location.reload();
+                        },
                     });
                 }
             }
@@ -5724,8 +5734,14 @@
     const VAPID_PUBLIC_KEY = 'BIsqq-SJ771xRfwcELAJGXwO0WY3dPi0cpbihv3yKNRjmYODeu3M3q70-eL9o_lYHBQjqLyMwa5oIqrySCveykM';
 
     async function subscribeToPush() {
-        if (isElectron || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
-        if (Notification.permission !== 'granted') return;
+        if (isElectron || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+            console.log('[push] not available:', { isElectron, sw: 'serviceWorker' in navigator, pm: 'PushManager' in window });
+            return;
+        }
+        if (Notification.permission !== 'granted') {
+            console.log('[push] permission not granted:', Notification.permission);
+            return;
+        }
         try {
             const reg = await navigator.serviceWorker.ready;
             let sub = await reg.pushManager.getSubscription();
@@ -5735,8 +5751,12 @@
                     applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
                 });
             }
+            console.log('[push] saving subscription to Supabase...');
             await savePushSubscription(sub);
-        } catch (_) {}
+            console.log('[push] subscription saved');
+        } catch (e) {
+            console.error('[push] error:', e);
+        }
     }
 
     function urlBase64ToUint8Array(base64String) {
