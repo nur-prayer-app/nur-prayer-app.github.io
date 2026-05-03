@@ -5,7 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Install Nur — Prayer Tracker</title>
     <meta name="description" content="How to install Nur on iPhone, Android, Windows, and Mac. Step-by-step guide.">
+    <link rel="canonical" href="https://nur-prayer-app.github.io/install.html">
+    <meta property="og:title" content="Install Nur — Prayer Tracker">
+    <meta property="og:description" content="How to install Nur on iPhone, Android, Windows, and Mac. Step-by-step guide.">
+    <meta property="og:image" content="https://nur-prayer-app.github.io/social-card.png">
+    <meta property="og:url" content="https://nur-prayer-app.github.io/install.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
     <link rel="icon" type="image/png" href="icon.png">
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Nur","item":"https://nur-prayer-app.github.io/"},{"@type":"ListItem","position":2,"name":"Install Guide","item":"https://nur-prayer-app.github.io/install.html"}]}
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -24,6 +34,8 @@
             --display: 'Poppins', sans-serif;
             --body: 'Inter', sans-serif;
         }
+        .skip-link{position:absolute;top:-100%;left:50%;transform:translateX(-50%);background:var(--green);color:#0c1322;padding:.6rem 1.2rem;border-radius:8px;font-size:.88rem;font-weight:600;font-family:var(--body);z-index:9999;text-decoration:none;transition:top .2s}
+        .skip-link:focus{top:8px}
         *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
         body{font-family:var(--body);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
 
@@ -94,12 +106,14 @@
 </head>
 <body>
 
+<a href="#content" class="skip-link">Skip to content</a>
+
 <nav class="nav"><div class="nav-inner">
     <a href="/" class="nav-brand"><img class="nav-ico" src="icon.png" alt="Nur" width="32" height="32"> Nur</a>
     <a href="/" class="nav-back">&larr; Back to home</a>
 </div></nav>
 
-<div class="page">
+<div class="page" id="content">
     <div class="page-badge"><span class="page-badge-dot"></span> Install Guide</div>
     <h1>Get Nur on <em>any device</em></h1>
     <p class="page-intro">Nur works everywhere — as a downloadable Windows app or an installable web app on your phone, tablet, or desktop browser. Pick your platform below.</p>
