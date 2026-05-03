@@ -5734,14 +5734,10 @@
     const VAPID_PUBLIC_KEY = 'BIsqq-SJ771xRfwcELAJGXwO0WY3dPi0cpbihv3yKNRjmYODeu3M3q70-eL9o_lYHBQjqLyMwa5oIqrySCveykM';
 
     async function subscribeToPush() {
-        if (isElectron || !('serviceWorker' in navigator) || !('PushManager' in window)) {
-            console.log('[push] not available:', { isElectron, sw: 'serviceWorker' in navigator, pm: 'PushManager' in window });
-            return;
-        }
-        if (Notification.permission !== 'granted') {
-            console.log('[push] permission not granted:', Notification.permission);
-            return;
-        }
+        if (isElectron) return;
+        if (!('serviceWorker' in navigator)) { toast('[debug] No SW support'); return; }
+        if (!('PushManager' in window)) { toast('[debug] No PushManager'); return; }
+        if (Notification.permission !== 'granted') { toast('[debug] Permission: ' + Notification.permission); return; }
         try {
             const reg = await navigator.serviceWorker.ready;
             let sub = await reg.pushManager.getSubscription();
@@ -5751,11 +5747,11 @@
                     applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
                 });
             }
-            console.log('[push] saving subscription to Supabase...');
+            toast('[debug] Saving to Supabase...');
             await savePushSubscription(sub);
-            console.log('[push] subscription saved');
+            toast('[debug] Push subscription saved!');
         } catch (e) {
-            console.error('[push] error:', e);
+            toast('[debug] Push error: ' + e.message);
         }
     }
 
