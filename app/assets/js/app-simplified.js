@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.243';
+    const APP_VERSION = '1.1.244';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -1998,7 +1998,8 @@
         const nowMidnight = new Date(nowFull); nowMidnight.setHours(0, 0, 0, 0);
         const gregMidnight = new Date(greg); gregMidnight.setHours(0, 0, 0, 0);
         const dayDiff = Math.round((gregMidnight - nowMidnight) / 86400000);
-        const isFutureDay = !isToday && dayDiff >= 1;
+        const hasLocation = !!S.settings.location;
+        const isFutureDay = !isToday && dayDiff >= 1 && (hasLocation || dayDiff >= 2);
 
         const prayerPassed = isFutureDay
             ? Object.fromEntries(PRAYERS.map(p => [p.id, false]))
