@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.242';
+    const APP_VERSION = '1.1.243';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -359,35 +359,39 @@
 
         $('#goals-archive-link')?.addEventListener('click', openArchiveModal);
 
-        // Inline archive actions
-        $$('.archive-row.inline .archive-restore', list).forEach(btn => {
-            btn.addEventListener('click', e => {
-                e.stopPropagation();
-                const i = parseInt(btn.dataset.aidx);
-                const restored = S.goalsArchive.splice(i, 1)[0];
-                delete restored.archivedAt;
-                save(KEYS.GOALS_ARCHIVE, S.goalsArchive);
-                getGoals().push(restored);
-                saveGoals();
-                renderGoals();
-                toast('Goal restored');
-            });
-        });
-        $$('.archive-row.inline .archive-delete', list).forEach(btn => {
-            btn.addEventListener('click', e => {
-                e.stopPropagation();
-                if (!btn.classList.contains('confirm')) {
-                    btn.classList.add('confirm');
-                    btn.style.color = 'var(--accent-danger)';
-                    setTimeout(() => { btn.classList.remove('confirm'); btn.style.color = ''; }, 3000);
+        // Inline archive actions (event delegation on parent list)
+        if (!list.dataset.archiveDelegated) {
+            list.dataset.archiveDelegated = '1';
+            list.addEventListener('click', e => {
+                const restoreBtn = e.target.closest('.archive-restore');
+                if (restoreBtn) {
+                    e.stopPropagation();
+                    const i = parseInt(restoreBtn.dataset.aidx);
+                    const restored = S.goalsArchive.splice(i, 1)[0];
+                    delete restored.archivedAt;
+                    save(KEYS.GOALS_ARCHIVE, S.goalsArchive);
+                    getGoals().push(restored);
+                    saveGoals();
+                    renderGoals();
+                    toast('Goal restored');
                     return;
                 }
-                const i = parseInt(btn.dataset.aidx);
-                S.goalsArchive.splice(i, 1);
-                save(KEYS.GOALS_ARCHIVE, S.goalsArchive);
-                renderGoals();
+                const deleteBtn = e.target.closest('.archive-delete');
+                if (deleteBtn) {
+                    e.stopPropagation();
+                    if (!deleteBtn.classList.contains('confirm')) {
+                        deleteBtn.classList.add('confirm');
+                        deleteBtn.style.color = 'var(--accent-danger)';
+                        setTimeout(() => { deleteBtn.classList.remove('confirm'); deleteBtn.style.color = ''; }, 3000);
+                        return;
+                    }
+                    const i = parseInt(deleteBtn.dataset.aidx);
+                    S.goalsArchive.splice(i, 1);
+                    save(KEYS.GOALS_ARCHIVE, S.goalsArchive);
+                    renderGoals();
+                }
             });
-        });
+        }
     }
 
     /* ── Add Goal Modal (calculator) ─────────────────────────── */
@@ -1885,7 +1889,7 @@
     }
 
     function renderReminderRow(s, monthName) {
-        const subtitle = s.detail || s.rangeText || (s.day ? `${monthName || ''} ${s.day}` : '');
+        const subtitle = esc(s.detail || s.rangeText || (s.day ? `${monthName || ''} ${s.day}` : ''));
         const hasInfo = !!REMINDER_INFO[s.name];
         const iconMap = {
             significance: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="currentColor"/>',
@@ -1901,7 +1905,7 @@
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">${iconMap[s.type] || iconMap.single}</svg>
             </div>
             <div class="reminder-text">
-                <div class="reminder-title">${s.name}</div>
+                <div class="reminder-title">${esc(s.name)}</div>
                 ${subtitle ? `<div class="reminder-date">${subtitle}</div>` : ''}
             </div>
             ${hasInfo ? '<svg class="reminder-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}
@@ -3856,7 +3860,13 @@
         const reader = new FileReader();
         reader.onload = () => {
             try {
-                Storage.importAll(JSON.parse(reader.result));
+                const parsed = JSON.parse(reader.result);
+                const allowedKeys = new Set(Object.values(Storage.KEYS));
+                const filtered = {};
+                for (const [k, v] of Object.entries(parsed)) {
+                    if (allowedKeys.has(k)) filtered[k] = v;
+                }
+                Storage.importAll(filtered);
                 toast('Data imported — reloading…');
                 setTimeout(() => location.reload(), 800);
             } catch {
@@ -4371,8 +4381,8 @@
             }
             list.innerHTML = matches.map((c) => `
                 <button type="button" class="city-row" data-idx="${CITY_PRESETS.indexOf(c)}">
-                    <div class="city-name">${c.name}</div>
-                    <div class="city-country">${c.country}</div>
+                    <div class="city-name">${esc(c.name)}</div>
+                    <div class="city-country">${esc(c.country)}</div>
                 </button>`).join('');
             $$('.city-row', list).forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -5247,7 +5257,7 @@
                     const dx = e.pageX - startX;
                     if (Math.abs(dx) > 3) dragged = true;
                     scroller.scrollLeft = scrollStart - dx;
-                });
+                }, { signal: _signal });
                 window.addEventListener('mouseup', () => {
                     if (!isDown) return;
                     isDown = false;
@@ -5257,7 +5267,7 @@
                         const swallow = (e) => { e.stopPropagation(); e.preventDefault(); };
                         scroller.addEventListener('click', swallow, { capture: true, once: true });
                     }
-                });
+                }, { signal: _signal });
                 
                 scroller.addEventListener('touchstart', (e) => {
                     isDown = true;
@@ -5604,8 +5614,8 @@
             if (!resp.ok) return;
             const data = await resp.json();
             const addr = data.address || {};
-            const city = addr.city || addr.town || addr.village || addr.county || '';
-            const country = addr.country || '';
+            const city = String(addr.city || addr.town || addr.village || addr.county || '').replace(/[<>"'&]/g, '');
+            const country = String(addr.country || '').replace(/[<>"'&]/g, '');
             if (city || country) {
                 S.settings.location.name = city && country ? `${city}, ${country}` : (city || country);
                 save(KEYS.SETTINGS, S.settings);
@@ -6421,6 +6431,10 @@
             wireSettingsTab('data');
         }
         toast('Signed in with Google');
+    });
+
+    window.addEventListener('sync-data-updated', () => {
+        toast('Data updated from cloud', { label: 'Reload', fn: () => location.reload() });
     });
 
     window.addEventListener('sync-session-lost', () => {
