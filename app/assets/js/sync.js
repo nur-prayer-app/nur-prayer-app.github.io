@@ -196,7 +196,7 @@
         const data = await resp.json();
         if (!resp.ok) throw new Error(data.error_description || data.msg || 'Sign-in failed');
         establishSession(data);
-        if (await pullFromCloud()) location.reload();
+        if (await pullFromCloud()) window.dispatchEvent(new Event('sync-data-updated'));
         return data;
     }
 
@@ -220,7 +220,7 @@
     async function handleOAuthTokens(accessToken, refreshToken) {
         establishSession({ access_token: accessToken, refresh_token: refreshToken });
         try {
-            if (await pullFromCloud()) location.reload();
+            if (await pullFromCloud()) window.dispatchEvent(new Event('sync-data-updated'));
             else await pushToCloud(true);
         } catch (e) { console.warn('OAuth sync failed:', e); }
     }
@@ -419,7 +419,7 @@
         syncTimer = setTimeout(async () => {
             if (!isSyncing) {
                 try {
-                    if (await pullFromCloud()) location.reload();
+                    if (await pullFromCloud()) window.dispatchEvent(new Event('sync-data-updated'));
                     else await pushToCloud();
                 } catch (e) {
                     console.warn('Auto-sync failed:', e);

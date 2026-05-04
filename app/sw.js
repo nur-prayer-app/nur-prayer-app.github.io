@@ -1,5 +1,5 @@
 // Nur — Service Worker (cache-first, version stamped by build-web.js)
-const CACHE_VERSION = 'nur-v242';
+const CACHE_VERSION = 'nur-v243';
 const CACHE_NAME = CACHE_VERSION;
 
 const PRECACHE_URLS = [
@@ -23,7 +23,8 @@ const PRECACHE_URLS = [
   'assets/icons/maghrib.svg',
   'assets/icons/moon.svg',
   'assets/icons/star-crescent.svg',
-  'assets/icons/sun.svg'
+  'assets/icons/sun.svg',
+  'manifest.json'
 ];
 
 // Install — pre-cache core assets
@@ -89,6 +90,12 @@ self.addEventListener('fetch', event => {
   // Don't intercept analytics/external scripts
   if (!event.request.url.startsWith(self.location.origin)) return;
 
+  // Skip caching for API/dynamic URLs — let browser handle directly
+  const url = event.request.url;
+  if (url.includes('supabase.co') || url.includes('version.json') || url.includes('nominatim.openstreetmap.org')) {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached;
@@ -105,6 +112,8 @@ self.addEventListener('fetch', event => {
         });
 
         return response;
+      }).catch(() => {
+        return new Response('Offline', { status: 503 });
       });
     })
   );
