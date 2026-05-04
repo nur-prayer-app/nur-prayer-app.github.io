@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.241';
+    const APP_VERSION = '1.1.242';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -5826,7 +5826,7 @@
                 adhanEnabled: S.settings.notifAdhanEnabled !== false,
                 preIqamaEnabled: S.settings.notifPreIqamaEnabled === true,
                 preIqamaMinutes: parseInt(S.settings.notifPreIqamaMinutes, 10) || 5,
-                iqamaOffsets: S.settings.iqamaOffsets || {},
+                iqamaOffsets: Object.fromEntries(PRAYER_RING_IDS.map(id => [id, getIqamaOffset(id)])),
                 prayerNotifs: S.settings.prayerNotifs || {},
             },
             schedule_computed_for: null,
