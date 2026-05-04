@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.244';
+    const APP_VERSION = '1.1.245';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -5989,12 +5989,10 @@
             dhuhr: prayerMinsToday.asr,
             asr: prayerMinsToday.maghrib,
             maghrib: prayerMinsToday.isha,
-            // Isha window closes at tomorrow Fajr — but we only need to flag it
-            // "after midnight" as a reasonable cutoff. Use 24*60 = next day's 00:00.
-            isha: 24 * 60,
         };
 
         PRAYERS.forEach(p => {
+            if (p.id === 'isha') return; // handled separately below
             if (d[p.id]) return; // already marked done
             if (d[`${p.id}_auto_missed`]) return; // already auto-missed
 
@@ -6006,6 +6004,22 @@
                 missedNames.push(p.name);
             }
         });
+
+        // Check yesterday's Isha: between midnight and Fajr, yesterday's day is still
+        // the dashboard day. If Isha wasn't marked, flag it on yesterday's record.
+        if (nowMinutes < prayerMinsToday.fajr) {
+            const yest = new Date(now);
+            yest.setDate(yest.getDate() - 1);
+            const yestH = HijriCalendar.gregorianToHijri(yest);
+            const yestKey = hk(yestH.year, yestH.month, yestH.day);
+            const yd = dayData(yestKey);
+            if (!yd.isha && !yd.isha_auto_missed) {
+                yd.isha_auto_missed = true;
+                addAutoMissedGoal('isha', yest.toISOString());
+                added++;
+                missedNames.push('Isha');
+            }
+        }
 
         if (added > 0) {
             save(KEYS.PRAYERS, S.prayers);
