@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.246';
+    const APP_VERSION = '1.1.247';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -4463,7 +4463,13 @@
             : todayRaw;
         const nextDay = new Date(baseDate); nextDay.setDate(nextDay.getDate() + 1);
         const tomorrowTimes = computeRawTimesCached(loc.lat, loc.lng, nextDay, opts);
-        const result = { today: base, tomorrowFajr: tomorrowTimes.fajr, rolled: shouldRoll, baseDate };
+        const result = {
+            today: base,
+            tomorrowFajr: tomorrowTimes.fajr,
+            rolled: shouldRoll,
+            baseDate,
+            calendarToday: todayRaw,
+        };
         _todayTimesCache = { key: cacheKey, value: result };
         return result;
     }
@@ -5361,12 +5367,17 @@
         if (nextIdx < 0) return;
 
         const next = schedule[nextIdx];
-        // If nothing before 'next' in today's schedule, fall back to YESTERDAY'S ISHA
-        // (this happens when now is between midnight and today's Fajr).
+        // If nothing before 'next' in today's schedule, fall back to the most recent Isha.
+        // After post-Isha roll, calendarToday has the real today's times (the Isha that just passed).
+        // Before roll (midnight→Fajr), getYesterdayTimes gives last night's Isha.
         let prev = nextIdx > 0 ? schedule[nextIdx - 1] : null;
         if (!prev) {
-            const yt = getYesterdayTimes(now);
-            if (yt) prev = { id: 'isha', name: 'Isha', at: yt.isha };
+            if (times.rolled && times.calendarToday) {
+                prev = { id: 'isha', name: 'Isha', at: times.calendarToday.isha };
+            } else {
+                const yt = getYesterdayTimes(now);
+                if (yt) prev = { id: 'isha', name: 'Isha', at: yt.isha };
+            }
         }
         const msToNext = next.at - now;
         const windowStart = prev ? prev.at : new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
@@ -5419,7 +5430,9 @@
         // (1) whichever window contains NOW and (2) the next one after NOW. This fixes the
         // empty-Current-card bug at times like 8:40 AM when you're in Duha (not a prayer window).
         const loc = S.settings.location;
-        const yestT = loc ? getYesterdayTimes(now) : null;
+        const yestT = loc
+            ? (times.rolled && times.calendarToday ? times.calendarToday : getYesterdayTimes(now))
+            : null;
         if (loc && yestT) {
             const todayT = times.today;
             const tomFajr = times.tomorrowFajr;
@@ -5498,14 +5511,16 @@
         if (daybarNow) daybarNow.style.left = `${dayPct3.toFixed(3)}%`;
 
         // Mark current/past prayer markers on the timeline (only "today"-marked markers follow schedule)
+        // After post-Isha roll, the schedule is tomorrow's — today's markers are all past.
+        const isRolled = !!times.rolled;
         $$('.daybar-marker').forEach(m => {
             const id = m.dataset.marker;
             const mDay = m.dataset.day;
             if (!id) return;
             m.classList.remove('past', 'current', 'next');
-            // Only apply current/next highlighting to today's markers; past days are opaque dimmed separately.
             if (mDay === 'yest') { m.classList.add('past'); return; }
-            if (mDay === 'tom') return; // tomorrow's markers have no state yet
+            if (isRolled && mDay === 'today') { m.classList.add('past'); return; }
+            if (mDay === 'tom' && !isRolled) return;
             const selfIdx = schedule.findIndex(e => e.id === id);
             if (selfIdx < 0) return;
             const startAt = schedule[selfIdx].at;
@@ -5541,9 +5556,11 @@
         const times = getTodayPrayerTimes();
         if (!times) return;
 
+        // Fasting always uses the real calendar day's Fajr→Maghrib, not the rolled schedule
         const now = new Date();
-        const fajr = times.today.fajr;
-        const maghrib = times.today.maghrib;
+        const calTimes = times.rolled && times.calendarToday ? times.calendarToday : times.today;
+        const fajr = calTimes.fajr;
+        const maghrib = calTimes.maghrib;
         const label = $('#fasting-label');
         const timeEl = $('#fasting-time');
         const fill = $('#fasting-fill');
