@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.237';
+    const APP_VERSION = '1.1.238';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -193,15 +193,14 @@
                 const d = dayData(key);
                 const wasOff = !d[pid];
                 d[pid] = cb.checked;
-                // If just marked prayed and it was auto-missed, clear the flag + resolve the goal
-                if (wasOff && d[pid] && d[`${pid}_auto_missed`]) {
-                    if (!S.settings.trackLatePrayers) {
+                if (wasOff && d[pid]) {
+                    if (d[`${pid}_auto_missed`] && !S.settings.trackLatePrayers) {
                         delete d[`${pid}_auto_missed`];
                     }
+                    const [y, m, day] = key.split('-').map(Number);
                     const matchingGoal = getGoals().find(g => {
-                        if (g.type !== 'qadaa-auto' || !g.missedOn) return false;
+                        if (g.type !== 'qadaa-auto' || !g.missedOn || (g.remaining || 0) <= 0) return false;
                         const gh = toHijri(g.missedOn);
-                        const [y, m, day] = key.split('-').map(Number);
                         return gh.year === y && gh.month === m && gh.day === day
                             && ((g.perPrayer && g.perPrayer[pid] > 0) || g.missedPrayer === pid);
                     });
@@ -2167,20 +2166,17 @@
                 d2[pid] = !wasOn;
 
                 if (!wasOn && d2[pid]) {
-                    if (d2[`${pid}_auto_missed`]) {
-                        if (!S.settings.trackLatePrayers) {
-                            delete d2[`${pid}_auto_missed`];
-                        }
-                        const matchingGoal = getGoals().find(g => {
-                            if (g.type !== 'qadaa-auto' || !g.missedOn) return false;
-                            const gd = new Date(g.missedOn);
-                            const gh = HijriCalendar.gregorianToHijri(gd);
-                            const [y, m, day] = k.split('-').map(Number);
-                            return gh.year === y && gh.month === m && gh.day === day
-                                && ((g.perPrayer && g.perPrayer[pid] > 0) || g.missedPrayer === pid);
-                        });
-                        if (matchingGoal) recordQadaaPrayers(matchingGoal, pid, 1);
+                    if (d2[`${pid}_auto_missed`] && !S.settings.trackLatePrayers) {
+                        delete d2[`${pid}_auto_missed`];
                     }
+                    const [y, m, day] = k.split('-').map(Number);
+                    const matchingGoal = getGoals().find(g => {
+                        if (g.type !== 'qadaa-auto' || !g.missedOn || (g.remaining || 0) <= 0) return false;
+                        const gh = HijriCalendar.gregorianToHijri(new Date(g.missedOn));
+                        return gh.year === y && gh.month === m && gh.day === day
+                            && ((g.perPrayer && g.perPrayer[pid] > 0) || g.missedPrayer === pid);
+                    });
+                    if (matchingGoal) recordQadaaPrayers(matchingGoal, pid, 1);
                 }
 
                 save(KEYS.PRAYERS, S.prayers);
@@ -2305,11 +2301,22 @@
         
         content.querySelector('[data-action="alldone"]')?.addEventListener('click', () => {
             const d2 = dayData(key);
+            const [ky, km, kd] = key.split('-').map(Number);
             PRAYERS.forEach(p => {
                 if (prayerPassed[p.id]) {
+                    const wasOff = !d2[p.id];
                     d2[p.id] = true;
                     if (d2[`${p.id}_auto_missed`] && !S.settings.trackLatePrayers) {
                         delete d2[`${p.id}_auto_missed`];
+                    }
+                    if (wasOff || d2[`${p.id}_auto_missed`]) {
+                        const matchingGoal = getGoals().find(g => {
+                            if (g.type !== 'qadaa-auto' || !g.missedOn || (g.remaining || 0) <= 0) return false;
+                            const gh = HijriCalendar.gregorianToHijri(new Date(g.missedOn));
+                            return gh.year === ky && gh.month === km && gh.day === kd
+                                && ((g.perPrayer && g.perPrayer[p.id] > 0) || g.missedPrayer === p.id);
+                        });
+                        if (matchingGoal) recordQadaaPrayers(matchingGoal, p.id, 1);
                     }
                 }
             });
@@ -6360,7 +6367,7 @@
         // Reconcile orphaned qadaa-auto goals: if the prayer is already marked done
         // but the goal was never resolved (due to earlier missedPrayer field bug),
         // resolve it now so the calendar stops showing a stale MISSED badge.
-        if (!Storage.get('_migrated_orphan_goals_v2')) {
+        if (!Storage.get('_migrated_orphan_goals_v3')) {
             let fixed = 0;
             getGoals().forEach(g => {
                 if (g.type !== 'qadaa-auto' || !g.missedOn || (g.remaining || 0) <= 0) return;
@@ -6372,10 +6379,16 @@
                 if (pid && dd[pid]) {
                     recordQadaaPrayers(g, pid, 1, { silent: true });
                     fixed++;
+                } else if (!pid) {
+                    const donePrayer = PRAYERS.find(p => dd[p.id] && g.perPrayer && g.perPrayer[p.id] > 0);
+                    if (donePrayer) {
+                        recordQadaaPrayers(g, donePrayer.id, 1, { silent: true });
+                        fixed++;
+                    }
                 }
             });
             if (fixed > 0) saveGoals();
-            Storage.set('_migrated_orphan_goals_v2', true);
+            Storage.set('_migrated_orphan_goals_v3', true);
         }
 
         initEvents();
