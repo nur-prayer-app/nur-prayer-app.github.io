@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.240';
+    const APP_VERSION = '1.1.241';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -5838,11 +5838,19 @@
         }
 
         try {
-            await fetch(`${PUSH_SUPABASE_URL}/rest/v1/push_subscriptions`, {
+            const upsertResp = await fetch(`${PUSH_SUPABASE_URL}/rest/v1/push_subscriptions`, {
                 method: 'POST',
                 headers,
                 body: JSON.stringify(body),
             });
+            if (!upsertResp.ok) {
+                // Upsert failed (likely partial index conflict) — fall back to PATCH by device_id
+                await fetch(`${PUSH_SUPABASE_URL}/rest/v1/push_subscriptions?device_id=eq.${deviceId}`, {
+                    method: 'PATCH',
+                    headers: { ...headers, 'Prefer': '' },
+                    body: JSON.stringify(body),
+                });
+            }
             // Trigger schedule re-computation
             const planHeaders = {
                 'Content-Type': 'application/json',
