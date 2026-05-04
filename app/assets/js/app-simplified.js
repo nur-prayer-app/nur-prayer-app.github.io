@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.245';
+    const APP_VERSION = '1.1.246';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -5721,7 +5721,7 @@
                 const preAt = at - preMin * 60 * 1000;
                 if (preAt > now) {
                     const t = setTimeout(() => {
-                        showPrayerNotification(`${name} · ${preMin} min`, `Prepare for prayer`);
+                        showPrayerNotification(`${name} in ${preMin} min`, `Prepare for prayer — ${formatTime12(times.today[id])}`);
                     }, preAt - now);
                     _notifTimers.push(t);
                 }
@@ -5729,7 +5729,7 @@
             // Adhan alert
             if (adhanOn && at > now) {
                 const t = setTimeout(() => {
-                    showPrayerNotification(`${name} Adhan`, formatTime12(times.today[id]));
+                    showPrayerNotification(`${name} — ${formatTime12(times.today[id])}`, 'Time for prayer');
                 }, at - now);
                 _notifTimers.push(t);
             }
@@ -5741,7 +5741,7 @@
                     const preIqamaAt = iqamaAt - preIqamaMin * 60 * 1000;
                     if (preIqamaAt > now) {
                         const t = setTimeout(() => {
-                            showPrayerNotification(`${name} Iqama · ${preIqamaMin} min`, formatTime12(new Date(iqamaAt)));
+                            showPrayerNotification(`${name} Iqama in ${preIqamaMin} min`, `Iqama at ${formatTime12(new Date(iqamaAt))}`);
                         }, preIqamaAt - now);
                         _notifTimers.push(t);
                     }
@@ -5757,12 +5757,16 @@
         _notifTimers.push(midnightTimer);
     }
 
+    let _hasPushSubscription = false;
+
     function showPrayerNotification(title, body) {
         // Electron: use native Windows toast (always works, no permission prompt)
         if (window.electronAPI?.showNotification) {
             window.electronAPI.showNotification(title, body);
             return;
         }
+        // If server-side push is active, skip in-app notification to avoid duplicates
+        if (_hasPushSubscription) return;
         // Browser fallback
         if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
             try { new Notification(title, { body, tag: 'nur-prayer' }); } catch {}
@@ -5788,6 +5792,7 @@
                     applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
                 });
             }
+            _hasPushSubscription = true;
             await savePushSubscription(sub);
         } catch {}
     }
@@ -5821,6 +5826,7 @@
             'apikey': PUSH_SUPABASE_ANON_KEY,
             'Authorization': `Bearer ${session ? session.access_token : PUSH_SUPABASE_ANON_KEY}`,
             'Prefer': 'resolution=merge-duplicates',
+            'X-Device-Id': deviceId,
         };
 
         const body = {
@@ -5855,24 +5861,28 @@
                 body: JSON.stringify(body),
             });
             if (!upsertResp.ok) {
-                // Upsert failed (likely partial index conflict) — fall back to PATCH by device_id
-                await fetch(`${PUSH_SUPABASE_URL}/rest/v1/push_subscriptions?device_id=eq.${deviceId}`, {
+                console.warn('[push] upsert failed:', upsertResp.status, await upsertResp.text().catch(() => ''));
+                const patchResp = await fetch(`${PUSH_SUPABASE_URL}/rest/v1/push_subscriptions?device_id=eq.${deviceId}`, {
                     method: 'PATCH',
                     headers: { ...headers, 'Prefer': '' },
                     body: JSON.stringify(body),
                 });
+                if (!patchResp.ok) console.warn('[push] patch fallback failed:', patchResp.status);
             }
             // Trigger schedule re-computation
             const planHeaders = {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${session ? session.access_token : PUSH_SUPABASE_ANON_KEY}`,
+                'X-Device-Id': deviceId,
             };
             fetch(`${PUSH_SUPABASE_URL}/functions/v1/plan-prayer-schedule`, {
                 method: 'POST',
                 headers: planHeaders,
                 body: JSON.stringify(session ? { user_id: session.user.id } : { device_id: deviceId }),
-            }).catch(() => {});
-        } catch {}
+            }).catch(e => console.warn('[push] planner call failed:', e.message));
+        } catch (e) {
+            console.warn('[push] savePushSubscription error:', e.message);
+        }
     }
 
     let _resyncTimer = null;
@@ -5887,7 +5897,10 @@
         try {
             const reg = await navigator.serviceWorker.ready;
             const sub = await reg.pushManager.getSubscription();
-            if (sub) await savePushSubscription(sub);
+            if (sub) {
+                _hasPushSubscription = true;
+                await savePushSubscription(sub);
+            }
         } catch {}
     }
 
@@ -6432,7 +6445,10 @@
         setInterval(updateClock, 30000);
         setInterval(runAutoMissedCheck, 5 * 60 * 1000); // every 5 min
 
-        if (S.settings.notifications) schedulePrayerNotifications();
+        if (S.settings.notifications) {
+            schedulePrayerNotifications();
+            subscribeToPush();
+        }
 
         setTimeout(checkForUpdatesSilent, 5000);
         if (_isIOS && !_isStandalone) setTimeout(showInstallBanner, 2000);
