@@ -7934,3 +7934,27 @@ body.electron .pwa-install-bar { display: none; }
         font-size: 10px;
     }
 }
+
+/* ── Fix additions ─────────────────────────────────────────── */
+.no-loc-hint {
+    font-size: 0.7em;
+    opacity: 0.5;
+    font-style: italic;
+}
+.high-lat-banner {
+    background: var(--warning-bg, rgba(251, 211, 141, 0.15));
+    color: var(--warning-text, #d69e2e);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    text-align: center;
+    margin-bottom: 8px;
+}
+.time-iqama {
+    font-size: 0.8em;
+    opacity: 0.6;
+}
+.notif-sub-list.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+}

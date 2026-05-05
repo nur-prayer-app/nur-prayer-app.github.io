@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.247';
+    const APP_VERSION = '1.1.248';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -140,7 +140,6 @@
         renderPrayerList(tk, dd);
         renderPrayerRing(c);
         renderGoals();
-        renderReminders();
         renderCalendar();
         updateTray();
     }
@@ -170,10 +169,17 @@
         const passed = isCurrentDay ? computePassedPrayers(new Date()) : {};
         if (!isCurrentDay) PRAYERS.forEach(p => { passed[p.id] = true; });
 
+        const loc = S.settings.location;
+        let computedTimes = null;
+        if (loc) {
+            computedTimes = computeRawTimesCached(loc.lat, loc.lng, gregDate, getTimesOptions());
+        }
+
         list.innerHTML = PRAYERS.map(p => {
             const done = dd[p.id];
             const future = !passed[p.id] && !done;
             const name = prayerName(p.id, gregDate);
+            const timeStr = computedTimes ? formatTime12(computedTimes[p.id]) : `${p.time} <span class="no-loc-hint">(no location)</span>`;
             return `
             <label class="prayer-icon-btn${done ? ' completed' : ''}${future ? ' future' : ''}" data-key="${tk}" data-prayer="${p.id}">
                 <input type="checkbox" ${done ? 'checked' : ''} ${future ? 'disabled' : ''} aria-label="Mark ${name} as ${done ? 'incomplete' : 'complete'}">
@@ -181,7 +187,7 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">${done ? '<polyline points="20,6 9,17 4,12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' : PRAYER_ICONS[p.id]}</svg>
                 </div>
                 <span class="prayer-icon-name">${name}</span>
-                <span class="prayer-icon-time">${p.time}</span>
+                <span class="prayer-icon-time">${timeStr}</span>
             </label>`;
         }).join('');
 
@@ -207,7 +213,18 @@
                     if (matchingGoal) recordQadaaPrayers(matchingGoal, pid, 1);
                 }
                 save(KEYS.PRAYERS, S.prayers);
-                render();
+                // Targeted DOM update instead of full render
+                item.classList.toggle('completed', cb.checked);
+                const iconCircle = item.querySelector('.prayer-icon-circle svg');
+                if (iconCircle) {
+                    iconCircle.innerHTML = cb.checked
+                        ? '<polyline points="20,6 9,17 4,12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'
+                        : PRAYER_ICONS[pid];
+                }
+                const c = completed(d);
+                renderPrayerRing(c);
+                renderGoals();
+                updateTray();
             });
         });
     }
@@ -274,7 +291,13 @@
                 // are a pure "pay back a missed prayer" goal — no day-of-origin, so no suffix.
                 let displayName = esc(g.name) || type.name;
                 if (isAutoType && !g.isManual && g.missedOn) {
-                    const nowStart = new Date(); nowStart.setHours(0,0,0,0);
+                    const _now = new Date();
+                    const _loc = S.settings.location;
+                    let nowStart = new Date(_now); nowStart.setHours(0,0,0,0);
+                    if (_loc) {
+                        const _fajr = computeRawTimesCached(_loc.lat, _loc.lng, _now, getTimesOptions()).fajr;
+                        if (_now < _fajr) nowStart.setDate(nowStart.getDate() - 1);
+                    }
                     const missedStart = new Date(g.missedOn); missedStart.setHours(0,0,0,0);
                     const daysAgo = Math.round((nowStart - missedStart) / (24 * 3600 * 1000));
                     const when = daysAgo === 0 ? 'today'
@@ -1462,7 +1485,7 @@
         renderFridayReminder();
     }
 
-    function renderFridayReminder() {
+    function renderFridayReminder(skipWire) {
         if (new Date().getDay() !== 5) return;
         const container = $('.reminders-display');
         if (!container) return;
@@ -1471,7 +1494,7 @@
         temp.innerHTML = html;
         const row = temp.firstElementChild;
         container.prepend(row);
-        wireReminderClicks(container);
+        if (!skipWire) wireReminderClicks(container);
     }
 
 
@@ -1726,13 +1749,11 @@
         if (combined.length === 0) {
             container.innerHTML = '<div class="reminder-row"><div class="reminder-icon-box"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="reminder-text"><div class="reminder-title">No special days</div></div></div>';
             renderFridayReminder();
-            wireReminderClicks(container);
             return;
         }
 
         container.innerHTML = combined.map(s => renderReminderRow({ ...s, _monthName: s._monthName }, s._monthName)).join('');
         renderFridayReminder();
-        wireReminderClicks(container);
     }
 
     function updateCalendar() {
@@ -1804,6 +1825,12 @@
         const rebuiltWeeks = [];
         for (let i = 0; i < allCells.length; i += 7) rebuiltWeeks.push(allCells.slice(i, i + 7));
 
+        // Pre-compute all hijri→gregorian conversions for the month
+        const gregByDay = {};
+        for (let d = 1; d <= totalDays; d++) {
+            gregByDay[d] = HijriCalendar.hijriToGregorian(S.calY, S.calM, d);
+        }
+
         const autoMissedSet = buildAutoMissedSet();
 
         rebuiltWeeks.forEach(week => {
@@ -1817,7 +1844,7 @@
                 const dd = peekDay(key);
                 const c = completed(dd);
                 const hasData = !!S.prayers[key];
-                const greg = HijriCalendar.hijriToGregorian(S.calY, S.calM, cell.day);
+                const greg = gregByDay[cell.day];
                 const gDay = greg.getDate();
                 const gMon = fmtMonthShort(greg);
                 const gMonFull = fmtMonthYear(greg);
@@ -1865,7 +1892,7 @@
 
         // Also re-render reminders when calendar month changes
         renderRemindersForMonth(S.calY, S.calM);
-        renderFridayReminder();
+        renderFridayReminder(true);
     }
 
     function renderRemindersForMonth(year, month) {
@@ -2925,8 +2952,9 @@
         // Fix drift: if perPrayer sum < remaining, redistribute evenly
         const sum = PRAYERS.reduce((s, p) => s + (g.perPrayer[p.id] || 0), 0);
         if (sum < g.remaining) {
-            const each = Math.ceil(g.remaining / 5);
-            PRAYERS.forEach(p => { g.perPrayer[p.id] = each; });
+            const base = Math.floor(g.remaining / 5);
+            const remainder = g.remaining % 5;
+            PRAYERS.forEach((p, i) => { g.perPrayer[p.id] = base + (i < remainder ? 1 : 0); });
         }
         return g.perPrayer;
     }
@@ -3324,7 +3352,7 @@
                                 </div>
                                 <span class="notif-sub-unit">min</span>
                                 <label class="setting-toggle">
-                                    <input type="checkbox" data-setting="notifPreEnabled" ${notifPre ? 'checked' : ''}>
+                                    <input type="checkbox" data-setting="notifPreEnabled" data-setting-skip="1" ${notifPre ? 'checked' : ''}>
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
@@ -3336,7 +3364,7 @@
                             </div>
                             <div class="notif-sub-controls">
                                 <label class="setting-toggle">
-                                    <input type="checkbox" data-setting="notifAdhanEnabled" ${notifAdhan ? 'checked' : ''}>
+                                    <input type="checkbox" data-setting="notifAdhanEnabled" data-setting-skip="1" ${notifAdhan ? 'checked' : ''}>
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
@@ -3358,7 +3386,7 @@
                                 </div>
                                 <span class="notif-sub-unit">min</span>
                                 <label class="setting-toggle">
-                                    <input type="checkbox" data-setting="notifPreIqamaEnabled" ${notifPreIqama ? 'checked' : ''}>
+                                    <input type="checkbox" data-setting="notifPreIqamaEnabled" data-setting-skip="1" ${notifPreIqama ? 'checked' : ''}>
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
@@ -3543,8 +3571,9 @@
             });
         });
 
-        // Checkbox toggles
+        // Checkbox toggles (skip notification sub-toggles handled specifically in prayers tab)
         $$('input[type="checkbox"][data-setting]', content).forEach(cb => {
+            if (cb.dataset.settingSkip) return;
             cb.addEventListener('change', () => {
                 setSetting(cb.dataset.setting, cb.checked);
                 if (['showGregorian', 'showIndicators', 'trackLatePrayers'].includes(cb.dataset.setting)) {
@@ -3631,8 +3660,10 @@
             // Notification toggle (same behavior as the button on Times page)
             $('#notif-toggle', content)?.addEventListener('change', (e) => {
                 e.preventDefault();
-                // togglePrayerNotifications does permission flow + toast
-                togglePrayerNotifications();
+                const checkbox = e.target;
+                togglePrayerNotifications().then(() => {
+                    checkbox.checked = !!S.settings.notifications;
+                });
             });
             // Set-location shortcut
             $('#set-location-btn', content)?.addEventListener('click', () => {
@@ -3848,10 +3879,11 @@
         const data = Storage.exportAll();
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
+        const url = URL.createObjectURL(blob);
+        a.href = url;
         a.download = `nur-backup-${new Date().toISOString().slice(0,10)}.json`;
         a.click();
-        URL.revokeObjectURL(a.href);
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
         toast('Data exported');
     }
 
@@ -3862,10 +3894,23 @@
         reader.onload = () => {
             try {
                 const parsed = JSON.parse(reader.result);
+                if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+                    toast('Import failed: invalid file structure');
+                    return;
+                }
                 const allowedKeys = new Set(Object.values(Storage.KEYS));
+                const JSON_KEYS = new Set([Storage.KEYS.PRAYERS, Storage.KEYS.QADAA, Storage.KEYS.GOALS, Storage.KEYS.GOALS_ARCHIVE, Storage.KEYS.SETTINGS]);
                 const filtered = {};
                 for (const [k, v] of Object.entries(parsed)) {
-                    if (allowedKeys.has(k)) filtered[k] = v;
+                    if (!allowedKeys.has(k)) continue;
+                    if (JSON_KEYS.has(k)) {
+                        const val = typeof v === 'string' ? JSON.parse(v) : v;
+                        if (val === null || typeof val !== 'object') {
+                            toast(`Import failed: invalid data for "${k}"`);
+                            return;
+                        }
+                    }
+                    filtered[k] = v;
                 }
                 Storage.importAll(filtered);
                 toast('Data imported — reloading…');
@@ -3875,6 +3920,7 @@
             }
         };
         reader.readAsText(file);
+        e.target.value = '';
     }
 
     /* ── Calendar Nav ────────────────────────────────────────── */
@@ -3908,7 +3954,7 @@
         // This picker drives EVERY card below — period-vs-previous-period comparisons,
         // volunteer counts, on-time %, etc. all scale to the chosen window so the page
         // reads as one coherent "last N days" view.
-        const RANGE_DAYS = S.settings.statsRange || 7;
+        const RANGE_DAYS = parseInt(localStorage.getItem('nur-stats-range'), 10) || 7;
 
         // Render the global stats toolbar (range picker) OUTSIDE the cards grid so it reads
         // as a page-level control — not a card control. Mounted once into the stats page.
@@ -3931,8 +3977,7 @@
             `;
             $$('.range-btn', toolbar).forEach(btn => {
                 btn.addEventListener('click', () => {
-                    S.settings.statsRange = parseInt(btn.dataset.range, 10);
-                    save(KEYS.SETTINGS, S.settings);
+                    localStorage.setItem('nur-stats-range', btn.dataset.range);
                     renderStats();
                 });
             });
@@ -4170,7 +4215,7 @@
      *  Adjustments are in minutes (positive = later). */
     let _rawTimesCache = {};
     function computeRawTimesCached(lat, lng, date, opts) {
-        const k = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}-${lat}-${lng}-${opts.method}-${opts.asrSchool}`;
+        const k = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}-${lat}-${lng}-${opts.method}-${opts.asrSchool}-${JSON.stringify(opts.adjustments || {})}`;
         if (_rawTimesCache[k]) return _rawTimesCache[k];
         const v = computeRawTimes(lat, lng, date, opts);
         _rawTimesCache[k] = v;
@@ -4212,13 +4257,15 @@
             Math.atan2(Math.cos(deg2rad(obliq)) * Math.sin(deg2rad(trueLong)), Math.cos(deg2rad(trueLong)))
         ));
 
-        const tz = -date.getTimezoneOffset() / 60;
+        const tz = -new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0).getTimezoneOffset() / 60;
         const noon = 12 - eqTime / 60 - lng / 15 + tz; // Dhuhr in decimal hours (local)
 
+        let _highLatClamped = false;
         const hourAngle = (angle) => {
             const A = -angle;
             const cosH = (Math.sin(deg2rad(A)) - Math.sin(deg2rad(lat)) * Math.sin(deg2rad(decl)))
                        / (Math.cos(deg2rad(lat)) * Math.cos(deg2rad(decl)));
+            if (cosH < -1 || cosH > 1) _highLatClamped = true;
             const clamped = Math.max(-1, Math.min(1, cosH));
             return rad2deg(Math.acos(clamped)) / 15;
         };
@@ -4254,6 +4301,7 @@
             if (hh < 0) d.setDate(d.getDate() - 1);
             result[k] = d;
         });
+        if (_highLatClamped) result.highLatitudeWarning = true;
         return result;
     }
 
@@ -4428,9 +4476,17 @@
 
     const PRAYER_TIME_IDS = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'];
     const _BASE_TIME_LABELS = { fajr: 'Fajr', sunrise: 'Sunrise', dhuhr: 'Dhuhr', asr: 'Asr', maghrib: 'Maghrib', isha: 'Isha' };
+    function getPrayerLabel(id, date) {
+        if (id === 'dhuhr' && date && date.getDay() === 5) return "Jumu'ah";
+        return _BASE_TIME_LABELS[id];
+    }
     const PRAYER_TIME_LABELS = new Proxy(_BASE_TIME_LABELS, {
         get(target, prop) {
-            if (prop === 'dhuhr' && new Date().getDay() === 5) return "Jumu'ah";
+            if (prop === 'dhuhr') {
+                const times = _todayTimesCache.value;
+                const baseDate = times ? times.baseDate : new Date();
+                if (baseDate.getDay() === 5) return "Jumu'ah";
+            }
             return target[prop];
         }
     });
@@ -4440,6 +4496,8 @@
     let _timesTicker = null;
     let _tickEls = null; // cached DOM refs for tickTimes — populated by renderPrayerTimes
     let _timesAC = null; // AbortController for document-level listeners in renderPrayerTimes
+    let _lastRolledState = false; // track post-Isha roll state for re-render
+    let _windowsCache = { key: '', value: null }; // cached windows array for tickTimes perf
 
     /* Cache today's prayer times — computeRawTimes does expensive trig and gets called
        via tickTimes every second. Invalidated when the calendar date changes. */
@@ -4552,6 +4610,7 @@
         const hijriNow = HijriCalendar.gregorianToHijri(new Date());
         const isRamadan = hijriNow.month === 9;
         const fastingOn = S.settings.fastingTracker !== undefined ? !!S.settings.fastingTracker : isRamadan;
+        const highLatWarn = times && times.today && times.today.highLatitudeWarning;
 
         // Build the static skeleton — dynamic parts updated by tick()
         // Settings live in the global gear icon (top header) — no duplicate controls here.
@@ -4585,6 +4644,8 @@
                         </button>
                     </div>
                 </div>
+
+                ${highLatWarn ? '<div class="high-lat-banner">⚠ Some times estimated (midnight sun period)</div>' : ''}
 
                 <!-- 1. Timeline on top: most information-dense element, sets context for everything else -->
                 <div class="times-daybar-wrap">
@@ -4703,11 +4764,13 @@
                                 : '<path d="M13.73 21a2 2 0 0 1-3.46 0M18.63 13A17.89 17.89 0 0 1 18 8M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14M18 8a6 6 0 0 0-9.33-5M1 1l22 22" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>'}
                         </svg>
                     </button>`;
+                const iqamaOffset = !isRef ? getIqamaOffset(id) : 0;
+                const iqamaStr = iqamaOffset > 0 ? ` <span class="time-iqama">· Iqama ${formatTime12(new Date(at.getTime() + iqamaOffset * 60000))}</span>` : '';
                 return `
                 <div class="time-row${isRef ? ' time-row-ref' : ''}" data-timeline-id="${id}">
                     ${iconSvg}
                     <span class="time-name">${PRAYER_TIME_LABELS[id]}</span>
-                    <span class="time-adhan">${formatTime12(at)}</span>
+                    <span class="time-adhan">${formatTime12(at)}${iqamaStr}</span>
                     ${notifBtn}
                 </div>`;
             }).join('');
@@ -5302,6 +5365,8 @@
             toTimeEl: $('#hero-progress-to-time'),
             sinceVal: $('#hsub-since-val'),
             sinceLabel: $('#hsub-since-label'),
+            daybarMarkers: $$('.daybar-marker'),
+            timelineRows: $$('.time-row[data-timeline-id]'),
             iqamaWrap: $('#hsub-iqama'),
             iqamaVal: $('#hsub-iqama-val'),
             iqamaLabel: $('#hsub-iqama-label'),
@@ -5361,6 +5426,11 @@
 
         const times = getTodayPrayerTimes();
         if (!times) return;
+        if (times.rolled !== _lastRolledState) {
+            _lastRolledState = times.rolled;
+            renderPrayerTimes();
+            return;
+        }
         const schedule = buildPrayerSchedule(times);
         const now = new Date();
         const nextIdx = findNextPrayerIdx(schedule, now);
@@ -5437,20 +5507,26 @@
             const todayT = times.today;
             const tomFajr = times.tomorrowFajr;
 
-            const windows = [
-                { kind: 'prayer', name: 'Fajr', tone: 'prayer', start: todayT.fajr, end: todayT.sunrise, prayerId: 'fajr' },
-                { kind: 'prayer', name: 'Dhuhr', tone: 'prayer', start: todayT.dhuhr, end: todayT.asr, prayerId: 'dhuhr' },
-                { kind: 'prayer', name: 'Asr', tone: 'prayer', start: todayT.asr, end: todayT.maghrib, prayerId: 'asr' },
-                { kind: 'prayer', name: 'Maghrib', tone: 'prayer', start: todayT.maghrib, end: todayT.isha, prayerId: 'maghrib' },
-                { kind: 'prayer', name: 'Isha', tone: 'prayer', start: todayT.isha, end: tomFajr, prayerId: 'isha' },
-                { kind: 'prayer', name: 'Isha', tone: 'prayer', start: yestT.isha, end: todayT.fajr, prayerId: 'isha' },
-                { kind: 'duha', name: 'Duha', tone: 'duha', start: new Date(todayT.sunrise.getTime() + 15*60*1000), end: new Date(todayT.dhuhr.getTime() - 10*60*1000) },
-                { kind: 'karaha', name: 'Karaha (sunrise)', tone: 'karaha', start: todayT.sunrise, end: new Date(todayT.sunrise.getTime() + 15*60*1000) },
-                { kind: 'karaha', name: 'Karaha (zawal)', tone: 'karaha', start: new Date(todayT.dhuhr.getTime() - 10*60*1000), end: todayT.dhuhr },
-                { kind: 'karaha', name: 'Karaha (sunset)', tone: 'karaha', start: new Date(todayT.maghrib.getTime() - 15*60*1000), end: todayT.maghrib },
-                { kind: 'third', name: 'Last third', tone: 'third', start: new Date(yestT.maghrib.getTime() + (2/3) * (todayT.fajr - yestT.maghrib)), end: todayT.fajr },
-                { kind: 'third', name: 'Last third', tone: 'third', start: new Date(todayT.maghrib.getTime() + (2/3) * (tomFajr - todayT.maghrib)), end: tomFajr },
-            ];
+            let windows;
+            if (_windowsCache.key === _todayTimesCache.key) {
+                windows = _windowsCache.value;
+            } else {
+                windows = [
+                    { kind: 'prayer', name: 'Fajr', tone: 'prayer', start: todayT.fajr, end: todayT.sunrise, prayerId: 'fajr' },
+                    { kind: 'prayer', name: 'Dhuhr', tone: 'prayer', start: todayT.dhuhr, end: todayT.asr, prayerId: 'dhuhr' },
+                    { kind: 'prayer', name: 'Asr', tone: 'prayer', start: todayT.asr, end: todayT.maghrib, prayerId: 'asr' },
+                    { kind: 'prayer', name: 'Maghrib', tone: 'prayer', start: todayT.maghrib, end: todayT.isha, prayerId: 'maghrib' },
+                    { kind: 'prayer', name: 'Isha', tone: 'prayer', start: todayT.isha, end: tomFajr, prayerId: 'isha' },
+                    { kind: 'prayer', name: 'Isha', tone: 'prayer', start: yestT.isha, end: todayT.fajr, prayerId: 'isha' },
+                    { kind: 'duha', name: 'Duha', tone: 'duha', start: new Date(todayT.sunrise.getTime() + 15*60*1000), end: new Date(todayT.dhuhr.getTime() - 10*60*1000) },
+                    { kind: 'karaha', name: 'Karaha (sunrise)', tone: 'karaha', start: todayT.sunrise, end: new Date(todayT.sunrise.getTime() + 15*60*1000) },
+                    { kind: 'karaha', name: 'Karaha (zawal)', tone: 'karaha', start: new Date(todayT.dhuhr.getTime() - 10*60*1000), end: todayT.dhuhr },
+                    { kind: 'karaha', name: 'Karaha (sunset)', tone: 'karaha', start: new Date(todayT.maghrib.getTime() - 15*60*1000), end: todayT.maghrib },
+                    { kind: 'third', name: 'Last third', tone: 'third', start: new Date(yestT.maghrib.getTime() + (2/3) * (todayT.fajr - yestT.maghrib)), end: todayT.fajr },
+                    { kind: 'third', name: 'Last third', tone: 'third', start: new Date(todayT.maghrib.getTime() + (2/3) * (tomFajr - todayT.maghrib)), end: tomFajr },
+                ];
+                _windowsCache = { key: _todayTimesCache.key, value: windows };
+            }
 
             // CURRENT = any window containing NOW. If multiple overlap (e.g. Dhuhr window + Karaha zawal),
             // prefer the more specific (non-prayer) one so user sees the karaha warning first.
@@ -5513,7 +5589,7 @@
         // Mark current/past prayer markers on the timeline (only "today"-marked markers follow schedule)
         // After post-Isha roll, the schedule is tomorrow's — today's markers are all past.
         const isRolled = !!times.rolled;
-        $$('.daybar-marker').forEach(m => {
+        (el.daybarMarkers || $$('.daybar-marker')).forEach(m => {
             const id = m.dataset.marker;
             const mDay = m.dataset.day;
             if (!id) return;
@@ -5530,7 +5606,7 @@
             else if (id === next.id || (id === 'fajr' && next.id === 'fajr-next')) m.classList.add('next');
         });
 
-        const tlRows = $$('.time-row[data-timeline-id]');
+        const tlRows = el.timelineRows || $$('.time-row[data-timeline-id]');
         tlRows.forEach(r => {
             const id = r.dataset.timelineId;
             const selfIdx = schedule.findIndex(e => e.id === id);
@@ -5690,6 +5766,7 @@
             clearScheduledNotifications();
             toast('Prayer notifications off');
             updateNotifToggleBtn();
+            $('.notif-sub-list')?.classList.add('disabled');
             return;
         }
         // Electron: no permission needed — native toasts always work
@@ -5707,6 +5784,7 @@
         subscribeToPush();
         toast('Prayer notifications on');
         updateNotifToggleBtn();
+        $('.notif-sub-list')?.classList.remove('disabled');
     }
 
     function schedulePrayerNotifications() {
@@ -6037,7 +6115,21 @@
 
         // Check yesterday's Isha: between midnight and Fajr, yesterday's day is still
         // the dashboard day. If Isha wasn't marked, flag it on yesterday's record.
+        // Also check after Fajr passes (previous dashboard day's Isha).
         if (nowMinutes < prayerMinsToday.fajr) {
+            const yest = new Date(now);
+            yest.setDate(yest.getDate() - 1);
+            const yestH = HijriCalendar.gregorianToHijri(yest);
+            const yestKey = hk(yestH.year, yestH.month, yestH.day);
+            const yd = dayData(yestKey);
+            if (!yd.isha && !yd.isha_auto_missed) {
+                yd.isha_auto_missed = true;
+                addAutoMissedGoal('isha', yest.toISOString());
+                added++;
+                missedNames.push('Isha');
+            }
+        } else if (nowMinutes >= prayerMinsToday.fajr) {
+            // After Fajr: check if yesterday's Isha was missed
             const yest = new Date(now);
             yest.setDate(yest.getDate() - 1);
             const yestH = HijriCalendar.gregorianToHijri(yest);
@@ -6059,11 +6151,22 @@
     }
 
     /* ── Clock ───────────────────────────────────────────────── */
+    let _lastDashboardKey = '';
+
     function updateClock() {
         const now = new Date();
         const h = now.getHours(), m = now.getMinutes();
         const h12 = h % 12 || 12;
         const ampm = h >= 12 ? 'PM' : 'AM';
+
+        // Re-render dashboard when the day rolls (at Fajr or midnight)
+        const dk = dashboardKey();
+        if (_lastDashboardKey && dk !== _lastDashboardKey) {
+            invalidatePrayerTimesCache();
+            render();
+            if (S.settings.notifications) schedulePrayerNotifications();
+        }
+        _lastDashboardKey = dk;
 
         const timeEl = $('#header-time');
         if (timeEl) timeEl.textContent = `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
@@ -6456,11 +6559,17 @@
 
         initEvents();
         initContext();
+        _lastDashboardKey = dashboardKey();
         render();
         updateClock();
         runAutoMissedCheck();
         setInterval(updateClock, 30000);
         setInterval(runAutoMissedCheck, 5 * 60 * 1000); // every 5 min
+
+        // Re-check day when app returns from background (mobile PWA, tab switch)
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) updateClock();
+        });
 
         if (S.settings.notifications) {
             schedulePrayerNotifications();
@@ -6482,7 +6591,14 @@
     });
 
     window.addEventListener('sync-data-updated', () => {
-        toast('Data updated from cloud', { label: 'Reload', fn: () => location.reload() });
+        S.prayers = Storage.get(KEYS.PRAYERS, {});
+        S.qadaa = Storage.get(KEYS.QADAA, {});
+        S.settings = Storage.get(KEYS.SETTINGS, {});
+        S.goalsArchive = Storage.get(KEYS.GOALS_ARCHIVE, []);
+        S.theme = Storage.get(KEYS.THEME, 'default');
+        invalidatePrayerTimesCache();
+        render();
+        toast('Data updated from cloud');
     });
 
     window.addEventListener('sync-session-lost', () => {
