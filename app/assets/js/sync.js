@@ -123,28 +123,35 @@
 
     /* ─── Token refresh ────────────────────────────────────────── */
 
-    async function refreshToken() {
-        const session = getSession();
-        if (!session?.refresh_token) return null;
+    let _refreshPromise = null;
 
-        const resp = await fetch(`${AUTH_URL}/token?grant_type=refresh_token`, {
-            method: 'POST',
-            headers: headers(),
-            body: JSON.stringify({ refresh_token: session.refresh_token }),
-        });
-        if (!resp.ok) {
-            saveSession(null);
-            window.dispatchEvent(new CustomEvent('sync-session-lost'));
-            return null;
-        }
-        const data = await resp.json();
-        const newSession = {
-            access_token: data.access_token,
-            refresh_token: data.refresh_token,
-            user: data.user,
-        };
-        saveSession(newSession);
-        return newSession;
+    async function refreshToken() {
+        if (_refreshPromise) return _refreshPromise;
+        _refreshPromise = (async () => {
+            const session = getSession();
+            if (!session?.refresh_token) return null;
+
+            const resp = await fetch(`${AUTH_URL}/token?grant_type=refresh_token`, {
+                method: 'POST',
+                headers: headers(),
+                body: JSON.stringify({ refresh_token: session.refresh_token }),
+            });
+            if (!resp.ok) {
+                saveSession(null);
+                window.dispatchEvent(new CustomEvent('sync-session-lost'));
+                return null;
+            }
+            const data = await resp.json();
+            const newSession = {
+                access_token: data.access_token,
+                refresh_token: data.refresh_token,
+                user: data.user,
+            };
+            saveSession(newSession);
+            return newSession;
+        })();
+        try { return await _refreshPromise; }
+        finally { _refreshPromise = null; }
     }
 
     async function getValidToken() {
@@ -281,9 +288,39 @@
         stopAutoSync();
     }
 
+    async function signOutAll() {
+        const token = await getValidToken();
+        if (token) {
+            await fetch(`${AUTH_URL}/logout?scope=global`, {
+                method: 'POST',
+                headers: headers(token),
+            }).catch(() => {});
+        }
+        saveSession(null);
+        localStorage.removeItem(LAST_SYNC_KEY);
+        stopAutoSync();
+    }
+
+    /* ─── Per-day timestamps for prayer-data merge ───────────────── */
+    const PRAYER_KEY = 'prayer-data';
+    const DAY_TS_KEY = 'nur-prayer-day-ts';
+
+    function getDayTimestamps() {
+        try { return JSON.parse(localStorage.getItem(DAY_TS_KEY)) || {}; } catch { return {}; }
+    }
+
+    function saveDayTimestamps(ts) {
+        localStorage.setItem(DAY_TS_KEY, JSON.stringify(ts));
+    }
+
+    function stampPrayerDay(dayKey) {
+        const ts = getDayTimestamps();
+        ts[dayKey] = Date.now();
+        saveDayTimestamps(ts);
+    }
+
     /* ─── Sync: push ───────────────────────────────────────────── */
 
-    // Last-push-wins: concurrent edits to the same key on different devices may overwrite
     function buildCloudPayload(dirtyKeys) {
         const snapshot = Storage.exportAll();
         const now = Date.now();
@@ -293,7 +330,12 @@
             let value = raw;
             try { value = JSON.parse(raw); } catch {}
             const prevTs = lastPushedTimestamps?.[key] || now;
-            payload[key] = { value, _ts: (firstPush || dirtyKeys.has(key)) ? now : prevTs };
+            const envelope = { value, _ts: (firstPush || dirtyKeys.has(key)) ? now : prevTs };
+            // Attach per-day timestamps for prayer-data to enable day-level merge
+            if (key === PRAYER_KEY) {
+                envelope._dayTs = getDayTimestamps();
+            }
+            payload[key] = envelope;
         }
         return payload;
     }
@@ -364,11 +406,39 @@
             let changed = false;
             const merged = {};
 
+            const allowedKeys = new Set(Object.values(Storage.KEYS));
             for (const [key, envelope] of Object.entries(cloudData)) {
+                if (!allowedKeys.has(key)) continue;
                 if (!envelope || typeof envelope !== 'object') continue;
-                if (dirtyKeys.has(key)) continue;
                 const cloudTs = envelope._ts || 0;
                 const cloudValue = envelope.value;
+
+                // Per-day merge for prayer-data: merge individual days instead of all-or-nothing
+                if (key === PRAYER_KEY && dirtyKeys.has(key) && envelope._dayTs && cloudValue && typeof cloudValue === 'object') {
+                    let localPrayers = {};
+                    try { localPrayers = JSON.parse(localSnapshot[key] || '{}'); } catch {}
+                    const localDayTs = getDayTimestamps();
+                    const cloudDayTs = envelope._dayTs;
+                    let dayMerged = false;
+                    for (const [dayKey, cloudDayData] of Object.entries(cloudValue)) {
+                        const localDayModified = localDayTs[dayKey] || 0;
+                        const cloudDayModified = cloudDayTs[dayKey] || 0;
+                        // Cloud day wins only if cloud is newer AND local day wasn't edited
+                        if (cloudDayModified > localDayModified && !localPrayers[dayKey]?._localDirty) {
+                            localPrayers[dayKey] = cloudDayData;
+                            localDayTs[dayKey] = cloudDayModified;
+                            dayMerged = true;
+                        }
+                    }
+                    if (dayMerged) {
+                        merged[key] = JSON.stringify(localPrayers);
+                        saveDayTimestamps(localDayTs);
+                        changed = true;
+                    }
+                    continue;
+                }
+
+                if (dirtyKeys.has(key)) continue;
                 const raw = typeof cloudValue === 'string' ? cloudValue : JSON.stringify(cloudValue);
 
                 if (key in localSnapshot) {
@@ -410,6 +480,7 @@
         if (!resp.ok) throw new Error('Failed to clear cloud data');
         localStorage.removeItem(LAST_SYNC_KEY);
         localStorage.removeItem('nur-push-timestamps');
+        localStorage.removeItem(DAY_TS_KEY);
         lastPushedTimestamps = null;
     }
 
@@ -447,6 +518,15 @@
 
     if (getSession()) startAutoSync();
 
+    // Immediate sync on reconnection — reset backoff and trigger sync
+    window.addEventListener('online', () => {
+        if (syncEnabled && !isSyncing) {
+            syncFailures = 0;
+            if (syncTimer !== null) { clearTimeout(syncTimer); syncTimer = null; }
+            scheduleNextSync();
+        }
+    });
+
     /* ─── Public API ───────────────────────────────────────────── */
 
     window.Sync = Object.freeze({
@@ -454,12 +534,14 @@
         signIn,
         signInWithGoogle,
         signOut,
+        signOutAll,
         resetPassword,
         getSession,
         getLastSync,
         pushToCloud,
         pullFromCloud,
         clearCloud,
+        stampPrayerDay,
         SUPABASE_URL,
         SUPABASE_KEY,
     });

@@ -94,7 +94,7 @@
 
     /* ─── Dirty-key tracking (for delta sync) ──────────────────── */
     const _dirtyKeys = new Set();
-    let _suppressDirty = false;
+    let _suppressDirtyDepth = 0;
 
     /* ─── Public API ────────────────────────────────────────────── */
     function get(key, fallback) {
@@ -112,12 +112,12 @@
     function set(key, value) {
         const payload = JSON_KEYS.has(key) ? JSON.stringify(value) : String(value);
         backend.setItem(key, payload);
-        if (!_suppressDirty) _dirtyKeys.add(key);
+        if (_suppressDirtyDepth === 0) _dirtyKeys.add(key);
     }
 
     function remove(key) {
         backend.removeItem(key);
-        if (!_suppressDirty) _dirtyKeys.add(key);
+        if (_suppressDirtyDepth === 0) _dirtyKeys.add(key);
     }
 
     /** Export all known keys as a single snapshot object — used by
@@ -136,7 +136,7 @@
     function importAll(snapshot) {
         Object.entries(snapshot).forEach(([k, v]) => {
             backend.setItem(k, v);
-            if (!_suppressDirty) _dirtyKeys.add(k);
+            if (_suppressDirtyDepth === 0) _dirtyKeys.add(k);
         });
     }
 
@@ -165,6 +165,6 @@
         ensureInstalledAt,
         getDirtyKeys()  { return new Set(_dirtyKeys); },
         clearDirtyKeys() { _dirtyKeys.clear(); },
-        suppressDirty(on) { _suppressDirty = !!on; },
+        suppressDirty(on) { _suppressDirtyDepth += on ? 1 : -1; if (_suppressDirtyDepth < 0) _suppressDirtyDepth = 0; },
     });
 })();
