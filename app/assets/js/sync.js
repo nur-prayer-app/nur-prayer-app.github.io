@@ -386,6 +386,7 @@
                 Storage.suppressDirty(true);
                 try { Storage.importAll(merged); }
                 finally { Storage.suppressDirty(false); }
+                setLastSync();
                 return true;
             }
 
@@ -408,6 +409,8 @@
         );
         if (!resp.ok) throw new Error('Failed to clear cloud data');
         localStorage.removeItem(LAST_SYNC_KEY);
+        localStorage.removeItem('nur-push-timestamps');
+        lastPushedTimestamps = null;
     }
 
     /* ─── Auto-sync ────────────────────────────────────────────── */
