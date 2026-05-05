@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.248';
+    const APP_VERSION = '1.1.249';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -89,6 +89,7 @@
     /** Get or create prayer data for a day (use when writing). */
     function dayData(key) {
         if (!S.prayers[key]) S.prayers[key] = { ...EMPTY_DAY };
+        if (typeof Sync !== 'undefined' && Sync.stampPrayerDay) Sync.stampPrayerDay(key);
         return S.prayers[key];
     }
 
@@ -3433,6 +3434,7 @@
                             <button type="button" class="btn btn-secondary" id="sync-now">Sync now</button>
                             <button type="button" class="btn btn-danger" id="sync-clear-cloud">Clear cloud data</button>
                             <button type="button" class="btn btn-secondary" id="sync-signout">Sign out</button>
+                            <button type="button" class="btn btn-secondary" id="sync-signout-all">Sign out all devices</button>
                         </div>
                     </div>
                 </div>`;
@@ -3771,6 +3773,13 @@
                 toast('Signed out');
             });
 
+            $('#sync-signout-all')?.addEventListener('click', async () => {
+                await Sync.signOutAll();
+                $('#settings-tab-content').innerHTML = renderSettingsTab('data');
+                wireSettingsTab('data');
+                toast('Signed out from all devices');
+            });
+
             $('#export-data')?.addEventListener('click', exportData);
             $('#import-data')?.addEventListener('click', () => $('#import-file')?.click());
             $('#import-file')?.addEventListener('change', importData);
@@ -3784,6 +3793,8 @@
                 }
                 if (typeof Sync !== 'undefined' && Sync.getSession()) await Sync.signOut();
                 Storage.clearAll();
+                // Clear direct localStorage keys not managed by Storage repository
+                ['nur-stats-range', 'nur-push-timestamps', 'nur-prayer-day-ts', 'nur-pkce-verifier', 'nur-last-sync', 'nur-sync-session'].forEach(k => localStorage.removeItem(k));
                 location.reload();
             });
         }
@@ -5924,22 +5935,29 @@
             'X-Device-Id': deviceId,
         };
 
+        // Validate and sanitize notification settings before sending
+        const rawPrayerNotifs = S.settings.prayerNotifs || {};
+        const safePrayerNotifs = {};
+        PRAYER_RING_IDS.forEach(id => {
+            if (rawPrayerNotifs[id] === false) safePrayerNotifs[id] = false;
+        });
+
         const body = {
             device_id: deviceId,
             endpoint: sub.endpoint,
             keys: JSON.stringify(sub.toJSON().keys),
-            lat: loc?.lat || null,
-            lng: loc?.lng || null,
+            lat: loc ? Number(loc.lat) || null : null,
+            lng: loc ? Number(loc.lng) || null : null,
             timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
             calc_method: S.settings.calcMethod || 'ISNA',
             notif_settings: {
                 preEnabled: S.settings.notifPreEnabled !== false,
-                preMinutes: parseInt(S.settings.notifPreMinutes, 10) || 15,
+                preMinutes: Math.max(1, Math.min(60, parseInt(S.settings.notifPreMinutes, 10) || 15)),
                 adhanEnabled: S.settings.notifAdhanEnabled !== false,
                 preIqamaEnabled: S.settings.notifPreIqamaEnabled === true,
-                preIqamaMinutes: parseInt(S.settings.notifPreIqamaMinutes, 10) || 5,
+                preIqamaMinutes: Math.max(1, Math.min(30, parseInt(S.settings.notifPreIqamaMinutes, 10) || 5)),
                 iqamaOffsets: Object.fromEntries(PRAYER_RING_IDS.map(id => [id, getIqamaOffset(id)])),
-                prayerNotifs: S.settings.prayerNotifs || {},
+                prayerNotifs: safePrayerNotifs,
             },
             schedule_computed_for: null,
             updated_at: new Date().toISOString(),
@@ -5957,7 +5975,7 @@
             });
             if (!upsertResp.ok) {
                 console.warn('[push] upsert failed:', upsertResp.status, await upsertResp.text().catch(() => ''));
-                const patchResp = await fetch(`${PUSH_SUPABASE_URL}/rest/v1/push_subscriptions?device_id=eq.${deviceId}`, {
+                const patchResp = await fetch(`${PUSH_SUPABASE_URL}/rest/v1/push_subscriptions?device_id=eq.${encodeURIComponent(deviceId)}`, {
                     method: 'PATCH',
                     headers: { ...headers, 'Prefer': '' },
                     body: JSON.stringify(body),
@@ -6279,7 +6297,9 @@
 
     // Navigate to a page from tray menu
     if (window.electronAPI?.onNavigate) {
+        const VALID_PAGES = ['dashboard', 'times', 'stats'];
         window.electronAPI.onNavigate((page) => {
+            if (!VALID_PAGES.includes(page)) return;
             const tab = $(`.nav-tab[data-page="${page}"]`);
             if (tab) tab.click();
         });
@@ -6566,6 +6586,11 @@
         setInterval(updateClock, 30000);
         setInterval(runAutoMissedCheck, 5 * 60 * 1000); // every 5 min
 
+        // Warn user if storage is full
+        window.addEventListener('storage-quota-exceeded', () => {
+            toast('Storage full — some data may not be saved. Try exporting and clearing old data.');
+        });
+
         // Re-check day when app returns from background (mobile PWA, tab switch)
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) updateClock();
@@ -6594,6 +6619,7 @@
         S.prayers = Storage.get(KEYS.PRAYERS, {});
         S.qadaa = Storage.get(KEYS.QADAA, {});
         S.settings = Storage.get(KEYS.SETTINGS, {});
+        S.goals = Storage.get(KEYS.GOALS, []);
         S.goalsArchive = Storage.get(KEYS.GOALS_ARCHIVE, []);
         S.theme = Storage.get(KEYS.THEME, 'default');
         invalidatePrayerTimesCache();
