@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.249';
+    const APP_VERSION = '1.1.250';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -86,10 +86,11 @@
 
     const EMPTY_DAY = { fajr:false, dhuhr:false, asr:false, maghrib:false, isha:false, qyaam:false, qyaamRakaat:0, duha:false, shafaWitr:false, fasting:false };
 
+    let _lastPrayersSnapshot = JSON.stringify(S.prayers);
+
     /** Get or create prayer data for a day (use when writing). */
     function dayData(key) {
         if (!S.prayers[key]) S.prayers[key] = { ...EMPTY_DAY };
-        if (typeof Sync !== 'undefined' && Sync.stampPrayerDay) Sync.stampPrayerDay(key);
         return S.prayers[key];
     }
 
@@ -100,7 +101,22 @@
 
     function completed(d) { return PRAYERS.filter(p => d[p.id]).length; }
     /** Persist a top-level key through the Storage repository. */
-    function save(k, v) { Storage.set(k, v); }
+    function save(k, v) {
+        Storage.set(k, v);
+        // Auto-detect which days changed and stamp them for per-day sync merge
+        if (k === KEYS.PRAYERS && typeof Sync !== 'undefined' && Sync.stampPrayerDay) {
+            const newSnapshot = JSON.stringify(v);
+            if (newSnapshot !== _lastPrayersSnapshot) {
+                const prev = JSON.parse(_lastPrayersSnapshot);
+                for (const dayKey of Object.keys(v)) {
+                    if (JSON.stringify(v[dayKey]) !== JSON.stringify(prev[dayKey])) {
+                        Sync.stampPrayerDay(dayKey);
+                    }
+                }
+                _lastPrayersSnapshot = newSnapshot;
+            }
+        }
+    }
 
     /* ── Formatters ──────────────────────────────────────────
      * Shared date + Hijri formatters. Every call-site formats the same way,
@@ -6617,6 +6633,7 @@
 
     window.addEventListener('sync-data-updated', () => {
         S.prayers = Storage.get(KEYS.PRAYERS, {});
+        _lastPrayersSnapshot = JSON.stringify(S.prayers);
         S.qadaa = Storage.get(KEYS.QADAA, {});
         S.settings = Storage.get(KEYS.SETTINGS, {});
         S.goals = Storage.get(KEYS.GOALS, []);
