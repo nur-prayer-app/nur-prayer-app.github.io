@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.252';
+    const APP_VERSION = '1.1.253';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -1570,7 +1570,7 @@
         const hadQadaaMissed = hijriInfo && autoMissedSet
             ? autoMissedSet.has(`${hijriInfo.year}-${hijriInfo.month}-${hijriInfo.day}`)
             : false;
-        const qadaaCount = PRAYERS.filter(p => dd[`${p.id}_qadaa_recorded`]).length;
+        const qadaaCount = PRAYERS.filter(p => dd[p.id] && dd[`${p.id}_qadaa_recorded`]).length;
 
         const iconsRow = `<div class="cell-prayers-row">
             ${PRAYERS.map(p => `<span class="cell-ico ${dd[p.id] ? 'on' : 'off'}" title="${p.name}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none">${CELL_GLYPHS[p.id]}</svg></span>`).join('')}
