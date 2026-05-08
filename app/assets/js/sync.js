@@ -17,7 +17,7 @@
     const OAUTH_CALLBACK_URL = 'https://nur-prayer-app.github.io/auth-callback.html';
     const SESSION_KEY = 'nur-sync-session';
     const LAST_SYNC_KEY = 'nur-last-sync';
-    const SYNC_INTERVAL = 5 * 60 * 1000;
+    const SYNC_INTERVAL = 60 * 1000;
 
     let syncTimer = null;
     let syncEnabled = false;

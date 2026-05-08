@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.251';
+    const APP_VERSION = '1.1.252';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -100,6 +100,7 @@
     }
 
     function completed(d) { return PRAYERS.filter(p => d[p.id]).length; }
+    let _pushDebounce = null;
     /** Persist a top-level key through the Storage repository. */
     function save(k, v) {
         Storage.set(k, v);
@@ -115,6 +116,11 @@
                 }
                 _lastPrayersSnapshot = newSnapshot;
             }
+        }
+        // Debounced push: sync to cloud 3s after last save (batches rapid edits)
+        if (typeof Sync !== 'undefined' && Sync.getSession && Sync.getSession()) {
+            clearTimeout(_pushDebounce);
+            _pushDebounce = setTimeout(() => { Sync.pushToCloud(); }, 3000);
         }
     }
 
@@ -6619,9 +6625,14 @@
             toast('Storage full — some data may not be saved. Try exporting and clearing old data.');
         });
 
-        // Re-check day when app returns from background (mobile PWA, tab switch)
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) updateClock();
+        // Re-check day + sync when app returns from background (mobile PWA, tab switch)
+        document.addEventListener('visibilitychange', async () => {
+            if (!document.hidden) {
+                updateClock();
+                if (typeof Sync !== 'undefined' && Sync.getSession && Sync.getSession()) {
+                    if (await Sync.pullFromCloud()) window.dispatchEvent(new Event('sync-data-updated'));
+                }
+            }
         });
 
         if (S.settings.notifications) {
