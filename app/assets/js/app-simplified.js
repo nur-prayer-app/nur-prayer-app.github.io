@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.250';
+    const APP_VERSION = '1.1.251';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -216,6 +216,10 @@
                 const d = dayData(key);
                 const wasOff = !d[pid];
                 d[pid] = cb.checked;
+                // Unchecking: clear qadaa_recorded flag for this prayer
+                if (!cb.checked && d[`${pid}_qadaa_recorded`]) {
+                    delete d[`${pid}_qadaa_recorded`];
+                }
                 if (wasOff && d[pid]) {
                     if (d[`${pid}_auto_missed`] && !S.settings.trackLatePrayers) {
                         delete d[`${pid}_auto_missed`];
@@ -2214,6 +2218,11 @@
                 const wasOn = !!d2[pid];
                 d2[pid] = !wasOn;
 
+                // Unchecking: clear qadaa_recorded flag
+                if (wasOn && !d2[pid] && d2[`${pid}_qadaa_recorded`]) {
+                    delete d2[`${pid}_qadaa_recorded`];
+                }
+
                 if (!wasOn && d2[pid]) {
                     if (d2[`${pid}_auto_missed`] && !S.settings.trackLatePrayers) {
                         delete d2[`${pid}_auto_missed`];
@@ -2948,7 +2957,10 @@
 
     function markAllPrayers(key, status) {
         const d = dayData(key);
-        PRAYERS.forEach(p => d[p.id] = status);
+        PRAYERS.forEach(p => {
+            d[p.id] = status;
+            if (!status && d[`${p.id}_qadaa_recorded`]) delete d[`${p.id}_qadaa_recorded`];
+        });
         save(KEYS.PRAYERS, S.prayers);
         render();
         openDayModal(key);
