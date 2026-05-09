@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.257';
+    const APP_VERSION = '1.1.258';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -6661,34 +6661,31 @@
             Storage.set('_migrated_orphan_goals_v3', true);
         }
 
-        // Backfill sourceKey on old notes that don't have one
-        if (!Storage.get('_migrated_note_sourcekey_v1')) {
-            let patched = false;
+        // Clean stale _qadaa_recorded flags: only keep if a goal note references this day
+        if (!Storage.get('_migrated_clean_qadaa_flags_v1')) {
+            const validSourceKeys = new Set();
             getGoals().forEach(g => {
                 if (!g.notes) return;
-                g.notes.forEach(n => {
-                    if (n && !n.sourceKey && n.date) {
-                        const h = toHijri(n.date);
-                        n.sourceKey = hk(h.year, h.month, h.day);
-                        patched = true;
-                    }
-                });
+                g.notes.forEach(n => { if (n && n.sourceKey) validSourceKeys.add(n.sourceKey); });
             });
             (S.goalsArchive || []).forEach(g => {
                 if (!g.notes) return;
-                g.notes.forEach(n => {
-                    if (n && !n.sourceKey && n.date) {
-                        const h = toHijri(n.date);
-                        n.sourceKey = hk(h.year, h.month, h.day);
-                        patched = true;
-                    }
-                });
+                g.notes.forEach(n => { if (n && n.sourceKey) validSourceKeys.add(n.sourceKey); });
             });
-            if (patched) {
-                saveGoals();
-                save(KEYS.GOALS_ARCHIVE, S.goalsArchive || []);
+            let cleaned = false;
+            for (const [dayKey, dd] of Object.entries(S.prayers)) {
+                if (!dd || typeof dd !== 'object') continue;
+                if (!validSourceKeys.has(dayKey)) {
+                    PRAYERS.forEach(p => {
+                        if (dd[`${p.id}_qadaa_recorded`]) {
+                            delete dd[`${p.id}_qadaa_recorded`];
+                            cleaned = true;
+                        }
+                    });
+                }
             }
-            Storage.set('_migrated_note_sourcekey_v1', true);
+            if (cleaned) save(KEYS.PRAYERS, S.prayers);
+            Storage.set('_migrated_clean_qadaa_flags_v1', true);
         }
 
         initEvents();
