@@ -360,8 +360,8 @@
             if (!token) return;
             const session = getSession();
 
-            // Pull-before-push: merge cloud changes before overwriting
-            try {
+            // Pull-before-push: merge cloud changes before overwriting (skip on force push)
+            if (!force) try {
                 const pullResp = await fetch(
                     `${REST_URL}/user_data?user_id=eq.${session.user.id}&select=data`,
                     { headers: headers(token) }
@@ -578,7 +578,13 @@
         if (syncTimer !== null) { clearTimeout(syncTimer); syncTimer = null; }
     }
 
-    if (getSession()) startAutoSync();
+    if (getSession()) {
+        // Force push local data on startup to assert this device's state
+        (async () => {
+            try { await pushToCloud(true); } catch {}
+            startAutoSync();
+        })();
+    }
 
     // Immediate sync on reconnection — reset backoff and trigger sync
     window.addEventListener('online', () => {
