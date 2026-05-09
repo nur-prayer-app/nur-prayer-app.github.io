@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.258';
+    const APP_VERSION = '1.1.259';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -6661,31 +6661,20 @@
             Storage.set('_migrated_orphan_goals_v3', true);
         }
 
-        // Clean stale _qadaa_recorded flags: only keep if a goal note references this day
-        if (!Storage.get('_migrated_clean_qadaa_flags_v1')) {
-            const validSourceKeys = new Set();
-            getGoals().forEach(g => {
-                if (!g.notes) return;
-                g.notes.forEach(n => { if (n && n.sourceKey) validSourceKeys.add(n.sourceKey); });
-            });
-            (S.goalsArchive || []).forEach(g => {
-                if (!g.notes) return;
-                g.notes.forEach(n => { if (n && n.sourceKey) validSourceKeys.add(n.sourceKey); });
-            });
+        // Clear ALL stale _qadaa_recorded flags from test data
+        if (!Storage.get('_migrated_clean_qadaa_flags_v2')) {
             let cleaned = false;
-            for (const [dayKey, dd] of Object.entries(S.prayers)) {
+            for (const dd of Object.values(S.prayers)) {
                 if (!dd || typeof dd !== 'object') continue;
-                if (!validSourceKeys.has(dayKey)) {
-                    PRAYERS.forEach(p => {
-                        if (dd[`${p.id}_qadaa_recorded`]) {
-                            delete dd[`${p.id}_qadaa_recorded`];
-                            cleaned = true;
-                        }
-                    });
-                }
+                PRAYERS.forEach(p => {
+                    if (dd[`${p.id}_qadaa_recorded`]) {
+                        delete dd[`${p.id}_qadaa_recorded`];
+                        cleaned = true;
+                    }
+                });
             }
             if (cleaned) save(KEYS.PRAYERS, S.prayers);
-            Storage.set('_migrated_clean_qadaa_flags_v1', true);
+            Storage.set('_migrated_clean_qadaa_flags_v2', true);
         }
 
         initEvents();
