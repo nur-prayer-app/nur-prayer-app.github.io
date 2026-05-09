@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.260';
+    const APP_VERSION = '1.1.261';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -6667,20 +6667,40 @@
             Storage.set('_migrated_orphan_goals_v3', true);
         }
 
-        // Clear ALL stale _qadaa_recorded flags from test data
-        if (!Storage.get('_migrated_clean_qadaa_flags_v2')) {
-            let cleaned = false;
+        // Rebuild _qadaa_recorded flags from goal notes (v3: clear all then restore from notes)
+        if (!Storage.get('_migrated_rebuild_qadaa_flags_v3')) {
+            // Clear all existing flags
             for (const dd of Object.values(S.prayers)) {
                 if (!dd || typeof dd !== 'object') continue;
-                PRAYERS.forEach(p => {
-                    if (dd[`${p.id}_qadaa_recorded`]) {
-                        delete dd[`${p.id}_qadaa_recorded`];
-                        cleaned = true;
-                    }
-                });
+                PRAYERS.forEach(p => { delete dd[`${p.id}_qadaa_recorded`]; });
             }
-            if (cleaned) save(KEYS.PRAYERS, S.prayers);
-            Storage.set('_migrated_clean_qadaa_flags_v2', true);
+            // Restore from goal notes that have sourceKey
+            const allGoalSets = [getGoals(), S.goalsArchive || []];
+            allGoalSets.forEach(set => {
+                set.forEach(g => {
+                    if (!g.notes) return;
+                    g.notes.forEach(n => {
+                        if (!n || !n.sourceKey || !n.amount || n.amount >= 0) return;
+                        const dd = S.prayers[n.sourceKey];
+                        if (!dd) return;
+                        if (n.prayer && dd[n.prayer]) {
+                            dd[`${n.prayer}_qadaa_recorded`] = true;
+                        } else {
+                            let marked = 0;
+                            const count = Math.abs(n.amount);
+                            PRAYERS.forEach(p => {
+                                if (marked >= count) return;
+                                if (dd[p.id] && !dd[`${p.id}_qadaa_recorded`]) {
+                                    dd[`${p.id}_qadaa_recorded`] = true;
+                                    marked++;
+                                }
+                            });
+                        }
+                    });
+                });
+            });
+            save(KEYS.PRAYERS, S.prayers);
+            Storage.set('_migrated_rebuild_qadaa_flags_v3', true);
         }
 
         initEvents();
