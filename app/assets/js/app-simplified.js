@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.262';
+    const APP_VERSION = '1.1.263';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -28,7 +28,6 @@
         theme: Storage.get(KEYS.THEME, 'default'),
         calY: 0, calM: 0,
         prayers: Storage.get(KEYS.PRAYERS, {}),
-        qadaa:   Storage.get(KEYS.QADAA, {}),
         settings: Storage.get(KEYS.SETTINGS, {}),
         goalsArchive: Storage.get(KEYS.GOALS_ARCHIVE, []),
     };
@@ -3039,7 +3038,6 @@
     function clearQadaaFlags(dayKey, prayerIds) {
         const dd = dayData(dayKey);
         (prayerIds || PRAYERS.map(p => p.id)).forEach(pid => { delete dd[`${pid}_qadaa_recorded`]; });
-        dd._localDirty = true;
         save(KEYS.PRAYERS, S.prayers);
     }
 
@@ -4008,7 +4006,7 @@
                     return;
                 }
                 const allowedKeys = new Set(Object.values(Storage.KEYS));
-                const JSON_KEYS = new Set([Storage.KEYS.PRAYERS, Storage.KEYS.QADAA, Storage.KEYS.GOALS, Storage.KEYS.GOALS_ARCHIVE, Storage.KEYS.SETTINGS]);
+                const JSON_KEYS = new Set([Storage.KEYS.PRAYERS, Storage.KEYS.GOALS, Storage.KEYS.GOALS_ARCHIVE, Storage.KEYS.SETTINGS]);
                 const filtered = {};
                 for (const [k, v] of Object.entries(parsed)) {
                     if (!allowedKeys.has(k)) continue;
@@ -6617,89 +6615,6 @@
         }
 
         if (S.theme !== 'default') document.body.setAttribute('data-theme', S.theme);
-        // Migrate old qadaa data to goals
-        if (S.qadaa.remaining || S.qadaa.counter) {
-            const rem = S.qadaa.remaining || S.qadaa.counter || 0;
-            const tot = S.qadaa.startTotal || S.qadaa.startCount || rem;
-            const goals = getGoals();
-            if (!goals.find(g => g.type === 'qadaa') && rem > 0) {
-                goals.push({ type: 'qadaa', name: 'Qadaa Prayers', total: tot, remaining: rem });
-                saveGoals();
-            }
-            Storage.remove(KEYS.QADAA);
-        }
-        // Migrate legacy fasting-data → prayer-data.fasting per day
-        const legacyFasting = Storage.get(KEYS.LEGACY_FASTING, {});
-        Object.keys(legacyFasting).forEach(k => {
-            if (legacyFasting[k] && k.endsWith('-fasting')) {
-                dayData(k.replace('-fasting', '')).fasting = true;
-            }
-        });
-        if (Object.keys(legacyFasting).length > 0) {
-            Storage.remove(KEYS.LEGACY_FASTING);
-            save(KEYS.PRAYERS, S.prayers);
-        }
-
-        // Reconcile orphaned qadaa-auto goals: if the prayer is already marked done
-        // but the goal was never resolved (due to earlier missedPrayer field bug),
-        // resolve it now so the calendar stops showing a stale MISSED badge.
-        if (!Storage.get('_migrated_orphan_goals_v3')) {
-            let fixed = 0;
-            getGoals().forEach(g => {
-                if (g.type !== 'qadaa-auto' || !g.missedOn || (g.remaining || 0) <= 0) return;
-                const mH = toHijri(g.missedOn);
-                const dKey = hk(mH.year, mH.month, mH.day);
-                const dd = S.prayers[dKey];
-                if (!dd) return;
-                const pid = g.missedPrayer;
-                if (pid && dd[pid]) {
-                    recordQadaaPrayers(g, pid, 1, { silent: true });
-                    fixed++;
-                } else if (!pid) {
-                    const donePrayer = PRAYERS.find(p => dd[p.id] && g.perPrayer && g.perPrayer[p.id] > 0);
-                    if (donePrayer) {
-                        recordQadaaPrayers(g, donePrayer.id, 1, { silent: true });
-                        fixed++;
-                    }
-                }
-            });
-            if (fixed > 0) saveGoals();
-            Storage.set('_migrated_orphan_goals_v3', true);
-        }
-
-        // Rebuild _qadaa_recorded flags from goal notes (v4: don't require prayer done)
-        if (!Storage.get('_migrated_rebuild_qadaa_flags_v4')) {
-            for (const dd of Object.values(S.prayers)) {
-                if (!dd || typeof dd !== 'object') continue;
-                PRAYERS.forEach(p => { delete dd[`${p.id}_qadaa_recorded`]; });
-            }
-            const allGoalSets = [getGoals(), S.goalsArchive || []];
-            allGoalSets.forEach(set => {
-                set.forEach(g => {
-                    if (!g.notes) return;
-                    g.notes.forEach(n => {
-                        if (!n || !n.sourceKey || !n.amount || n.amount >= 0) return;
-                        if (!S.prayers[n.sourceKey]) S.prayers[n.sourceKey] = {};
-                        const dd = S.prayers[n.sourceKey];
-                        if (n.prayer) {
-                            dd[`${n.prayer}_qadaa_recorded`] = true;
-                        } else {
-                            let marked = 0;
-                            const count = Math.abs(n.amount);
-                            PRAYERS.forEach(p => {
-                                if (marked >= count) return;
-                                if (!dd[`${p.id}_qadaa_recorded`]) {
-                                    dd[`${p.id}_qadaa_recorded`] = true;
-                                    marked++;
-                                }
-                            });
-                        }
-                    });
-                });
-            });
-            save(KEYS.PRAYERS, S.prayers);
-            Storage.set('_migrated_rebuild_qadaa_flags_v4', true);
-        }
 
         initEvents();
         initContext();
@@ -6747,7 +6662,6 @@
 
     window.addEventListener('sync-data-updated', () => {
         S.prayers = Storage.get(KEYS.PRAYERS, {});
-        S.qadaa = Storage.get(KEYS.QADAA, {});
         S.settings = Storage.get(KEYS.SETTINGS, {});
         S.goals = Storage.get(KEYS.GOALS, []);
         S.goalsArchive = Storage.get(KEYS.GOALS_ARCHIVE, []);
@@ -6760,11 +6674,7 @@
         toast('Data updated from cloud');
     });
 
-    window.addEventListener('sync-dirty-cleared', () => {
-        for (const dd of Object.values(S.prayers)) {
-            if (dd && dd._localDirty) delete dd._localDirty;
-        }
-    });
+
 
     window.addEventListener('sync-session-lost', () => {
         if (typeof Sync !== 'undefined' && Sync.stopAutoSync) Sync.stopAutoSync();
