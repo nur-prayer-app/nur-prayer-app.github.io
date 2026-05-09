@@ -17,7 +17,7 @@
     const OAUTH_CALLBACK_URL = 'https://nur-prayer-app.github.io/auth-callback.html';
     const SESSION_KEY = 'nur-sync-session';
     const LAST_SYNC_KEY = 'nur-last-sync';
-    const SYNC_INTERVAL = 60 * 1000;
+    const SYNC_INTERVAL = 15 * 1000;
 
     let syncTimer = null;
     let syncEnabled = false;
@@ -360,6 +360,43 @@
             if (!token) return;
             const session = getSession();
 
+            // Pull-before-push: merge cloud changes before overwriting
+            try {
+                const pullResp = await fetch(
+                    `${REST_URL}/user_data?user_id=eq.${session.user.id}&select=data`,
+                    { headers: headers(token) }
+                );
+                if (pullResp.ok) {
+                    const rows = await pullResp.json();
+                    if (rows.length && rows[0].data) {
+                        const cloudData = rows[0].data;
+                        const localPrayers = Storage.get(PRAYER_KEY, {});
+                        const localDayTs = getDayTimestamps();
+                        const cloudEnv = cloudData[PRAYER_KEY];
+                        if (cloudEnv && cloudEnv._dayTs && cloudEnv.value) {
+                            const cloudDayTs = cloudEnv._dayTs;
+                            let merged = false;
+                            for (const [dayKey, cloudDayData] of Object.entries(cloudEnv.value)) {
+                                const localMod = localDayTs[dayKey] || 0;
+                                const cloudMod = cloudDayTs[dayKey] || 0;
+                                if (cloudMod > localMod) {
+                                    localPrayers[dayKey] = cloudDayData;
+                                    localDayTs[dayKey] = cloudMod;
+                                    merged = true;
+                                }
+                            }
+                            if (merged) {
+                                Storage.suppressDirty(true);
+                                try { Storage.set(PRAYER_KEY, localPrayers); }
+                                finally { Storage.suppressDirty(false); }
+                                saveDayTimestamps(localDayTs);
+                                window.dispatchEvent(new Event('sync-data-updated'));
+                            }
+                        }
+                    }
+                }
+            } catch {}
+
             const payload = buildCloudPayload(dirtyKeys);
             const resp = await fetch(`${REST_URL}/user_data?on_conflict=user_id`, {
                 method: 'POST',
@@ -448,8 +485,8 @@
                     for (const [dayKey, cloudDayData] of Object.entries(cloudValue)) {
                         const localDayModified = localDayTs[dayKey] || 0;
                         const cloudDayModified = cloudDayTs[dayKey] || 0;
-                        // Cloud day wins only if cloud is newer AND local day wasn't edited
-                        if (cloudDayModified > localDayModified && !localPrayers[dayKey]?._localDirty) {
+                        // Cloud day wins if cloud timestamp is strictly newer
+                        if (cloudDayModified > localDayModified) {
                             localPrayers[dayKey] = cloudDayData;
                             localDayTs[dayKey] = cloudDayModified;
                             dayMerged = true;
@@ -519,7 +556,7 @@
             if (!isSyncing) {
                 try {
                     if (await pullFromCloud()) window.dispatchEvent(new Event('sync-data-updated'));
-                    else await pushToCloud();
+                    await pushToCloud();
                 } catch (e) {
                     console.warn('Auto-sync failed:', e);
                     syncFailures++;
