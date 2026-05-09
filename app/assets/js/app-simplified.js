@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.253';
+    const APP_VERSION = '1.1.254';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -86,11 +86,12 @@
 
     const EMPTY_DAY = { fajr:false, dhuhr:false, asr:false, maghrib:false, isha:false, qyaam:false, qyaamRakaat:0, duha:false, shafaWitr:false, fasting:false };
 
-    let _lastPrayersSnapshot = JSON.stringify(S.prayers);
+    const _modifiedDays = new Set();
 
     /** Get or create prayer data for a day (use when writing). */
     function dayData(key) {
         if (!S.prayers[key]) S.prayers[key] = { ...EMPTY_DAY };
+        _modifiedDays.add(key);
         return S.prayers[key];
     }
 
@@ -101,23 +102,16 @@
 
     function completed(d) { return PRAYERS.filter(p => d[p.id]).length; }
     let _pushDebounce = null;
-    /** Persist a top-level key through the Storage repository. */
     function save(k, v) {
-        Storage.set(k, v);
-        // Auto-detect which days changed and stamp them for per-day sync merge
-        if (k === KEYS.PRAYERS && typeof Sync !== 'undefined' && Sync.stampPrayerDay) {
-            const newSnapshot = JSON.stringify(v);
-            if (newSnapshot !== _lastPrayersSnapshot) {
-                const prev = JSON.parse(_lastPrayersSnapshot);
-                for (const dayKey of Object.keys(v)) {
-                    if (JSON.stringify(v[dayKey]) !== JSON.stringify(prev[dayKey])) {
-                        Sync.stampPrayerDay(dayKey);
-                    }
-                }
-                _lastPrayersSnapshot = newSnapshot;
-            }
+        try {
+            Storage.set(k, v);
+        } catch (e) {
+            return;
         }
-        // Debounced push: sync to cloud 3s after last save (batches rapid edits)
+        if (k === KEYS.PRAYERS && typeof Sync !== 'undefined' && Sync.stampPrayerDay) {
+            for (const dayKey of _modifiedDays) Sync.stampPrayerDay(dayKey);
+            _modifiedDays.clear();
+        }
         if (typeof Sync !== 'undefined' && Sync.getSession && Sync.getSession()) {
             clearTimeout(_pushDebounce);
             _pushDebounce = setTimeout(() => { Sync.pushToCloud(); }, 3000);
@@ -157,7 +151,7 @@
     /* ── Dashboard ───────────────────────────────────────────── */
     function render() {
         const tk = dashboardKey();
-        const dd = dayData(tk);
+        const dd = peekDay(tk);
         const c  = completed(dd);
 
         renderPrayerList(tk, dd);
@@ -891,7 +885,8 @@
                 return;
             }
             S.goalsArchive = S.goalsArchive || [];
-            S.goalsArchive.push({ ...g, archivedAt: new Date().toISOString() });
+            const archivedCopy = { ...g, archivedAt: new Date().toISOString() };
+            S.goalsArchive.push(archivedCopy);
             save(KEYS.GOALS_ARCHIVE, S.goalsArchive);
             goals.splice(idx, 1);
             clearAutoMissedFlag(g.missedPrayer, g.missedOn, true);
@@ -900,9 +895,10 @@
             renderGoals();
             renderCalendar();
             toast('Dismissed', { label: 'Undo', fn: () => {
-                const restored = S.goalsArchive.pop();
+                const idx2 = S.goalsArchive.indexOf(archivedCopy);
+                if (idx2 !== -1) S.goalsArchive.splice(idx2, 1);
                 save(KEYS.GOALS_ARCHIVE, S.goalsArchive);
-                getGoals().push(restored);
+                getGoals().push(archivedCopy);
                 saveGoals();
                 renderGoals();
                 renderCalendar();
@@ -948,10 +944,10 @@
         const PACE_PROFILES = {
             qadaa:        [{ rate: 1, label: 'At 1/day' }, { rate: 5, label: 'At 5/day (1 full day)' }],
             'qadaa-auto': [{ rate: 1, label: 'At 1/day' }],
-            'qadaa-fast': [{ rate: 1, label: 'At 1/day' }, { rate: 2, label: 'At 2/week', divisor: 3.5 }],
-            qyaam:        [{ rate: 1, label: 'At 1 night/day' }, { rate: 2, label: 'At 2 nights/week', divisor: 3.5 }],
+            'qadaa-fast': [{ rate: 1, label: 'At 1/day' }, { rate: 2, label: 'At 2/week', divisor: 7 }],
+            qyaam:        [{ rate: 1, label: 'At 1 night/day' }, { rate: 2, label: 'At 2 nights/week', divisor: 7 }],
             quran:        [{ rate: 1, label: 'At 1 page/day' }, { rate: 5, label: 'At 5 pages/day' }, { rate: 20, label: 'At 20 pages/day (khatm in 30 days)' }],
-            custom:       [{ rate: 1, label: 'At 1/day' }, { rate: 7, label: 'At 7/week', divisor: 1 }],
+            custom:       [{ rate: 1, label: 'At 1/day' }, { rate: 7, label: 'At 7/week', divisor: 7 }],
         };
         const paces = (PACE_PROFILES[g.type] || PACE_PROFILES.custom).map(p => ({ ...p, ...forecastAt(p.divisor ? p.rate / p.divisor : p.rate) }));
 
@@ -1065,20 +1061,18 @@
             if (bt) $('#goal-back')?.addEventListener('click', bt.run);
         }
 
-        // Per-prayer record buttons (qadaa goals) — tap the icon+name area
         $$('.pp-tap', content).forEach(btn => {
             btn.addEventListener('click', () => {
                 const pid = btn.dataset.prayer;
                 if (g.perPrayer[pid] <= 0) return;
-                const snapshot = { perPrayer: { ...g.perPrayer }, remaining: g.remaining, notesLen: (g.notes||[]).length };
+                const snap = snapshotGoal(g);
+                g._dontArchive = true;
                 recordQadaaPrayers(g, pid, 1);
                 reopen();
                 renderGoals();
                 const pName = PRAYER_MAP[pid]?.name || pid;
                 toast(`Recorded 1 ${pName}`, { label: 'Undo', fn: () => {
-                    g.perPrayer = snapshot.perPrayer;
-                    g.remaining = snapshot.remaining;
-                    if (g.notes) g.notes.length = snapshot.notesLen;
+                    restoreGoalSnapshot(g, snap);
                     saveGoals(); reopen(); renderGoals();
                 } });
             });
@@ -1126,8 +1120,16 @@
                 const noteIdx = parseInt(btn.dataset.noteIdx);
                 const note = (g.notes || [])[noteIdx];
                 if (!note) return;
+                const reverse = -(note.amount || 0);
+                if (note.amount == null) {
+                    g.notes.splice(noteIdx, 1);
+                    saveGoals();
+                    reopen();
+                    renderGoals();
+                    toast(`Undone: ${note.text || 'entry'}`);
+                    return;
+                }
                 ensurePerPrayer(g);
-                const reverse = -note.amount;
                 g.remaining = Math.max(0, g.remaining + reverse);
                 if (note.prayer && g.perPrayer[note.prayer] !== undefined) {
                     g.perPrayer[note.prayer] = Math.max(0, g.perPrayer[note.prayer] + reverse);
@@ -1137,11 +1139,7 @@
                     });
                 }
                 if (note.amount > 0) g.total = Math.max(g.remaining, g.total - note.amount);
-                if (note.sourceKey) {
-                    const dd = dayData(note.sourceKey);
-                    PRAYERS.forEach(p => { delete dd[`${p.id}_qadaa_recorded`]; });
-                    save(KEYS.PRAYERS, S.prayers);
-                }
+                if (note.sourceKey) clearQadaaFlags(note.sourceKey);
                 g.notes.splice(noteIdx, 1);
                 saveGoals();
                 reopen();
@@ -1151,15 +1149,13 @@
             });
         });
 
-        // Record full day — deduct 1 from each prayer that still has stock;
-        // if some have 0, they stay at 0. This lets the user bulk-record even
-        // when breakdown is uneven.
         // Qadaa: 1/2/3 day buttons
         $$('.goal-fullday[data-days]', content).forEach(btn => {
             btn.addEventListener('click', () => {
                 const days = parseInt(btn.dataset.days);
                 ensurePerPrayer(g);
-                const snapshot = { perPrayer: { ...g.perPrayer }, remaining: g.remaining, notesLen: (g.notes||[]).length };
+                const snap = snapshotGoal(g);
+                g._dontArchive = true;
                 let total = 0;
                 for (let d = 0; d < days; d++) {
                     const mix = {};
@@ -1170,17 +1166,14 @@
                     if (!any) break;
                     total += recordQadaaPrayers(g, mix, 1, { silent: true });
                 }
-                if (total === 0) { toast('No prayers remaining'); return; }
-                // One consolidated note for the whole action
+                if (total === 0) { delete g._dontArchive; toast('No prayers remaining'); return; }
                 g.notes = g.notes || [];
                 g.notes.push({ date: new Date().toISOString(), text: `${total} prayers — ${days} day${days === 1 ? '' : 's'}`, amount: -total });
                 saveGoals();
                 reopen();
                 renderGoals();
                 toast(`${total} prayers — ${days} day${days === 1 ? '' : 's'}`, { label: 'Undo', fn: () => {
-                    g.perPrayer = snapshot.perPrayer;
-                    g.remaining = snapshot.remaining;
-                    if (g.notes) g.notes.length = snapshot.notesLen;
+                    restoreGoalSnapshot(g, snap);
                     saveGoals(); reopen(); renderGoals();
                 } });
             });
@@ -1221,16 +1214,18 @@
                 return;
             }
             S.goalsArchive = S.goalsArchive || [];
-            S.goalsArchive.push({ ...g, archivedAt: new Date().toISOString() });
+            const archivedGoal = { ...g, archivedAt: new Date().toISOString() };
+            S.goalsArchive.push(archivedGoal);
             save(KEYS.GOALS_ARCHIVE, S.goalsArchive);
             goals.splice(idx, 1);
             saveGoals();
             closeAllModals();
             renderGoals();
             toast('Goal archived', { label: 'Undo', fn: () => {
-                const restored = S.goalsArchive.pop();
+                const idx2 = S.goalsArchive.indexOf(archivedGoal);
+                if (idx2 !== -1) S.goalsArchive.splice(idx2, 1);
                 save(KEYS.GOALS_ARCHIVE, S.goalsArchive);
-                getGoals().push(restored);
+                getGoals().push(archivedGoal);
                 saveGoals();
                 renderGoals();
             } });
@@ -1510,9 +1505,11 @@
         const h = HijriCalendar.gregorianToHijri(new Date());
         renderRemindersForMonth(h.year, h.month);
         renderFridayReminder();
+        const container = $('.reminders-display');
+        if (container) wireReminderClicks(container);
     }
 
-    function renderFridayReminder(skipWire) {
+    function renderFridayReminder() {
         if (new Date().getDay() !== 5) return;
         const container = $('.reminders-display');
         if (!container) return;
@@ -1521,7 +1518,6 @@
         temp.innerHTML = html;
         const row = temp.firstElementChild;
         container.prepend(row);
-        if (!skipWire) wireReminderClicks(container);
     }
 
 
@@ -1608,6 +1604,7 @@
             S.calY = h.year; S.calM = h.month;
         }
         S.highlightHijriMonth = null;
+        S.highlightGregMonth = null;
         updateCalendar();
     }
 
@@ -1776,11 +1773,13 @@
         if (combined.length === 0) {
             container.innerHTML = '<div class="reminder-row"><div class="reminder-icon-box"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="reminder-text"><div class="reminder-title">No special days</div></div></div>';
             renderFridayReminder();
+            wireReminderClicks(container);
             return;
         }
 
         container.innerHTML = combined.map(s => renderReminderRow({ ...s, _monthName: s._monthName }, s._monthName)).join('');
         renderFridayReminder();
+        wireReminderClicks(container);
     }
 
     function updateCalendar() {
@@ -1919,7 +1918,9 @@
 
         // Also re-render reminders when calendar month changes
         renderRemindersForMonth(S.calY, S.calM);
-        renderFridayReminder(true);
+        renderFridayReminder();
+        const reminderContainer = $('.reminders-display');
+        if (reminderContainer) wireReminderClicks(reminderContainer);
     }
 
     function renderRemindersForMonth(year, month) {
@@ -1939,7 +1940,6 @@
         }
 
         container.innerHTML = specials.map(s => renderReminderRow(s, mn)).join('');
-        wireReminderClicks(container);
     }
 
     function renderReminderRow(s, monthName) {
@@ -2364,10 +2364,11 @@
 
         
         content.querySelector('[data-action="alldone"]')?.addEventListener('click', () => {
+            const freshPassed = computePassedPrayers(new Date());
             const d2 = dayData(key);
             const [ky, km, kd] = key.split('-').map(Number);
             PRAYERS.forEach(p => {
-                if (prayerPassed[p.id]) {
+                if (freshPassed[p.id]) {
                     const wasOff = !d2[p.id];
                     d2[p.id] = true;
                     if (d2[`${p.id}_auto_missed`] && !S.settings.trackLatePrayers) {
@@ -2390,8 +2391,9 @@
         });
 
         content.querySelector('[data-action="clear"]')?.addEventListener('click', () => {
+            const freshPassed = computePassedPrayers(new Date());
             const d2 = dayData(key);
-            PRAYERS.forEach(p => { if (prayerPassed[p.id]) d2[p.id] = false; });
+            PRAYERS.forEach(p => { if (freshPassed[p.id]) d2[p.id] = false; });
             save(KEYS.PRAYERS, S.prayers);
             render();
             openDayModal(key);
@@ -2600,6 +2602,7 @@
                     if (!g2) return;
                     ensurePerPrayer(g2);
                     const snap = { perPrayer: { ...g2.perPrayer }, remaining: g2.remaining, notesLen: (g2.notes||[]).length };
+                    g2._dontArchive = true;
                     let totalDeducted = 0;
                     for (let d = 0; d < days; d++) {
                         const mix = {};
@@ -2611,7 +2614,7 @@
                         const rec = recordQadaaPrayers(g2, mix, 1, { silent: true });
                         totalDeducted += rec;
                     }
-                    if (totalDeducted === 0) { toast('Nothing to record'); return; }
+                    if (totalDeducted === 0) { delete g2._dontArchive; toast('Nothing to record'); return; }
                     // One consolidated note
                     g2.notes = g2.notes || [];
                     g2.notes.push({ date: new Date().toISOString(), text: `${totalDeducted} prayers — ${days} day${days === 1 ? '' : 's'}`, amount: -totalDeducted, sourceKey: sourceKey || null });
@@ -2633,15 +2636,9 @@
                     sessionLog.push({
                         text: `${totalDeducted} prayer${totalDeducted === 1 ? '' : 's'} — ${days} day${days === 1 ? '' : 's'}`,
                         undo: () => {
-                            g2.perPrayer = snap.perPrayer;
-                            g2.remaining = snap.remaining;
-                            if (g2.notes) g2.notes.length = snap.notesLen;
+                            restoreGoalSnapshot(g2, snap);
                             saveGoals();
-                            if (dayFlagsSet.length && sourceKey) {
-                                const d3 = dayData(sourceKey);
-                                dayFlagsSet.forEach(pid => delete d3[`${pid}_qadaa_recorded`]);
-                                save(KEYS.PRAYERS, S.prayers);
-                            }
+                            if (dayFlagsSet.length && sourceKey) clearQadaaFlags(sourceKey, dayFlagsSet);
                         },
                     });
                     renderBody();
@@ -2707,6 +2704,7 @@
                     const g2 = getTargetGoal();
                     if (!g2 || (g2.perPrayer[pid] || 0) <= 0) return;
                     const snap = { perPrayer: { ...g2.perPrayer }, remaining: g2.remaining, notesLen: (g2.notes||[]).length };
+                    g2._dontArchive = true;
                     recordQadaaPrayers(g2, pid, 1);
 
                     // Mark the source day on the calendar so the badge shows
@@ -2724,15 +2722,9 @@
                     sessionLog.push({
                         text: `1 ${pName}`,
                         undo: () => {
-                            g2.perPrayer = snap.perPrayer;
-                            g2.remaining = snap.remaining;
-                            if (g2.notes) g2.notes.length = snap.notesLen;
+                            restoreGoalSnapshot(g2, snap);
                             saveGoals();
-                            if (dayFlagWasSet && sourceKey) {
-                                const d3 = dayData(sourceKey);
-                                delete d3[`${pid}_qadaa_recorded`];
-                                save(KEYS.PRAYERS, S.prayers);
-                            }
+                            if (dayFlagWasSet && sourceKey) clearQadaaFlags(sourceKey, [pid]);
                         },
                     });
                     renderBody();
@@ -2790,15 +2782,17 @@
                 ${historyRows}
             ` : '');
 
-            // Session-row undo
+            // Session-row undo (LIFO — only allow undoing the most recent entry)
             $$('.aq-log-row[data-scope="session"]', el).forEach(btn => {
                 btn.addEventListener('click', () => {
                     const i = parseInt(btn.dataset.i);
+                    if (i !== sessionLog.length - 1) { toast('Undo the most recent entry first'); return; }
                     if (sessionLog[i]) {
                         sessionLog[i].undo();
                         sessionLog.splice(i, 1);
                         renderBody();
                         renderGoals();
+                        renderCalendar();
                     }
                 });
             });
@@ -2826,13 +2820,11 @@
                     g2.remaining = Math.max(0, Math.min(g2.total, g2.remaining + reverse));
                     if (note.prayer && g2.perPrayer[note.prayer] !== undefined) {
                         g2.perPrayer[note.prayer] = Math.max(0, g2.perPrayer[note.prayer] + reverse);
+                    } else if (!note.prayer) {
+                        // Multi-prayer note — reset per-prayer breakdown for redistribution
+                        g2.perPrayer = null;
                     }
-                    // Clear qadaa_recorded flags on the source day
-                    if (note.sourceKey) {
-                        const dd = dayData(note.sourceKey);
-                        PRAYERS.forEach(p => { delete dd[`${p.id}_qadaa_recorded`]; });
-                        save(KEYS.PRAYERS, S.prayers);
-                    }
+                    if (note.sourceKey) clearQadaaFlags(note.sourceKey);
                     g2.notes.splice(i, 1);
                     saveGoals();
                     renderBody();
@@ -2979,9 +2971,24 @@
         return { fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 };
     }
 
-    /**
-     * Ensure goal has a per-prayer map (upgrades legacy goals).
-     */
+    function snapshotGoal(g) {
+        return { perPrayer: { ...g.perPrayer }, remaining: g.remaining, notesLen: (g.notes || []).length };
+    }
+
+    function restoreGoalSnapshot(g, snap) {
+        g.perPrayer = snap.perPrayer;
+        g.remaining = snap.remaining;
+        if (g.notes) g.notes.length = snap.notesLen;
+        delete g._dontArchive;
+    }
+
+    function clearQadaaFlags(dayKey, prayerIds) {
+        const dd = dayData(dayKey);
+        (prayerIds || PRAYERS.map(p => p.id)).forEach(pid => { delete dd[`${pid}_qadaa_recorded`]; });
+        dd._localDirty = true;
+        save(KEYS.PRAYERS, S.prayers);
+    }
+
     function ensurePerPrayer(g) {
         if (!g.perPrayer) g.perPrayer = emptyPerPrayer();
         // Fix drift: if perPrayer sum < remaining, redistribute evenly
@@ -3105,7 +3112,8 @@
         let moved = 0;
         for (let i = goals.length - 1; i >= 0; i--) {
             const g = goals[i];
-            if (g.remaining <= 0 && g.total > 0 && !g._dontArchive) {
+            if (g._dontArchive) { delete g._dontArchive; continue; }
+            if (g.remaining <= 0 && g.total > 0) {
                 archive.push({ ...g, archivedAt: new Date().toISOString(), completed: true });
                 goals.splice(i, 1);
                 moved++;
@@ -3669,8 +3677,9 @@
                     persistNumSetting(inp.dataset.settingNum, parseInt(inp.value) || 0);
                 });
             });
-            // Bool toggles with data-setting (notifPreEnabled, notifAdhanEnabled, etc)
+            // Bool toggles with data-setting-skip (notifPreEnabled, notifAdhanEnabled, etc)
             $$('input[type="checkbox"][data-setting]', content).forEach(cb => {
+                if (!cb.dataset.settingSkip) return;
                 cb.addEventListener('change', () => {
                     persistBoolSetting(cb.dataset.setting, cb.checked);
                 });
@@ -3955,7 +3964,7 @@
                             return;
                         }
                     }
-                    filtered[k] = v;
+                    filtered[k] = (v !== null && typeof v === 'object') ? JSON.stringify(v) : v;
                 }
                 Storage.importAll(filtered);
                 toast('Data imported — reloading…');
@@ -3977,6 +3986,7 @@
             S.calM++; if (S.calM > 12) { S.calM = 1; S.calY++; }
         }
         S.highlightHijriMonth = null;
+        S.highlightGregMonth = null;
         updateCalendar();
     }
     function calPrev() {
@@ -3987,6 +3997,7 @@
             S.calM--; if (S.calM < 1) { S.calM = 12; S.calY--; }
         }
         S.highlightHijriMonth = null;
+        S.highlightGregMonth = null;
         updateCalendar();
     }
 
@@ -4038,7 +4049,12 @@
         const dayDataForOffset = (offset) => {
             const d = new Date(today);
             d.setDate(d.getDate() - offset);
-            const h = HijriCalendar.gregorianToHijri(d);
+            let dateForHijri = d;
+            if (offset === 0 && S.settings.location) {
+                const fajr = computeRawTimesCached(S.settings.location.lat, S.settings.location.lng, d, getTimesOptions()).fajr;
+                if (d < fajr) { dateForHijri = new Date(d); dateForHijri.setDate(dateForHijri.getDate() - 1); }
+            }
+            const h = HijriCalendar.gregorianToHijri(dateForHijri);
             const raw = S.prayers[hk(h.year, h.month, h.day)];
             if (!raw) return { date: d, data: undefined };
             const hasActivity = PRAYERS.some(p => raw[p.id]) || raw.qyaam || raw.duha || raw.shafaWitr || raw.fasting;
@@ -6165,23 +6181,9 @@
             }
         });
 
-        // Check yesterday's Isha: between midnight and Fajr, yesterday's day is still
-        // the dashboard day. If Isha wasn't marked, flag it on yesterday's record.
-        // Also check after Fajr passes (previous dashboard day's Isha).
-        if (nowMinutes < prayerMinsToday.fajr) {
-            const yest = new Date(now);
-            yest.setDate(yest.getDate() - 1);
-            const yestH = HijriCalendar.gregorianToHijri(yest);
-            const yestKey = hk(yestH.year, yestH.month, yestH.day);
-            const yd = dayData(yestKey);
-            if (!yd.isha && !yd.isha_auto_missed) {
-                yd.isha_auto_missed = true;
-                addAutoMissedGoal('isha', yest.toISOString());
-                added++;
-                missedNames.push('Isha');
-            }
-        } else if (nowMinutes >= prayerMinsToday.fajr) {
-            // After Fajr: check if yesterday's Isha was missed
+        // Check yesterday's Isha: Isha's window extends until Fajr, so only
+        // mark it missed once Fajr has passed (nowMinutes >= fajr).
+        if (nowMinutes >= prayerMinsToday.fajr) {
             const yest = new Date(now);
             yest.setDate(yest.getDate() - 1);
             const yestH = HijriCalendar.gregorianToHijri(yest);
@@ -6216,7 +6218,8 @@
         if (_lastDashboardKey && dk !== _lastDashboardKey) {
             invalidatePrayerTimesCache();
             render();
-            if (S.settings.notifications) schedulePrayerNotifications();
+            // Delay re-schedule so any notification due right now (e.g. Fajr adhan) fires first
+            if (S.settings.notifications) setTimeout(schedulePrayerNotifications, 60000);
         }
         _lastDashboardKey = dk;
 
@@ -6629,6 +6632,7 @@
         document.addEventListener('visibilitychange', async () => {
             if (!document.hidden) {
                 updateClock();
+                runAutoMissedCheck();
                 if (typeof Sync !== 'undefined' && Sync.getSession && Sync.getSession()) {
                     if (await Sync.pullFromCloud()) window.dispatchEvent(new Event('sync-data-updated'));
                 }
@@ -6656,18 +6660,27 @@
 
     window.addEventListener('sync-data-updated', () => {
         S.prayers = Storage.get(KEYS.PRAYERS, {});
-        _lastPrayersSnapshot = JSON.stringify(S.prayers);
         S.qadaa = Storage.get(KEYS.QADAA, {});
         S.settings = Storage.get(KEYS.SETTINGS, {});
         S.goals = Storage.get(KEYS.GOALS, []);
         S.goalsArchive = Storage.get(KEYS.GOALS_ARCHIVE, []);
         S.theme = Storage.get(KEYS.THEME, 'default');
+        if (S.theme === 'default') document.body.removeAttribute('data-theme');
+        else document.body.setAttribute('data-theme', S.theme);
         invalidatePrayerTimesCache();
         render();
+        if (S.settings.notifications) schedulePrayerNotifications();
         toast('Data updated from cloud');
     });
 
+    window.addEventListener('sync-dirty-cleared', () => {
+        for (const dd of Object.values(S.prayers)) {
+            if (dd && dd._localDirty) delete dd._localDirty;
+        }
+    });
+
     window.addEventListener('sync-session-lost', () => {
+        if (typeof Sync !== 'undefined' && Sync.stopAutoSync) Sync.stopAutoSync();
         toast('Session expired — please sign in again');
     });
 
