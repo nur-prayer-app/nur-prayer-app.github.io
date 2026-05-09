@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.259';
+    const APP_VERSION = '1.1.260';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -2417,11 +2417,14 @@
 
         
         content.querySelector('[data-action="alldone"]')?.addEventListener('click', () => {
-            const freshPassed = computePassedPrayers(new Date());
+            const isPast = !isToday && !isFutureDay;
+            const canMark = isPast
+                ? Object.fromEntries(PRAYERS.map(p => [p.id, true]))
+                : computePassedPrayers(new Date());
             const d2 = dayData(key);
             const [ky, km, kd] = key.split('-').map(Number);
             PRAYERS.forEach(p => {
-                if (freshPassed[p.id]) {
+                if (canMark[p.id]) {
                     const wasOff = !d2[p.id];
                     d2[p.id] = true;
                     if (d2[`${p.id}_auto_missed`] && !S.settings.trackLatePrayers) {
@@ -2444,9 +2447,12 @@
         });
 
         content.querySelector('[data-action="clear"]')?.addEventListener('click', () => {
-            const freshPassed = computePassedPrayers(new Date());
+            const isPast = !isToday && !isFutureDay;
+            const canClear = isPast
+                ? Object.fromEntries(PRAYERS.map(p => [p.id, true]))
+                : computePassedPrayers(new Date());
             const d2 = dayData(key);
-            PRAYERS.forEach(p => { if (freshPassed[p.id]) d2[p.id] = false; });
+            PRAYERS.forEach(p => { if (canClear[p.id]) d2[p.id] = false; });
             save(KEYS.PRAYERS, S.prayers);
             render();
             openDayModal(key);
