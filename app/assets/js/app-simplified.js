@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.255';
+    const APP_VERSION = '1.1.256';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -132,6 +132,33 @@
     const fmtHijriShort = (h) => `${h.monthName} ${h.day}`;
     /** Convert any Gregorian Date/ISO to Hijri in one step. */
     const toHijri = (d) => HijriCalendar.gregorianToHijri(new Date(d));
+
+    /** Format a note's date info: "source day · done date" respecting primary calendar. */
+    function fmtNoteDate(note) {
+        const isHijri = (S.settings.primaryCalendar || 'hijri') === 'hijri';
+        let doneStr = '';
+        if (note.date) {
+            if (isHijri) {
+                const h = toHijri(note.date);
+                doneStr = fmtHijriShort(h);
+            } else {
+                doneStr = fmtShortDate(note.date);
+            }
+        }
+        let forStr = '';
+        if (note.sourceKey) {
+            const [sy, sm, sd] = note.sourceKey.split('-').map(Number);
+            if (isHijri) {
+                const smd = HijriCalendar.getMonthData(sy, sm);
+                forStr = `${smd.monthName} ${sd}`;
+            } else {
+                const greg = HijriCalendar.hijriToGregorian(sy, sm, sd);
+                forStr = fmtShortDate(greg);
+            }
+        }
+        if (forStr && forStr !== doneStr) return `${forStr} · ${doneStr}`;
+        return doneStr;
+    }
 
     /** Clear the auto-missed flag for `prayerId` on the Hijri day that `dateIso`
      *  falls on. Called when the user marks an auto-missed prayer as prayed or
@@ -785,7 +812,7 @@
                     <div class="goal-notes">
                         ${g.notes.map((n, i) => ({ n, i })).filter(x => x.n).slice(-5).reverse().map(({ n, i }) => {
                             const text = esc(n.text || '—');
-                            const dateStr = n.date ? fmtShortDate(n.date) : '';
+                            const dateStr = fmtNoteDate(n);
                             return `<button type="button" class="goal-note" data-note-idx="${i}">
                                 <div class="goal-note-body">
                                     <span class="goal-note-text">${text}</span>
@@ -1018,7 +1045,7 @@
                     <div class="goal-notes">
                         ${g.notes.map((n, i) => ({ n, i })).filter(x => x.n).slice(-8).reverse().map(({ n, i }) => {
                             const text = esc(n.text || '—');
-                            const dateStr = n.date ? fmtShortDate(n.date) : '';
+                            const dateStr = fmtNoteDate(n);
                             return `<button type="button" class="goal-note" data-note-idx="${i}" title="Tap to undo this action">
                                 <div class="goal-note-body">
                                     <span class="goal-note-text">${text}</span>
@@ -1068,14 +1095,25 @@
                 const pid = btn.dataset.prayer;
                 if (g.perPrayer[pid] <= 0) return;
                 const snap = snapshotGoal(g);
+                const tk = todayKey();
                 g._dontArchive = true;
-                recordQadaaPrayers(g, pid, 1);
+                recordQadaaPrayers(g, pid, 1, { sourceKey: tk });
+                const d2 = dayData(tk);
+                let dayFlagSet = false;
+                if (!d2[`${pid}_qadaa_recorded`]) {
+                    d2[`${pid}_qadaa_recorded`] = true;
+                    dayFlagSet = true;
+                    save(KEYS.PRAYERS, S.prayers);
+                }
                 reopen();
                 renderGoals();
+                renderCalendar();
                 const pName = PRAYER_MAP[pid]?.name || pid;
                 toast(`Recorded 1 ${pName}`, { label: 'Undo', fn: () => {
                     restoreGoalSnapshot(g, snap);
-                    saveGoals(); reopen(); renderGoals();
+                    saveGoals();
+                    if (dayFlagSet) clearQadaaFlags(tk, [pid]);
+                    reopen(); renderGoals(); renderCalendar();
                 } });
             });
         });
@@ -1169,14 +1207,27 @@
                     total += recordQadaaPrayers(g, mix, 1, { silent: true });
                 }
                 if (total === 0) { delete g._dontArchive; toast('No prayers remaining'); return; }
+                const tk = todayKey();
+                const d2 = dayData(tk);
+                const dayFlagsSet = [];
+                PRAYERS.forEach(p => {
+                    if (!d2[`${p.id}_qadaa_recorded`]) {
+                        d2[`${p.id}_qadaa_recorded`] = true;
+                        dayFlagsSet.push(p.id);
+                    }
+                });
+                if (dayFlagsSet.length) save(KEYS.PRAYERS, S.prayers);
                 g.notes = g.notes || [];
-                g.notes.push({ date: new Date().toISOString(), text: `${total} prayers — ${days} day${days === 1 ? '' : 's'}`, amount: -total });
+                g.notes.push({ date: new Date().toISOString(), text: `${total} prayers — ${days} day${days === 1 ? '' : 's'}`, amount: -total, sourceKey: tk });
                 saveGoals();
                 reopen();
                 renderGoals();
+                renderCalendar();
                 toast(`${total} prayers — ${days} day${days === 1 ? '' : 's'}`, { label: 'Undo', fn: () => {
                     restoreGoalSnapshot(g, snap);
-                    saveGoals(); reopen(); renderGoals();
+                    saveGoals();
+                    if (dayFlagsSet.length) clearQadaaFlags(tk, dayFlagsSet);
+                    reopen(); renderGoals(); renderCalendar();
                 } });
             });
         });
@@ -2604,6 +2655,7 @@
                     if (!g2) return;
                     ensurePerPrayer(g2);
                     const snap = { perPrayer: { ...g2.perPrayer }, remaining: g2.remaining, notesLen: (g2.notes||[]).length };
+                    const dayKey = sourceKey || todayKey();
                     g2._dontArchive = true;
                     let totalDeducted = 0;
                     for (let d = 0; d < days; d++) {
@@ -2617,30 +2669,26 @@
                         totalDeducted += rec;
                     }
                     if (totalDeducted === 0) { delete g2._dontArchive; toast('Nothing to record'); return; }
-                    // One consolidated note
                     g2.notes = g2.notes || [];
-                    g2.notes.push({ date: new Date().toISOString(), text: `${totalDeducted} prayers — ${days} day${days === 1 ? '' : 's'}`, amount: -totalDeducted, sourceKey: sourceKey || null });
+                    g2.notes.push({ date: new Date().toISOString(), text: `${totalDeducted} prayers — ${days} day${days === 1 ? '' : 's'}`, amount: -totalDeducted, sourceKey: dayKey });
                     saveGoals();
 
-                    // Mark the source day as "prayed qadaa" for every prayer involved
+                    const d2 = dayData(dayKey);
                     let dayFlagsSet = [];
-                    if (sourceKey) {
-                        const d2 = dayData(sourceKey);
-                        PRAYERS.forEach(p => {
-                            if (!d2[`${p.id}_qadaa_recorded`]) {
-                                d2[`${p.id}_qadaa_recorded`] = true;
-                                dayFlagsSet.push(p.id);
-                            }
-                        });
-                        if (dayFlagsSet.length) save(KEYS.PRAYERS, S.prayers);
-                    }
+                    PRAYERS.forEach(p => {
+                        if (!d2[`${p.id}_qadaa_recorded`]) {
+                            d2[`${p.id}_qadaa_recorded`] = true;
+                            dayFlagsSet.push(p.id);
+                        }
+                    });
+                    if (dayFlagsSet.length) save(KEYS.PRAYERS, S.prayers);
 
                     sessionLog.push({
                         text: `${totalDeducted} prayer${totalDeducted === 1 ? '' : 's'} — ${days} day${days === 1 ? '' : 's'}`,
                         undo: () => {
                             restoreGoalSnapshot(g2, snap);
                             saveGoals();
-                            if (dayFlagsSet.length && sourceKey) clearQadaaFlags(sourceKey, dayFlagsSet);
+                            if (dayFlagsSet.length) clearQadaaFlags(dayKey, dayFlagsSet);
                         },
                     });
                     renderBody();
@@ -2706,18 +2754,16 @@
                     const g2 = getTargetGoal();
                     if (!g2 || (g2.perPrayer[pid] || 0) <= 0) return;
                     const snap = { perPrayer: { ...g2.perPrayer }, remaining: g2.remaining, notesLen: (g2.notes||[]).length };
+                    const dayKey = sourceKey || todayKey();
                     g2._dontArchive = true;
-                    recordQadaaPrayers(g2, pid, 1);
+                    recordQadaaPrayers(g2, pid, 1, { sourceKey: dayKey });
 
-                    // Mark the source day on the calendar so the badge shows
+                    const d2 = dayData(dayKey);
                     let dayFlagWasSet = false;
-                    if (sourceKey) {
-                        const d2 = dayData(sourceKey);
-                        if (!d2[`${pid}_qadaa_recorded`]) {
-                            d2[`${pid}_qadaa_recorded`] = true;
-                            dayFlagWasSet = true;
-                            save(KEYS.PRAYERS, S.prayers);
-                        }
+                    if (!d2[`${pid}_qadaa_recorded`]) {
+                        d2[`${pid}_qadaa_recorded`] = true;
+                        dayFlagWasSet = true;
+                        save(KEYS.PRAYERS, S.prayers);
                     }
 
                     const pName = PRAYER_MAP[pid]?.name || pid;
@@ -2726,7 +2772,7 @@
                         undo: () => {
                             restoreGoalSnapshot(g2, snap);
                             saveGoals();
-                            if (dayFlagWasSet && sourceKey) clearQadaaFlags(sourceKey, [pid]);
+                            if (dayFlagWasSet) clearQadaaFlags(dayKey, [pid]);
                         },
                     });
                     renderBody();
@@ -2767,7 +2813,7 @@
             const notesBeforeSession = (g.notes || []).length - sessionLog.length;
             const olderNotes = persistentNotes.filter(x => x.i < notesBeforeSession);
             const historyRows = olderNotes.slice(-8).reverse().map(({ n, i }) => {
-                const dateStr = n.date ? fmtShortDate(n.date) : '';
+                const dateStr = fmtNoteDate(n);
                 return `
                 <button type="button" class="aq-log-row aq-log-history" data-scope="history" data-i="${i}" title="Tap to undo">
                     <span class="aq-log-text">${esc(n.text || '—')}</span>
@@ -3072,7 +3118,7 @@
      * Record (complete) prayers on a qadaa goal.
      * mix: object { fajr:1, asr:2 } or prayer id + count.
      */
-    function recordQadaaPrayers(g, prayerMix, n = 1, { silent = false } = {}) {
+    function recordQadaaPrayers(g, prayerMix, n = 1, { silent = false, sourceKey = null } = {}) {
         ensurePerPrayer(g);
         const mix = typeof prayerMix === 'string' ? { [prayerMix]: n } : { ...prayerMix };
         let totalRecorded = 0;
@@ -3093,11 +3139,12 @@
             const parts = Object.entries(mix).filter(([,v]) => v > 0);
             const isFullDay = parts.length === 5 && parts.every(([,v]) => v === 1);
             const label = isFullDay ? 'Full day' : parts.map(([k, v]) => `${v} ${PRAYER_MAP[k]?.name || k}`).join(', ');
-            g.notes.push({ date: new Date().toISOString(), text: label, amount: -totalRecorded });
+            const noteEntry = { date: new Date().toISOString(), text: label, amount: -totalRecorded };
+            if (sourceKey) noteEntry.sourceKey = sourceKey;
+            if (typeof prayerMix === 'string') noteEntry.prayer = prayerMix;
+            g.notes.push(noteEntry);
         }
         saveGoals();
-        // Auto-archive the goal right after it's fully recorded. Without this, the calendar's
-        // MISSED badge would keep showing until renderGoals() eventually swept the zeroed goal.
         if (totalRecorded > 0) archiveCompletedGoals();
         return totalRecorded;
     }
@@ -6612,6 +6659,36 @@
             });
             if (fixed > 0) saveGoals();
             Storage.set('_migrated_orphan_goals_v3', true);
+        }
+
+        // Backfill sourceKey on old notes that don't have one
+        if (!Storage.get('_migrated_note_sourcekey_v1')) {
+            let patched = false;
+            getGoals().forEach(g => {
+                if (!g.notes) return;
+                g.notes.forEach(n => {
+                    if (n && !n.sourceKey && n.date) {
+                        const h = toHijri(n.date);
+                        n.sourceKey = hk(h.year, h.month, h.day);
+                        patched = true;
+                    }
+                });
+            });
+            (S.goalsArchive || []).forEach(g => {
+                if (!g.notes) return;
+                g.notes.forEach(n => {
+                    if (n && !n.sourceKey && n.date) {
+                        const h = toHijri(n.date);
+                        n.sourceKey = hk(h.year, h.month, h.day);
+                        patched = true;
+                    }
+                });
+            });
+            if (patched) {
+                saveGoals();
+                save(KEYS.GOALS_ARCHIVE, S.goalsArchive || []);
+            }
+            Storage.set('_migrated_note_sourcekey_v1', true);
         }
 
         initEvents();
