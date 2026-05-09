@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.261';
+    const APP_VERSION = '1.1.262';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -1619,7 +1619,7 @@
         const hadQadaaMissed = hijriInfo && autoMissedSet
             ? autoMissedSet.has(`${hijriInfo.year}-${hijriInfo.month}-${hijriInfo.day}`)
             : false;
-        const qadaaCount = PRAYERS.filter(p => dd[p.id] && dd[`${p.id}_qadaa_recorded`]).length;
+        const qadaaCount = PRAYERS.filter(p => dd[`${p.id}_qadaa_recorded`]).length;
 
         const iconsRow = `<div class="cell-prayers-row">
             ${PRAYERS.map(p => `<span class="cell-ico ${dd[p.id] ? 'on' : 'off'}" title="${p.name}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none">${CELL_GLYPHS[p.id]}</svg></span>`).join('')}
@@ -6667,30 +6667,28 @@
             Storage.set('_migrated_orphan_goals_v3', true);
         }
 
-        // Rebuild _qadaa_recorded flags from goal notes (v3: clear all then restore from notes)
-        if (!Storage.get('_migrated_rebuild_qadaa_flags_v3')) {
-            // Clear all existing flags
+        // Rebuild _qadaa_recorded flags from goal notes (v4: don't require prayer done)
+        if (!Storage.get('_migrated_rebuild_qadaa_flags_v4')) {
             for (const dd of Object.values(S.prayers)) {
                 if (!dd || typeof dd !== 'object') continue;
                 PRAYERS.forEach(p => { delete dd[`${p.id}_qadaa_recorded`]; });
             }
-            // Restore from goal notes that have sourceKey
             const allGoalSets = [getGoals(), S.goalsArchive || []];
             allGoalSets.forEach(set => {
                 set.forEach(g => {
                     if (!g.notes) return;
                     g.notes.forEach(n => {
                         if (!n || !n.sourceKey || !n.amount || n.amount >= 0) return;
+                        if (!S.prayers[n.sourceKey]) S.prayers[n.sourceKey] = {};
                         const dd = S.prayers[n.sourceKey];
-                        if (!dd) return;
-                        if (n.prayer && dd[n.prayer]) {
+                        if (n.prayer) {
                             dd[`${n.prayer}_qadaa_recorded`] = true;
                         } else {
                             let marked = 0;
                             const count = Math.abs(n.amount);
                             PRAYERS.forEach(p => {
                                 if (marked >= count) return;
-                                if (dd[p.id] && !dd[`${p.id}_qadaa_recorded`]) {
+                                if (!dd[`${p.id}_qadaa_recorded`]) {
                                     dd[`${p.id}_qadaa_recorded`] = true;
                                     marked++;
                                 }
@@ -6700,7 +6698,7 @@
                 });
             });
             save(KEYS.PRAYERS, S.prayers);
-            Storage.set('_migrated_rebuild_qadaa_flags_v3', true);
+            Storage.set('_migrated_rebuild_qadaa_flags_v4', true);
         }
 
         initEvents();
