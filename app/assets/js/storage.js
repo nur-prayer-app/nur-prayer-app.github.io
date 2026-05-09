@@ -134,10 +134,21 @@
 
     /** Import a previously-exported snapshot. Raw values go in as-is. */
     function importAll(snapshot) {
-        Object.entries(snapshot).forEach(([k, v]) => {
-            backend.setItem(k, v);
-            if (_suppressDirtyDepth === 0) _dirtyKeys.add(k);
-        });
+        const rollback = {};
+        try {
+            Object.entries(snapshot).forEach(([k, v]) => {
+                rollback[k] = backend.getItem(k); // save old value (null if didn't exist)
+                backend.setItem(k, v);
+                if (_suppressDirtyDepth === 0) _dirtyKeys.add(k);
+            });
+        } catch (e) {
+            // Roll back: restore all keys we already wrote
+            Object.entries(rollback).forEach(([k, old]) => {
+                if (old === null) backend.removeItem(k);
+                else backend.setItem(k, old);
+            });
+            throw e; // re-throw so caller can handle
+        }
     }
 
     /** Wipe everything the app owns (Settings → Danger zone). */
@@ -165,6 +176,7 @@
         ensureInstalledAt,
         getDirtyKeys()  { return new Set(_dirtyKeys); },
         clearDirtyKeys() { _dirtyKeys.clear(); },
+        removeDirtyKey(key) { _dirtyKeys.delete(key); },
         suppressDirty(on) { _suppressDirtyDepth += on ? 1 : -1; if (_suppressDirtyDepth < 0) _suppressDirtyDepth = 0; },
     });
 })();

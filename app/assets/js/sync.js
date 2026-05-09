@@ -203,7 +203,11 @@
         const data = await resp.json();
         if (!resp.ok) throw new Error(data.error_description || data.msg || 'Sign-in failed');
         establishSession(data);
-        if (await pullFromCloud()) window.dispatchEvent(new Event('sync-data-updated'));
+        try {
+            if (await pullFromCloud()) window.dispatchEvent(new Event('sync-data-updated'));
+        } catch (e) {
+            console.warn('Initial pull after sign-in failed:', e);
+        }
         return data;
     }
 
@@ -329,6 +333,11 @@
         for (const [key, raw] of Object.entries(snapshot)) {
             let value = raw;
             try { value = JSON.parse(raw); } catch {}
+            if (key === PRAYER_KEY && value && typeof value === 'object') {
+                for (const dayData of Object.values(value)) {
+                    if (dayData && dayData._localDirty) delete dayData._localDirty;
+                }
+            }
             const prevTs = lastPushedTimestamps?.[key] || now;
             const envelope = { value, _ts: (firstPush || dirtyKeys.has(key)) ? now : prevTs };
             // Attach per-day timestamps for prayer-data to enable day-level merge
@@ -372,7 +381,23 @@
             for (const [key, envelope] of Object.entries(payload)) timestamps[key] = envelope._ts;
             lastPushedTimestamps = timestamps;
             savePushTimestamps();
-            Storage.clearDirtyKeys();
+            for (const key of dirtyKeys) Storage.removeDirtyKey(key);
+            const prayers = Storage.get(PRAYER_KEY, null);
+            if (prayers && typeof prayers === 'object') {
+                let cleaned = false;
+                for (const dd of Object.values(prayers)) {
+                    if (dd && dd._localDirty) {
+                        delete dd._localDirty;
+                        cleaned = true;
+                    }
+                }
+                if (cleaned) {
+                    Storage.suppressDirty(true);
+                    try { Storage.set(PRAYER_KEY, prayers); }
+                    finally { Storage.suppressDirty(false); }
+                    window.dispatchEvent(new Event('sync-dirty-cleared'));
+                }
+            }
             syncFailures = 0;
             return setLastSync();
         } finally {
@@ -414,7 +439,7 @@
                 const cloudValue = envelope.value;
 
                 // Per-day merge for prayer-data: merge individual days instead of all-or-nothing
-                if (key === PRAYER_KEY && dirtyKeys.has(key) && envelope._dayTs && cloudValue && typeof cloudValue === 'object') {
+                if (key === PRAYER_KEY && envelope._dayTs && cloudValue && typeof cloudValue === 'object') {
                     let localPrayers = {};
                     try { localPrayers = JSON.parse(localSnapshot[key] || '{}'); } catch {}
                     const localDayTs = getDayTimestamps();
@@ -542,6 +567,7 @@
         pullFromCloud,
         clearCloud,
         stampPrayerDay,
+        stopAutoSync,
         SUPABASE_URL,
         SUPABASE_KEY,
     });
