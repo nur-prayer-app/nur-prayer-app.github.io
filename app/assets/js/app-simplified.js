@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.254';
+    const APP_VERSION = '1.1.255';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -245,6 +245,7 @@
                 const c = completed(d);
                 renderPrayerRing(c);
                 renderGoals();
+                renderCalendar();
                 updateTray();
             });
         });
@@ -866,6 +867,7 @@
                 saveGoals();
                 reopen();
                 renderGoals();
+                renderCalendar();
                 toast('Undone');
             });
         });
@@ -2751,7 +2753,7 @@
             }
 
             const todayStr = fmtShortDate(new Date());
-            const sessionRows = sessionLog.map((entry, i) => `
+            const sessionRows = [...sessionLog].map((entry, i) => ({ entry, i })).reverse().map(({ entry, i }) => `
                 <button type="button" class="aq-log-row aq-log-session" data-scope="session" data-i="${i}" title="Tap to undo">
                     <span class="aq-log-text">${esc(entry.text)}</span>
                     <span class="aq-log-date">${todayStr}</span>
@@ -4825,13 +4827,11 @@
                                 : '<path d="M13.73 21a2 2 0 0 1-3.46 0M18.63 13A17.89 17.89 0 0 1 18 8M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14M18 8a6 6 0 0 0-9.33-5M1 1l22 22" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>'}
                         </svg>
                     </button>`;
-                const iqamaOffset = !isRef ? getIqamaOffset(id) : 0;
-                const iqamaStr = iqamaOffset > 0 ? ` <span class="time-iqama">· Iqama ${formatTime12(new Date(at.getTime() + iqamaOffset * 60000))}</span>` : '';
                 return `
                 <div class="time-row${isRef ? ' time-row-ref' : ''}" data-timeline-id="${id}">
                     ${iconSvg}
                     <span class="time-name">${PRAYER_TIME_LABELS[id]}</span>
-                    <span class="time-adhan">${formatTime12(at)}${iqamaStr}</span>
+                    <span class="time-adhan">${formatTime12(at)}</span>
                     ${notifBtn}
                 </div>`;
             }).join('');
