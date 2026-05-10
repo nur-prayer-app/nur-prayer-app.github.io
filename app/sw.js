@@ -1,5 +1,5 @@
 // Nur — Service Worker (cache-first, version stamped by build-web.js)
-const CACHE_VERSION = 'nur-v264';
+const CACHE_VERSION = 'nur-v265';
 const CACHE_NAME = CACHE_VERSION;
 
 const PRECACHE_URLS = [
