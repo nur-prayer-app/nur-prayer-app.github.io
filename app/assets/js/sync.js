@@ -579,9 +579,18 @@
     }
 
     if (getSession()) {
-        // Force push local data on startup to assert this device's state
+        // Force push local data on startup — clear stale day timestamps first
         (async () => {
-            try { await pushToCloud(true); } catch {}
+            try {
+                // Reset local day timestamps to NOW so pull can't overwrite our data
+                const allPrayers = Storage.get(PRAYER_KEY, {});
+                const freshTs = {};
+                const now = Date.now();
+                Object.keys(allPrayers).forEach(k => { freshTs[k] = now; });
+                saveDayTimestamps(freshTs);
+                localStorage.removeItem('nur-push-timestamps');
+                await pushToCloud(true);
+            } catch {}
             startAutoSync();
         })();
     }
