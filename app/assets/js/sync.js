@@ -323,6 +323,45 @@
         saveDayTimestamps(ts);
     }
 
+    /* ─── Goal merge (event-sourcing: union notes by ID) ─────────── */
+
+    const GOALS_KEY = 'goals-data';
+
+    function mergeGoals(localGoals, cloudGoals) {
+        if (!cloudGoals || !Array.isArray(cloudGoals)) return localGoals;
+        if (!localGoals || !Array.isArray(localGoals)) return cloudGoals;
+
+        const byKey = new Map();
+        for (const g of localGoals) {
+            byKey.set(g.createdAt || g.type + '-' + (g.missedOn || ''), { ...g, notes: [...(g.notes || [])] });
+        }
+        for (const g of cloudGoals) {
+            const k = g.createdAt || g.type + '-' + (g.missedOn || '');
+            if (!byKey.has(k)) {
+                byKey.set(k, { ...g, notes: [...(g.notes || [])] });
+            } else {
+                const target = byKey.get(k);
+                target.total = Math.max(target.total || 0, g.total || 0);
+                const noteIds = new Set(target.notes.map(n => n.id).filter(Boolean));
+                for (const n of (g.notes || [])) {
+                    if (n.id && !noteIds.has(n.id)) {
+                        target.notes.push(n);
+                        noteIds.add(n.id);
+                    } else if (!n.id) {
+                        target.notes.push(n);
+                    }
+                }
+            }
+        }
+
+        const result = [];
+        for (const g of byKey.values()) {
+            g.remaining = Math.max(0, (g.total || 0) + (g.notes || []).reduce((s, n) => s + (n.amount || 0), 0));
+            result.push(g);
+        }
+        return result;
+    }
+
     /* ─── Sync: push ───────────────────────────────────────────── */
 
     function buildCloudPayload(dirtyKeys) {
@@ -333,11 +372,6 @@
         for (const [key, raw] of Object.entries(snapshot)) {
             let value = raw;
             try { value = JSON.parse(raw); } catch {}
-            if (key === PRAYER_KEY && value && typeof value === 'object') {
-                for (const dayData of Object.values(value)) {
-                    if (dayData && dayData._localDirty) delete dayData._localDirty;
-                }
-            }
             const prevTs = lastPushedTimestamps?.[key] || now;
             const envelope = { value, _ts: (firstPush || dirtyKeys.has(key)) ? now : prevTs };
             // Attach per-day timestamps for prayer-data to enable day-level merge
@@ -419,22 +453,6 @@
             lastPushedTimestamps = timestamps;
             savePushTimestamps();
             for (const key of dirtyKeys) Storage.removeDirtyKey(key);
-            const prayers = Storage.get(PRAYER_KEY, null);
-            if (prayers && typeof prayers === 'object') {
-                let cleaned = false;
-                for (const dd of Object.values(prayers)) {
-                    if (dd && dd._localDirty) {
-                        delete dd._localDirty;
-                        cleaned = true;
-                    }
-                }
-                if (cleaned) {
-                    Storage.suppressDirty(true);
-                    try { Storage.set(PRAYER_KEY, prayers); }
-                    finally { Storage.suppressDirty(false); }
-                    window.dispatchEvent(new Event('sync-dirty-cleared'));
-                }
-            }
             syncFailures = 0;
             return setLastSync();
         } finally {
@@ -475,7 +493,7 @@
                 const cloudTs = envelope._ts || 0;
                 const cloudValue = envelope.value;
 
-                // Per-day merge for prayer-data: merge individual days instead of all-or-nothing
+                // Per-day merge for prayer-data: field-level merge within each day
                 if (key === PRAYER_KEY && envelope._dayTs && cloudValue && typeof cloudValue === 'object') {
                     let localPrayers = {};
                     try { localPrayers = JSON.parse(localSnapshot[key] || '{}'); } catch {}
@@ -485,16 +503,48 @@
                     for (const [dayKey, cloudDayData] of Object.entries(cloudValue)) {
                         const localDayModified = localDayTs[dayKey] || 0;
                         const cloudDayModified = cloudDayTs[dayKey] || 0;
-                        // Cloud day wins if cloud timestamp is strictly newer
                         if (cloudDayModified > localDayModified) {
-                            localPrayers[dayKey] = cloudDayData;
+                            // Cloud is newer: merge fields (union of true values)
+                            if (!localPrayers[dayKey]) {
+                                localPrayers[dayKey] = cloudDayData;
+                            } else {
+                                const local = localPrayers[dayKey];
+                                for (const [field, val] of Object.entries(cloudDayData)) {
+                                    if (val === true || local[field] === undefined || local[field] === false) {
+                                        local[field] = val;
+                                    }
+                                }
+                            }
                             localDayTs[dayKey] = cloudDayModified;
                             dayMerged = true;
+                        } else if (cloudDayModified === localDayModified && cloudDayData) {
+                            // Same timestamp: merge true values from cloud (additive)
+                            if (!localPrayers[dayKey]) localPrayers[dayKey] = {};
+                            const local = localPrayers[dayKey];
+                            for (const [field, val] of Object.entries(cloudDayData)) {
+                                if (val === true && !local[field]) {
+                                    local[field] = true;
+                                    dayMerged = true;
+                                }
+                            }
                         }
                     }
                     if (dayMerged) {
                         merged[key] = JSON.stringify(localPrayers);
                         saveDayTimestamps(localDayTs);
+                        changed = true;
+                    }
+                    continue;
+                }
+
+                // Goals: merge notes by UUID (event sourcing)
+                if (key === GOALS_KEY && cloudValue && Array.isArray(cloudValue)) {
+                    let localGoals = [];
+                    try { localGoals = JSON.parse(localSnapshot[key] || '[]'); } catch {}
+                    const mergedGoals = mergeGoals(localGoals, cloudValue);
+                    const mergedRaw = JSON.stringify(mergedGoals);
+                    if (mergedRaw !== (localSnapshot[key] || '[]')) {
+                        merged[key] = mergedRaw;
                         changed = true;
                     }
                     continue;
@@ -557,6 +607,7 @@
                 try {
                     if (await pullFromCloud()) window.dispatchEvent(new Event('sync-data-updated'));
                     await pushToCloud();
+                    syncFailures = 0;
                 } catch (e) {
                     console.warn('Auto-sync failed:', e);
                     syncFailures++;
@@ -578,22 +629,7 @@
         if (syncTimer !== null) { clearTimeout(syncTimer); syncTimer = null; }
     }
 
-    if (getSession()) {
-        // Force push local data on startup — clear stale day timestamps first
-        (async () => {
-            try {
-                // Reset local day timestamps to NOW so pull can't overwrite our data
-                const allPrayers = Storage.get(PRAYER_KEY, {});
-                const freshTs = {};
-                const now = Date.now();
-                Object.keys(allPrayers).forEach(k => { freshTs[k] = now; });
-                saveDayTimestamps(freshTs);
-                localStorage.removeItem('nur-push-timestamps');
-                await pushToCloud(true);
-            } catch {}
-            startAutoSync();
-        })();
-    }
+    if (getSession()) startAutoSync();
 
     // Immediate sync on reconnection — reset backoff and trigger sync
     window.addEventListener('online', () => {
