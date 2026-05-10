@@ -331,12 +331,17 @@
         if (!cloudGoals || !Array.isArray(cloudGoals)) return localGoals;
         if (!localGoals || !Array.isArray(localGoals)) return cloudGoals;
 
+        function goalKey(g) {
+            if (g.type === 'qadaa-auto') return 'auto-' + (g.missedOn || '') + '-' + (g.missedPrayer || '');
+            return g.type;
+        }
+
         const byKey = new Map();
         for (const g of localGoals) {
-            byKey.set(g.createdAt || g.type + '-' + (g.missedOn || ''), { ...g, notes: [...(g.notes || [])] });
+            byKey.set(goalKey(g), { ...g, notes: [...(g.notes || [])] });
         }
         for (const g of cloudGoals) {
-            const k = g.createdAt || g.type + '-' + (g.missedOn || '');
+            const k = goalKey(g);
             if (!byKey.has(k)) {
                 byKey.set(k, { ...g, notes: [...(g.notes || [])] });
             } else {
