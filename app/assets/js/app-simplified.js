@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.265';
+    const APP_VERSION = '1.1.266';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -121,6 +121,7 @@
      * Shared date + Hijri formatters. Every call-site formats the same way,
      * so concentrating them here keeps output consistent and makes locale
      * changes a one-line edit. */
+    const noteId = () => crypto.randomUUID();
     const fmtShortDate = (d) => new Date(d).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
     const fmtLongDate  = (d) => new Date(d).toLocaleDateString('en-US', { month:'long',  day:'numeric', year:'numeric' });
     const fmtFullDate  = (d) => new Date(d).toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
@@ -859,6 +860,7 @@
             if (g.perPrayer) g.perPrayer[pid] = 0;
             g.notes = g.notes || [];
             g.notes.push({
+                id: noteId(),
                 date: new Date().toISOString(),
                 text: `Prayed ${p.name}`,
                 amount: -1,
@@ -1133,6 +1135,7 @@
                 g.total = Math.max(g.total, g.remaining);
                 g.notes = g.notes || [];
                 g.notes.push({
+                    id: noteId(),
                     date: new Date().toISOString(),
                     text: `Manual ${step > 0 ? '+' : ''}${delta} ${PRAYER_MAP[pid]?.name || pid}`,
                     amount: delta,
@@ -1217,7 +1220,7 @@
                 });
                 if (dayFlagsSet.length) save(KEYS.PRAYERS, S.prayers);
                 g.notes = g.notes || [];
-                g.notes.push({ date: new Date().toISOString(), text: `${total} prayers — ${days} day${days === 1 ? '' : 's'}`, amount: -total, sourceKey: tk });
+                g.notes.push({ id: noteId(), date: new Date().toISOString(), text: `${total} prayers — ${days} day${days === 1 ? '' : 's'}`, amount: -total, sourceKey: tk });
                 saveGoals();
                 reopen();
                 renderGoals();
@@ -1238,7 +1241,7 @@
             const prev = { remaining: g.remaining, notesLen: (g.notes||[]).length };
             g.remaining -= amount;
             g.notes = g.notes || [];
-            g.notes.push({ date: new Date().toISOString(), text: `Recorded ${amount}`, amount: -amount });
+            g.notes.push({ id: noteId(), date: new Date().toISOString(), text: `Recorded ${amount}`, amount: -amount });
             saveGoals(); reopen(); renderGoals();
             toast(`${amount} recorded`, { label: 'Undo', fn: () => {
                 g.remaining = prev.remaining;
@@ -2395,7 +2398,7 @@
                 $('#fast-qadaa')?.addEventListener('click', () => {
                     fastGoal.remaining = Math.max(0, fastGoal.remaining - 1);
                     fastGoal.notes = fastGoal.notes || [];
-                    fastGoal.notes.push({ date: new Date().toISOString(), text: 'Fasted 1 day', amount: -1 });
+                    fastGoal.notes.push({ id: noteId(), date: new Date().toISOString(), text: 'Fasted 1 day', amount: -1 });
                     saveGoals();
                     render();
                     openDayModal(key);
@@ -2457,10 +2460,7 @@
             openDayModal(key);
         });
 
-        
-        content.querySelector('[data-action="add-qadaa"]')?.addEventListener('click', () => {
-            openAddQadaaModal(key);
-        });
+
 
         // Create a new goal — opens the Add Goal modal with a "Back" trail to this day
         content.querySelector('[data-action="create-goal"]')?.addEventListener('click', () => {
@@ -2675,7 +2675,7 @@
                     }
                     if (totalDeducted === 0) { delete g2._dontArchive; toast('Nothing to record'); return; }
                     g2.notes = g2.notes || [];
-                    g2.notes.push({ date: new Date().toISOString(), text: `${totalDeducted} prayers — ${days} day${days === 1 ? '' : 's'}`, amount: -totalDeducted, sourceKey: dayKey });
+                    g2.notes.push({ id: noteId(), date: new Date().toISOString(), text: `${totalDeducted} prayers — ${days} day${days === 1 ? '' : 's'}`, amount: -totalDeducted, sourceKey: dayKey });
                     saveGoals();
 
                     const d2 = dayData(dayKey);
@@ -2992,7 +2992,7 @@
                 fg.total++; fg.remaining++;
             }
             fg.notes = fg.notes || [];
-            fg.notes.push({ date: new Date().toISOString(), text: `Missed fasting on ${md.monthName} ${d}`, amount: 1 });
+            fg.notes.push({ id: noteId(), date: new Date().toISOString(), text: `Missed fasting on ${md.monthName} ${d}`, amount: 1 });
             saveGoals();
             renderGoals();
             toast('Fasting day added');
@@ -3043,7 +3043,6 @@
 
     function ensurePerPrayer(g) {
         if (!g.perPrayer) g.perPrayer = emptyPerPrayer();
-        // Fix drift: if perPrayer sum < remaining, redistribute evenly
         const sum = PRAYERS.reduce((s, p) => s + (g.perPrayer[p.id] || 0), 0);
         if (sum < g.remaining) {
             const base = Math.floor(g.remaining / 5);
@@ -3051,6 +3050,12 @@
             PRAYERS.forEach((p, i) => { g.perPrayer[p.id] = base + (i < remainder ? 1 : 0); });
         }
         return g.perPrayer;
+    }
+
+    function recomputeGoal(g) {
+        const totalRecorded = (g.notes || []).reduce((s, n) => s + (n.amount || 0), 0);
+        g.remaining = Math.max(0, g.total + totalRecorded);
+        ensurePerPrayer(g);
     }
 
     /**
@@ -3111,7 +3116,7 @@
                 : typeof prayerMix === 'string'
                     ? `+${n} ${prayerMix}`
                     : Object.entries(mix).map(([k, v]) => `${v} ${k}`).join(', ');
-            g.notes.push({ date: new Date().toISOString(), text: note || label, amount: totalAdded });
+            g.notes.push({ id: noteId(), date: new Date().toISOString(), text: note || label, amount: totalAdded });
         }
 
         saveGoals();
@@ -3143,7 +3148,7 @@
             const parts = Object.entries(mix).filter(([,v]) => v > 0);
             const isFullDay = parts.length === 5 && parts.every(([,v]) => v === 1);
             const label = isFullDay ? 'Full day' : parts.map(([k, v]) => `${v} ${PRAYER_MAP[k]?.name || k}`).join(', ');
-            const noteEntry = { date: new Date().toISOString(), text: label, amount: -totalRecorded };
+            const noteEntry = { id: noteId(), date: new Date().toISOString(), text: label, amount: -totalRecorded };
             if (sourceKey) noteEntry.sourceKey = sourceKey;
             if (typeof prayerMix === 'string') noteEntry.prayer = prayerMix;
             g.notes.push(noteEntry);
@@ -3188,11 +3193,20 @@
     }
 
     /* ── Settings ─────────────────────────────────────────── */
+    const LOCAL_SETTINGS = new Set(['primaryCalendar', 'weekStart', 'showGregorian', 'showIndicators', 'archiveStyle']);
+    let _localSettings = (() => { try { return JSON.parse(localStorage.getItem('nur-settings-local')) || {}; } catch { return {}; } })();
+
     function getSetting(key, fallback) {
+        if (LOCAL_SETTINGS.has(key)) return _localSettings[key] !== undefined ? _localSettings[key] : fallback;
         return S.settings[key] !== undefined ? S.settings[key] : fallback;
     }
 
     function setSetting(key, value) {
+        if (LOCAL_SETTINGS.has(key)) {
+            _localSettings[key] = value;
+            localStorage.setItem('nur-settings-local', JSON.stringify(_localSettings));
+            return;
+        }
         S.settings[key] = value;
         save(KEYS.SETTINGS, S.settings);
     }
@@ -5596,7 +5610,7 @@
         const hsSinceVal = el.sinceVal;
         const hsSinceLabel = el.sinceLabel;
         if (hsSinceVal) hsSinceVal.textContent = prev ? formatDuration(sinceMs) : '—';
-        if (hsSinceLabel) hsSinceLabel.textContent = prev ? `Since ${prev.name} adhan` : 'Since last';
+        if (hsSinceLabel) hsSinceLabel.textContent = prev ? `Since ${prev.name}${prev.id !== 'sunrise' ? ' adhan' : ''}` : 'Since last';
 
         const hsIqamaWrap = el.iqamaWrap;
         const hsIqamaVal = el.iqamaVal;
@@ -6161,7 +6175,7 @@
                 duplicate.total = Math.max(duplicate.total, 1);
                 if (duplicate.perPrayer) duplicate.perPrayer[prayerId] = 1;
                 duplicate.notes = duplicate.notes || [];
-                duplicate.notes.push({ date: nowIso, text: 'Re-opened', amount: 1, prayer: prayerId });
+                duplicate.notes.push({ id: noteId(), date: nowIso, text: 'Re-opened', amount: 1, prayer: prayerId });
                 saveGoals();
             }
             return;
@@ -6177,6 +6191,7 @@
             missedOn: greg.toISOString(),
             isManual,
             notes: [{
+                id: noteId(),
                 date: nowIso,
                 text: isManual ? 'Added manually as missed' : 'Auto-flagged as missed',
                 amount: 1,
@@ -6347,7 +6362,7 @@
         if (!activePrayerId && times.rolled) activePrayerId = 'isha';
 
         const tk = dashboardKey();
-        const dd = dayData(tk);
+        const dd = peekDay(tk);
         const done = completed(dd);
 
         let currentPrayerDone = false;
@@ -6615,6 +6630,17 @@
         }
 
         if (S.theme !== 'default') document.body.setAttribute('data-theme', S.theme);
+
+        // Backfill UUIDs on notes that don't have them (idempotent)
+        let needsSave = false;
+        [getGoals(), S.goalsArchive || []].forEach(set => {
+            set.forEach(g => {
+                (g.notes || []).forEach(n => {
+                    if (n && !n.id) { n.id = noteId(); needsSave = true; }
+                });
+            });
+        });
+        if (needsSave) saveGoals();
 
         initEvents();
         initContext();
