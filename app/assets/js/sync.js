@@ -347,13 +347,12 @@
             } else {
                 const target = byKey.get(k);
                 target.total = Math.max(target.total || 0, g.total || 0);
+                // Only merge notes that have UUIDs — ignore ID-less legacy notes
                 const noteIds = new Set(target.notes.map(n => n.id).filter(Boolean));
                 for (const n of (g.notes || [])) {
                     if (n.id && !noteIds.has(n.id)) {
                         target.notes.push(n);
                         noteIds.add(n.id);
-                    } else if (!n.id) {
-                        target.notes.push(n);
                     }
                 }
             }
@@ -634,7 +633,9 @@
         if (syncTimer !== null) { clearTimeout(syncTimer); syncTimer = null; }
     }
 
-    if (getSession()) startAutoSync();
+    if (getSession()) {
+        (async () => { try { await pushToCloud(true); } catch(e) { console.warn('startup push:', e); } startAutoSync(); })();
+    }
 
     // Immediate sync on reconnection — reset backoff and trigger sync
     window.addEventListener('online', () => {
