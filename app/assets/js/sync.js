@@ -633,9 +633,7 @@
         if (syncTimer !== null) { clearTimeout(syncTimer); syncTimer = null; }
     }
 
-    if (getSession()) {
-        (async () => { try { await pushToCloud(true); } catch(e) { console.warn('startup push:', e); } startAutoSync(); })();
-    }
+    if (getSession()) startAutoSync();
 
     // Immediate sync on reconnection — reset backoff and trigger sync
     window.addEventListener('online', () => {

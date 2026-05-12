@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.270';
+    const APP_VERSION = '1.1.271';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -6694,6 +6694,23 @@
         S.theme = Storage.get(KEYS.THEME, 'default');
         if (S.theme === 'default') document.body.removeAttribute('data-theme');
         else document.body.setAttribute('data-theme', S.theme);
+        // Reconcile: remove auto-missed goals where prayer is now done (from another device)
+        let reconciled = false;
+        getGoals().filter(g => g.type === 'qadaa-auto' && g.missedOn && g.remaining > 0).forEach(g => {
+            const mH = toHijri(g.missedOn);
+            const dKey = hk(mH.year, mH.month, mH.day);
+            const dd = S.prayers[dKey];
+            if (dd && dd[g.missedPrayer]) {
+                g.remaining = 0;
+                if (dd[`${g.missedPrayer}_auto_missed`]) delete dd[`${g.missedPrayer}_auto_missed`];
+                reconciled = true;
+            }
+        });
+        if (reconciled) {
+            save(KEYS.PRAYERS, S.prayers);
+            saveGoals();
+            archiveCompletedGoals();
+        }
         invalidatePrayerTimesCache();
         render();
         if (S.settings.notifications) schedulePrayerNotifications();
