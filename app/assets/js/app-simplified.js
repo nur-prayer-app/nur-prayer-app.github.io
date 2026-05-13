@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.271';
+    const APP_VERSION = '1.1.272';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -312,8 +312,18 @@
     function renderGoals() {
         const list = $('#goals-list');
         if (!list) return;
-        // Auto-archive any goal whose remaining just hit 0 — keeps the active list tidy
-        // and preserves the goal (with completed: true) for statistics.
+        // Reconcile: clear auto-missed goals where prayer is already done
+        let _reconciled = false;
+        getGoals().filter(g => g.type === 'qadaa-auto' && g.missedOn && g.remaining > 0).forEach(g => {
+            const mH = toHijri(g.missedOn);
+            const dd = S.prayers[hk(mH.year, mH.month, mH.day)];
+            if (dd && dd[g.missedPrayer]) {
+                g.remaining = 0;
+                delete dd[`${g.missedPrayer}_auto_missed`];
+                _reconciled = true;
+            }
+        });
+        if (_reconciled) { save(KEYS.PRAYERS, S.prayers); saveGoals(); }
         archiveCompletedGoals();
         const allGoals = getGoals();
         // Show all goals including qadaa-auto (it will render with a special "auto" badge)
