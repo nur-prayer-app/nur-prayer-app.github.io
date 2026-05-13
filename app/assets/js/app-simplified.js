@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.273';
+    const APP_VERSION = '1.1.274';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -121,7 +121,13 @@
      * Shared date + Hijri formatters. Every call-site formats the same way,
      * so concentrating them here keeps output consistent and makes locale
      * changes a one-line edit. */
-    const noteId = () => crypto.randomUUID();
+    function computeNoteId(n) {
+        const raw = `${n.date}|${n.amount}|${n.sourceKey || ''}|${n.text || ''}`;
+        let h = 0x811c9dc5;
+        for (let i = 0; i < raw.length; i++) { h ^= raw.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+        return (h >>> 0).toString(36);
+    }
+    function makeNote(fields) { const n = { ...fields, date: fields.date || new Date().toISOString() }; n.id = computeNoteId(n); return n; }
     const fmtShortDate = (d) => new Date(d).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
     const fmtLongDate  = (d) => new Date(d).toLocaleDateString('en-US', { month:'long',  day:'numeric', year:'numeric' });
     const fmtFullDate  = (d) => new Date(d).toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
@@ -869,13 +875,7 @@
             g.remaining = 0;
             if (g.perPrayer) g.perPrayer[pid] = 0;
             g.notes = g.notes || [];
-            g.notes.push({
-                id: noteId(),
-                date: new Date().toISOString(),
-                text: `Prayed ${p.name}`,
-                amount: -1,
-                prayer: pid,
-            });
+            g.notes.push(makeNote({ text: `Prayed ${p.name}`, amount: -1, prayer: pid }));
             clearAutoMissedFlag(pid, g.missedOn);
             saveGoals();
             reopen();
@@ -1144,14 +1144,7 @@
                 g.remaining = Math.max(0, g.remaining + delta);
                 g.total = Math.max(g.total, g.remaining);
                 g.notes = g.notes || [];
-                g.notes.push({
-                    id: noteId(),
-                    date: new Date().toISOString(),
-                    text: `Manual ${step > 0 ? '+' : ''}${delta} ${PRAYER_MAP[pid]?.name || pid}`,
-                    amount: delta,
-                    manual: true,
-                    prayer: pid,
-                });
+                g.notes.push(makeNote({ text: `Manual ${step > 0 ? '+' : ''}${delta} ${PRAYER_MAP[pid]?.name || pid}`, amount: delta, manual: true, prayer: pid }));
                 saveGoals();
                 reopen();
                 renderGoals();
@@ -1230,7 +1223,7 @@
                 });
                 if (dayFlagsSet.length) save(KEYS.PRAYERS, S.prayers);
                 g.notes = g.notes || [];
-                g.notes.push({ id: noteId(), date: new Date().toISOString(), text: `${total} prayers — ${days} day${days === 1 ? '' : 's'}`, amount: -total, sourceKey: tk });
+                g.notes.push(makeNote({ text: `${total} prayers — ${days} day${days === 1 ? '' : 's'}`, amount: -total, sourceKey: tk }));
                 saveGoals();
                 reopen();
                 renderGoals();
@@ -1251,7 +1244,7 @@
             const prev = { remaining: g.remaining, notesLen: (g.notes||[]).length };
             g.remaining -= amount;
             g.notes = g.notes || [];
-            g.notes.push({ id: noteId(), date: new Date().toISOString(), text: `Recorded ${amount}`, amount: -amount });
+            g.notes.push(makeNote({ text: `Recorded ${amount}`, amount: -amount }));
             saveGoals(); reopen(); renderGoals();
             toast(`${amount} recorded`, { label: 'Undo', fn: () => {
                 g.remaining = prev.remaining;
@@ -2408,7 +2401,7 @@
                 $('#fast-qadaa')?.addEventListener('click', () => {
                     fastGoal.remaining = Math.max(0, fastGoal.remaining - 1);
                     fastGoal.notes = fastGoal.notes || [];
-                    fastGoal.notes.push({ id: noteId(), date: new Date().toISOString(), text: 'Fasted 1 day', amount: -1 });
+                    fastGoal.notes.push(makeNote({ text: 'Fasted 1 day', amount: -1 }));
                     saveGoals();
                     render();
                     openDayModal(key);
@@ -2685,7 +2678,7 @@
                     }
                     if (totalDeducted === 0) { delete g2._dontArchive; toast('Nothing to record'); return; }
                     g2.notes = g2.notes || [];
-                    g2.notes.push({ id: noteId(), date: new Date().toISOString(), text: `${totalDeducted} prayers — ${days} day${days === 1 ? '' : 's'}`, amount: -totalDeducted, sourceKey: dayKey });
+                    g2.notes.push(makeNote({ text: `${totalDeducted} prayers — ${days} day${days === 1 ? '' : 's'}`, amount: -totalDeducted, sourceKey: dayKey }));
                     saveGoals();
 
                     const d2 = dayData(dayKey);
@@ -3002,7 +2995,7 @@
                 fg.total++; fg.remaining++;
             }
             fg.notes = fg.notes || [];
-            fg.notes.push({ id: noteId(), date: new Date().toISOString(), text: `Missed fasting on ${md.monthName} ${d}`, amount: 1 });
+            fg.notes.push(makeNote({ text: `Missed fasting on ${md.monthName} ${d}`, amount: 1 }));
             saveGoals();
             renderGoals();
             toast('Fasting day added');
@@ -3126,7 +3119,7 @@
                 : typeof prayerMix === 'string'
                     ? `+${n} ${prayerMix}`
                     : Object.entries(mix).map(([k, v]) => `${v} ${k}`).join(', ');
-            g.notes.push({ id: noteId(), date: new Date().toISOString(), text: note || label, amount: totalAdded });
+            g.notes.push(makeNote({ text: note || label, amount: totalAdded }));
         }
 
         saveGoals();
@@ -3158,9 +3151,7 @@
             const parts = Object.entries(mix).filter(([,v]) => v > 0);
             const isFullDay = parts.length === 5 && parts.every(([,v]) => v === 1);
             const label = isFullDay ? 'Full day' : parts.map(([k, v]) => `${v} ${PRAYER_MAP[k]?.name || k}`).join(', ');
-            const noteEntry = { id: noteId(), date: new Date().toISOString(), text: label, amount: -totalRecorded };
-            if (sourceKey) noteEntry.sourceKey = sourceKey;
-            if (typeof prayerMix === 'string') noteEntry.prayer = prayerMix;
+            const noteEntry = makeNote({ text: label, amount: -totalRecorded, sourceKey: sourceKey || undefined, prayer: typeof prayerMix === 'string' ? prayerMix : undefined });
             g.notes.push(noteEntry);
         }
         saveGoals();
@@ -6185,7 +6176,7 @@
                 duplicate.total = Math.max(duplicate.total, 1);
                 if (duplicate.perPrayer) duplicate.perPrayer[prayerId] = 1;
                 duplicate.notes = duplicate.notes || [];
-                duplicate.notes.push({ id: noteId(), date: nowIso, text: 'Re-opened', amount: 1, prayer: prayerId });
+                duplicate.notes.push(makeNote({ date: nowIso, text: 'Re-opened', amount: 1, prayer: prayerId }));
                 saveGoals();
             }
             return;
@@ -6200,14 +6191,13 @@
             missedPrayer: prayerId,
             missedOn: greg.toISOString(),
             isManual,
-            notes: [{
-                id: noteId(),
+            notes: [makeNote({
                 date: nowIso,
                 text: isManual ? 'Added manually as missed' : 'Auto-flagged as missed',
                 amount: 1,
                 prayer: prayerId,
                 auto: !isManual,
-            }],
+            })],
             createdAt: nowIso,
         });
         saveGoals();
@@ -6641,19 +6631,7 @@
 
         if (S.theme !== 'default') document.body.setAttribute('data-theme', S.theme);
 
-        // Backfill deterministic IDs on notes (based on content, not random — ensures same note gets same ID across devices)
-        let needsSave = false;
-        [getGoals(), S.goalsArchive || []].forEach(set => {
-            set.forEach(g => {
-                (g.notes || []).forEach((n, idx) => {
-                    if (n && !n.id) {
-                        n.id = `${g.type}-${idx}-${n.date || ''}-${n.amount || 0}-${n.sourceKey || ''}`;
-                        needsSave = true;
-                    }
-                });
-            });
-        });
-        if (needsSave) saveGoals();
+
 
         initEvents();
         initContext();

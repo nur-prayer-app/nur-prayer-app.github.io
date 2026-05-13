@@ -327,6 +327,13 @@
 
     const GOALS_KEY = 'goals-data';
 
+    function computeNoteId(n) {
+        const raw = `${n.date}|${n.amount}|${n.sourceKey || ''}|${n.text || ''}`;
+        let h = 0x811c9dc5;
+        for (let i = 0; i < raw.length; i++) { h ^= raw.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+        return (h >>> 0).toString(36);
+    }
+
     function mergeGoals(localGoals, cloudGoals) {
         if (!cloudGoals || !Array.isArray(cloudGoals)) return localGoals;
         if (!localGoals || !Array.isArray(localGoals)) return cloudGoals;
@@ -347,12 +354,13 @@
             } else {
                 const target = byKey.get(k);
                 target.total = Math.max(target.total || 0, g.total || 0);
-                // Only merge notes that have UUIDs — ignore ID-less legacy notes
-                const noteIds = new Set(target.notes.map(n => n.id).filter(Boolean));
+                // Dedup by content hash — same note on any device gets same ID
+                const existing = new Set(target.notes.map(n => computeNoteId(n)));
                 for (const n of (g.notes || [])) {
-                    if (n.id && !noteIds.has(n.id)) {
+                    const id = computeNoteId(n);
+                    if (!existing.has(id)) {
                         target.notes.push(n);
-                        noteIds.add(n.id);
+                        existing.add(id);
                     }
                 }
             }
@@ -633,7 +641,9 @@
         if (syncTimer !== null) { clearTimeout(syncTimer); syncTimer = null; }
     }
 
-    if (getSession()) startAutoSync();
+    if (getSession()) {
+        (async () => { try { await pushToCloud(true); } catch(e) { console.warn('startup push:', e); } startAutoSync(); })();
+    }
 
     // Immediate sync on reconnection — reset backoff and trigger sync
     window.addEventListener('online', () => {
