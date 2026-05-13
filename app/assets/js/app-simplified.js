@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.272';
+    const APP_VERSION = '1.1.273';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -6641,12 +6641,15 @@
 
         if (S.theme !== 'default') document.body.setAttribute('data-theme', S.theme);
 
-        // Backfill UUIDs on notes that don't have them (idempotent)
+        // Backfill deterministic IDs on notes (based on content, not random — ensures same note gets same ID across devices)
         let needsSave = false;
         [getGoals(), S.goalsArchive || []].forEach(set => {
             set.forEach(g => {
-                (g.notes || []).forEach(n => {
-                    if (n && !n.id) { n.id = noteId(); needsSave = true; }
+                (g.notes || []).forEach((n, idx) => {
+                    if (n && !n.id) {
+                        n.id = `${g.type}-${idx}-${n.date || ''}-${n.amount || 0}-${n.sourceKey || ''}`;
+                        needsSave = true;
+                    }
                 });
             });
         });
