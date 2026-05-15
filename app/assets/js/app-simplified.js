@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.274';
+    const APP_VERSION = '1.1.275';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -107,13 +107,17 @@
         } catch (e) {
             return;
         }
-        if (k === KEYS.PRAYERS && typeof Sync !== 'undefined' && Sync.stampPrayerDay) {
-            for (const dayKey of _modifiedDays) Sync.stampPrayerDay(dayKey);
+        if (k === KEYS.PRAYERS && typeof Sync !== 'undefined' && Sync.enqueuePrayerDay) {
+            for (const dayKey of _modifiedDays) {
+                const dd = S.prayers[dayKey];
+                if (dd) Sync.enqueuePrayerDay(dayKey, dd);
+            }
             _modifiedDays.clear();
         }
-        if (typeof Sync !== 'undefined' && Sync.getSession && Sync.getSession()) {
-            clearTimeout(_pushDebounce);
-            _pushDebounce = setTimeout(() => { Sync.pushToCloud(); }, 3000);
+        if (k === KEYS.SETTINGS && typeof Sync !== 'undefined' && Sync.enqueueSetting) {
+            for (const [sk, sv] of Object.entries(v)) {
+                Sync.enqueueSetting(sk, sv);
+            }
         }
     }
 
@@ -121,13 +125,13 @@
      * Shared date + Hijri formatters. Every call-site formats the same way,
      * so concentrating them here keeps output consistent and makes locale
      * changes a one-line edit. */
-    function computeNoteId(n) {
-        const raw = `${n.date}|${n.amount}|${n.sourceKey || ''}|${n.text || ''}`;
-        let h = 0x811c9dc5;
-        for (let i = 0; i < raw.length; i++) { h ^= raw.charCodeAt(i); h = Math.imul(h, 0x01000193); }
-        return (h >>> 0).toString(36);
+    function makeNote(fields, goalKey) {
+        const n = { ...fields, date: fields.date || new Date().toISOString(), id: crypto.randomUUID() };
+        if (goalKey && typeof Sync !== 'undefined' && Sync.enqueueGoalEvent) {
+            Sync.enqueueGoalEvent({ id: n.id, goal_key: goalKey, amount: n.amount || 0, note_text: n.text || null, source_key: n.sourceKey || null, prayer: n.prayer || null, ref_event_id: n.refEventId || null });
+        }
+        return n;
     }
-    function makeNote(fields) { const n = { ...fields, date: fields.date || new Date().toISOString() }; n.id = computeNoteId(n); return n; }
     const fmtShortDate = (d) => new Date(d).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
     const fmtLongDate  = (d) => new Date(d).toLocaleDateString('en-US', { month:'long',  day:'numeric', year:'numeric' });
     const fmtFullDate  = (d) => new Date(d).toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
@@ -141,7 +145,7 @@
 
     /** Format a note's date info: "source day · done date" respecting primary calendar. */
     function fmtNoteDate(note) {
-        const isHijri = (S.settings.primaryCalendar || 'hijri') === 'hijri';
+        const isHijri = (getSetting('primaryCalendar', 'hijri')) === 'hijri';
         let doneStr = '';
         if (note.date) {
             if (isHijri) {
@@ -1652,7 +1656,7 @@
 
     /** Update calendar state to match today in the active (primary) calendar. */
     function calToday() {
-        const primary = S.settings.primaryCalendar || 'hijri';
+        const primary = getSetting('primaryCalendar', 'hijri');
         if (primary === 'gregorian') {
             const n = new Date();
             S.gregY = n.getFullYear();
@@ -1841,7 +1845,7 @@
     }
 
     function updateCalendar() {
-        const primary = S.settings.primaryCalendar || 'hijri';
+        const primary = getSetting('primaryCalendar', 'hijri');
         if (primary === 'gregorian') return updateCalendarGregorian();
         const md = HijriCalendar.getMonthData(S.calY, S.calM);
 
@@ -2806,7 +2810,7 @@
                 return;
             }
 
-            const todayStr = fmtShortDate(new Date());
+            const todayStr = getSetting('primaryCalendar', 'hijri') === 'hijri' ? fmtHijriShort(toHijri(new Date())) : fmtShortDate(new Date());
             const sessionRows = [...sessionLog].map((entry, i) => ({ entry, i })).reverse().map(({ entry, i }) => `
                 <button type="button" class="aq-log-row aq-log-session" data-scope="session" data-i="${i}" title="Tap to undo">
                     <span class="aq-log-text">${esc(entry.text)}</span>
@@ -3845,13 +3849,9 @@
                 syncNow.disabled = true;
                 syncNow.textContent = 'Syncing...';
                 try {
-                    if (await Sync.pullFromCloud()) {
-                        location.reload();
-                    } else {
-                        await Sync.pushToCloud(true);
-                        const meta = $('#sync-meta');
-                        if (meta) meta.textContent = 'Last synced: just now';
-                    }
+                    await Sync.syncAll();
+                    const meta = $('#sync-meta');
+                    if (meta) meta.textContent = 'Last synced: just now';
                 } catch (e) {
                     toast('Sync failed: ' + e.message);
                 } finally {
@@ -4047,7 +4047,7 @@
 
     /* ── Calendar Nav ────────────────────────────────────────── */
     function calNext() {
-        const primary = S.settings.primaryCalendar || 'hijri';
+        const primary = getSetting('primaryCalendar', 'hijri');
         if (primary === 'gregorian') {
             S.gregM++; if (S.gregM > 11) { S.gregM = 0; S.gregY++; }
         } else {
@@ -4058,7 +4058,7 @@
         updateCalendar();
     }
     function calPrev() {
-        const primary = S.settings.primaryCalendar || 'hijri';
+        const primary = getSetting('primaryCalendar', 'hijri');
         if (primary === 'gregorian') {
             S.gregM--; if (S.gregM < 0) { S.gregM = 11; S.gregY--; }
         } else {
@@ -6298,7 +6298,7 @@
             const md = HijriCalendar.getMonthData(hd.year, hd.month);
             const gregStr = fmtShortDate(now);
             const hijriStr = `${md.monthName} ${hd.day}, ${hd.year}`;
-            const primary = S.settings.primaryCalendar || 'hijri';
+            const primary = getSetting('primaryCalendar', 'hijri');
             // Stacked: primary on its own line (accent), secondary below (muted)
             const primaryStr = primary === 'gregorian' ? gregStr : hijriStr;
             const secondaryStr = primary === 'gregorian' ? hijriStr : gregStr;
@@ -6638,9 +6638,16 @@
         _lastDashboardKey = dashboardKey();
         render();
         updateClock();
-        runAutoMissedCheck();
+        // Defer auto-missed check until after first sync pull (avoid flagging prayers done on other devices)
+        if (typeof Sync !== 'undefined' && Sync.getSession && Sync.getSession()) {
+            const _onFirstSync = () => { window.removeEventListener('sync-data-updated', _onFirstSync); runAutoMissedCheck(); };
+            window.addEventListener('sync-data-updated', _onFirstSync);
+            setTimeout(() => { window.removeEventListener('sync-data-updated', _onFirstSync); runAutoMissedCheck(); }, 10000);
+        } else {
+            runAutoMissedCheck();
+        }
         setInterval(updateClock, 30000);
-        setInterval(runAutoMissedCheck, 5 * 60 * 1000); // every 5 min
+        setInterval(runAutoMissedCheck, 5 * 60 * 1000);
 
         // Warn user if storage is full
         window.addEventListener('storage-quota-exceeded', () => {
@@ -6648,13 +6655,10 @@
         });
 
         // Re-check day + sync when app returns from background (mobile PWA, tab switch)
-        document.addEventListener('visibilitychange', async () => {
+        document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
                 updateClock();
                 runAutoMissedCheck();
-                if (typeof Sync !== 'undefined' && Sync.getSession && Sync.getSession()) {
-                    if (await Sync.pullFromCloud()) window.dispatchEvent(new Event('sync-data-updated'));
-                }
             }
         });
 
