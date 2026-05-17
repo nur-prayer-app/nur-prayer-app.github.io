@@ -224,6 +224,7 @@
         saveSession(null);
         localStorage.removeItem(LAST_SYNC_KEY);
         localStorage.removeItem(QUEUE_KEY);
+        localStorage.removeItem(BOOTSTRAP_KEY);
         stopAutoSync();
     }
 
@@ -233,6 +234,7 @@
         saveSession(null);
         localStorage.removeItem(LAST_SYNC_KEY);
         localStorage.removeItem(QUEUE_KEY);
+        localStorage.removeItem(BOOTSTRAP_KEY);
         stopAutoSync();
     }
 
@@ -520,6 +522,89 @@
         }
     }
 
+    /* ─── Bootstrap: enqueue all local data on first v2 sync ───── */
+
+    const BOOTSTRAP_KEY = 'nur-sync-v2-bootstrapped';
+
+    async function bootstrapIfCloudEmpty(token, userId) {
+        if (localStorage.getItem(BOOTSTRAP_KEY)) return;
+
+        // Check if cloud already has data — if so, skip bootstrap and just pull
+        const checkResp = await fetch(
+            `${REST_URL}/prayer_days?user_id=eq.${userId}&select=day_key&limit=1`,
+            { headers: headers(token) }
+        );
+        if (!checkResp.ok) return; // network issue — retry next cycle
+        updateClockOffset(checkResp);
+        const rows = await checkResp.json();
+        if (rows.length > 0) {
+            // Cloud has data from another device — don't push, just pull
+            localStorage.setItem(BOOTSTRAP_KEY, '1');
+            return;
+        }
+
+        const now = syncedNow();
+        const fieldTs = getFieldTs();
+
+        // Enqueue all prayer days
+        const prayers = Storage.get(Storage.KEYS.PRAYERS, {});
+        for (const [dayKey, dd] of Object.entries(prayers)) {
+            if (!dd || typeof dd !== 'object') continue;
+            if (!fieldTs[dayKey]) fieldTs[dayKey] = {};
+            const data = { day_key: dayKey };
+            let hasFields = false;
+            for (const [k, v] of Object.entries(dd)) {
+                if (k.endsWith('_auto_missed') || k === '_localDirty') continue;
+                data[k] = v;
+                if (!fieldTs[dayKey][k]) fieldTs[dayKey][k] = now;
+                hasFields = true;
+            }
+            if (hasFields) enqueue('prayer_days', data);
+        }
+        saveFieldTs(fieldTs);
+
+        // Enqueue all goals metadata + events
+        const goals = Storage.get(Storage.KEYS.GOALS, []);
+        for (const g of goals) {
+            if (!g || !g.type) continue;
+            enqueue('goals', {
+                goal_key: g.type,
+                goal_type: g.type,
+                name: g.name || g.type,
+                target_amount: g.total || 0,
+                archived_at: g.completed ? (new Date(g.archivedAt || 0).getTime()) : 0,
+                updated_at: now,
+            });
+            if (Array.isArray(g.notes)) {
+                for (const n of g.notes) {
+                    enqueue('goal_events', {
+                        id: n.id || crypto.randomUUID(),
+                        goal_key: g.type,
+                        amount: n.amount || 0,
+                        note_text: n.text || null,
+                        source_key: n.sourceKey || null,
+                        prayer: n.prayer || null,
+                        ref_event_id: n.refEventId || null,
+                        device_id: DEVICE_ID,
+                        client_ts: n.date ? new Date(n.date).getTime() : now,
+                    });
+                }
+            }
+        }
+
+        // Enqueue all synced settings
+        const settings = Storage.get(Storage.KEYS.SETTINGS, {});
+        const settingsTs = JSON.parse(localStorage.getItem('nur-settings-ts') || '{}');
+        for (const [key, value] of Object.entries(settings)) {
+            if (!SYNCED_SETTINGS.has(key)) continue;
+            if (!settingsTs[key]) settingsTs[key] = now;
+            enqueue('user_settings', { key, value, updated_at: settingsTs[key] });
+        }
+        localStorage.setItem('nur-settings-ts', JSON.stringify(settingsTs));
+
+        localStorage.setItem(BOOTSTRAP_KEY, '1');
+    }
+
     /* ─── Sync orchestration ───────────────────────────────────── */
 
     async function syncAll() {
@@ -531,6 +616,9 @@
             const session = getSession();
             if (!session?.user?.id) return;
             const userId = session.user.id;
+
+            // Bootstrap: push all local data if cloud is empty (first v2 sync)
+            await bootstrapIfCloudEmpty(token, userId);
 
             // Pull (get latest from cloud)
             let changed = false;
@@ -609,6 +697,7 @@
         localStorage.removeItem(LAST_SYNC_KEY);
         localStorage.removeItem(QUEUE_KEY);
         localStorage.removeItem(FIELD_TS_KEY);
+        localStorage.removeItem(BOOTSTRAP_KEY);
     }
 
     window.Sync = Object.freeze({
