@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.275';
+    const APP_VERSION = '1.1.276';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -3905,7 +3905,7 @@
                 if (typeof Sync !== 'undefined' && Sync.getSession()) await Sync.signOut();
                 Storage.clearAll();
                 // Clear direct localStorage keys not managed by Storage repository
-                ['nur-stats-range', 'nur-push-timestamps', 'nur-prayer-day-ts', 'nur-pkce-verifier', 'nur-last-sync', 'nur-sync-session'].forEach(k => localStorage.removeItem(k));
+                ['nur-stats-range', 'nur-push-timestamps', 'nur-prayer-day-ts', 'nur-pkce-verifier', 'nur-last-sync', 'nur-sync-session', 'nur-last-sync-v2', 'nur-sync-v2-bootstrapped', 'nur-field-ts'].forEach(k => localStorage.removeItem(k));
                 location.reload();
             });
         }
@@ -5952,6 +5952,7 @@
             if (adhanOn && at > now) {
                 const t = setTimeout(() => {
                     showPrayerNotification(`${name} — ${formatTime12(times.today[id])}`, 'Time for prayer');
+                    renderPrayerList(dashboardKey(), peekDay(dashboardKey()));
                 }, at - now);
                 _notifTimers.push(t);
             }
@@ -6272,6 +6273,7 @@
 
     /* ── Clock ───────────────────────────────────────────────── */
     let _lastDashboardKey = '';
+    let _lastPassedCount = -1;
 
     function updateClock() {
         const now = new Date();
@@ -6286,8 +6288,21 @@
             render();
             // Delay re-schedule so any notification due right now (e.g. Fajr adhan) fires first
             if (S.settings.notifications) setTimeout(schedulePrayerNotifications, 60000);
+            _lastPassedCount = -1;
         }
         _lastDashboardKey = dk;
+
+        // Re-render prayer list when a prayer time passes (future → clickable)
+        if (S.settings.location) {
+            const passed = computePassedPrayers(now);
+            const passedCount = PRAYERS.filter(p => passed[p.id]).length;
+            if (_lastPassedCount >= 0 && passedCount !== _lastPassedCount) {
+                const tk = dk;
+                const dd = peekDay(tk);
+                renderPrayerList(tk, dd);
+            }
+            _lastPassedCount = passedCount;
+        }
 
         const timeEl = $('#header-time');
         if (timeEl) timeEl.textContent = `${h12}:${String(m).padStart(2,'0')} ${ampm}`;

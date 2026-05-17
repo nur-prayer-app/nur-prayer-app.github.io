@@ -46,8 +46,8 @@ const HijriCalendar = (() => {
         'rajab': 6, "shaʻban": 7, "shaʿbān": 7, "sha'ban": 7,
         'ramadan': 8, 'ramaḍān': 8, 'shawwal': 9, 'shawwāl': 9,
         "dhuʻl-qiʻdah": 10, "dhū al-qaʿdah": 10, "dhu al-qi'dah": 10,
-        "dhul qi'dah": 10, "dhuʻl-ḥijjah": 11, "dhū al-ḥijjah": 11,
-        "dhul hijjah": 11,
+        "dhul qi'dah": 10, "dhuʻl-ḥijjah": 11, "dhuʻl-hijjah": 11,
+        "dhū al-ḥijjah": 11, "dhul hijjah": 11,
     };
     Object.assign(MONTH_NAME_TO_IDX, INTL_MONTH_MAP);
 
