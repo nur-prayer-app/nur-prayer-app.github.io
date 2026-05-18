@@ -43,10 +43,12 @@
     const SYNC_LOG_MAX = 200;
 
     function syncLog(msg) {
+        const ts = new Date().toISOString().slice(11, 19);
         const logs = JSON.parse(localStorage.getItem(SYNC_LOG_KEY) || '[]');
-        logs.push(`[${new Date().toISOString().slice(11,19)}] ${msg}`);
+        logs.push(`[${ts}] ${msg}`);
         if (logs.length > SYNC_LOG_MAX) logs.splice(0, logs.length - SYNC_LOG_MAX);
         localStorage.setItem(SYNC_LOG_KEY, JSON.stringify(logs));
+        if (window.electronAPI?.writeLog) window.electronAPI.writeLog(`[sync] ${msg}`);
     }
 
     /* ─── Helpers ───────────────────────────────────────────────── */
