@@ -37,6 +37,18 @@
     const DEVICE_ID = localStorage.getItem(DEVICE_ID_KEY) ||
         (() => { const id = crypto.randomUUID(); localStorage.setItem(DEVICE_ID_KEY, id); return id; })();
 
+    /* ─── Sync Log ─────────────────────────────────────────────── */
+
+    const SYNC_LOG_KEY = 'nur-sync-log';
+    const SYNC_LOG_MAX = 200;
+
+    function syncLog(msg) {
+        const logs = JSON.parse(localStorage.getItem(SYNC_LOG_KEY) || '[]');
+        logs.push(`[${new Date().toISOString().slice(11,19)}] ${msg}`);
+        if (logs.length > SYNC_LOG_MAX) logs.splice(0, logs.length - SYNC_LOG_MAX);
+        localStorage.setItem(SYNC_LOG_KEY, JSON.stringify(logs));
+    }
+
     /* ─── Helpers ───────────────────────────────────────────────── */
 
     function syncedNow() { return Date.now() + clockOffset; }
@@ -541,24 +553,25 @@
     const FULL_PUSH_KEY = 'nur-sync-v2-full-push-done';
 
     async function fullPushIfNeeded(token, userId) {
-        if (localStorage.getItem(FULL_PUSH_KEY)) return;
 
         const prayers = Storage.get(Storage.KEYS.PRAYERS, {});
         const localDays = Object.keys(prayers).filter(k => prayers[k] && typeof prayers[k] === 'object');
-        if (!localDays.length) { localStorage.setItem(FULL_PUSH_KEY, '1'); return; }
+        syncLog(`fullPush: local=${localDays.length} days`);
+        if (!localDays.length) return;
 
         // Check how many days cloud has
         const countResp = await fetch(
             `${REST_URL}/prayer_days?user_id=eq.${userId}&select=day_key`,
             { headers: headers(token) }
         );
-        if (!countResp.ok) return;
+        if (!countResp.ok) { syncLog(`fullPush: countResp failed ${countResp.status}`); return; }
         updateClockOffset(countResp);
         const cloudDays = new Set((await countResp.json()).map(r => r.day_key));
 
         // Find local days not yet in cloud
         const missing = localDays.filter(k => !cloudDays.has(k));
-        if (!missing.length) { localStorage.setItem(FULL_PUSH_KEY, '1'); return; }
+        syncLog(`fullPush: cloud=${cloudDays.size}, missing=${missing.length}`);
+        if (!missing.length) return;
 
         // Push missing days directly — throttled to avoid rate limits
         const now = syncedNow();
@@ -584,8 +597,9 @@
                 method: 'POST', headers: headers(currentToken), body: JSON.stringify({ payload: params }),
             });
             if (resp.status === 401) {
+                syncLog(`fullPush: 401 at item ${i}, refreshing token`);
                 currentToken = await getValidToken();
-                if (!currentToken) break;
+                if (!currentToken) { syncLog('fullPush: refresh failed, breaking'); break; }
                 resp = await fetch(`${REST_URL}/rpc/upsert_prayer_day`, {
                     method: 'POST', headers: headers(currentToken), body: JSON.stringify({ payload: params }),
                 });
@@ -606,8 +620,7 @@
         }
 
         saveFieldTs(fieldTs);
-        // Only mark done if ALL missing days were pushed
-        if (pushed >= missing.length) localStorage.setItem(FULL_PUSH_KEY, '1');
+        syncLog(`fullPush: pushed=${pushed}/${missing.length}`);
     }
 
     /* ─── Sync orchestration ───────────────────────────────────── */
@@ -617,10 +630,11 @@
         isSyncing = true;
         try {
             const token = await getValidToken();
-            if (!token) return;
+            if (!token) { syncLog('syncAll: no token'); return; }
             const session = getSession();
-            if (!session?.user?.id) return;
+            if (!session?.user?.id) { syncLog('syncAll: no user id'); return; }
             const userId = session.user.id;
+            syncLog('syncAll: start');
 
             // Push all local data that's missing from cloud
             await fullPushIfNeeded(token, userId);
@@ -745,5 +759,7 @@
         },
         // Constants
         SUPABASE_URL, SUPABASE_KEY, DEVICE_ID, SYNCED_SETTINGS,
+        // Debug
+        getLog() { return JSON.parse(localStorage.getItem(SYNC_LOG_KEY) || '[]'); },
     });
 })();
