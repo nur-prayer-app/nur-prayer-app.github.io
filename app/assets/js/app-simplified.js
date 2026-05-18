@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.280';
+    const APP_VERSION = '1.1.281';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -3905,7 +3905,7 @@
                 if (typeof Sync !== 'undefined' && Sync.getSession()) await Sync.signOut();
                 Storage.clearAll();
                 // Clear direct localStorage keys not managed by Storage repository
-                ['nur-stats-range', 'nur-push-timestamps', 'nur-prayer-day-ts', 'nur-pkce-verifier', 'nur-last-sync', 'nur-sync-session', 'nur-last-sync-v2', 'nur-sync-v2-bootstrapped', 'nur-field-ts'].forEach(k => localStorage.removeItem(k));
+                ['nur-stats-range', 'nur-push-timestamps', 'nur-prayer-day-ts', 'nur-pkce-verifier', 'nur-last-sync', 'nur-sync-session', 'nur-last-sync-v2', 'nur-sync-v2-full-push-done', 'nur-field-ts'].forEach(k => localStorage.removeItem(k));
                 location.reload();
             });
         }

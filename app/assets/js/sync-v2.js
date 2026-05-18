@@ -224,7 +224,7 @@
         saveSession(null);
         localStorage.removeItem(LAST_SYNC_KEY);
         localStorage.removeItem(QUEUE_KEY);
-        localStorage.removeItem(BOOTSTRAP_KEY);
+        localStorage.removeItem(FULL_PUSH_KEY);
         stopAutoSync();
     }
 
@@ -234,7 +234,7 @@
         saveSession(null);
         localStorage.removeItem(LAST_SYNC_KEY);
         localStorage.removeItem(QUEUE_KEY);
-        localStorage.removeItem(BOOTSTRAP_KEY);
+        localStorage.removeItem(FULL_PUSH_KEY);
         stopAutoSync();
     }
 
@@ -536,98 +536,64 @@
         }
     }
 
-    /* ─── Bootstrap: enqueue all local data on first v2 sync ───── */
+    /* ─── Full Push: directly push all local prayer data to cloud ── */
 
-    const BOOTSTRAP_KEY = 'nur-sync-v2-bootstrapped';
+    const FULL_PUSH_KEY = 'nur-sync-v2-full-push-done';
 
-    async function bootstrapIfCloudEmpty(token, userId) {
-        // Check if cloud has data
-        const checkResp = await fetch(
-            `${REST_URL}/prayer_days?user_id=eq.${userId}&select=day_key&limit=1`,
+    async function fullPushIfNeeded(token, userId) {
+        if (localStorage.getItem(FULL_PUSH_KEY)) return;
+
+        const prayers = Storage.get(Storage.KEYS.PRAYERS, {});
+        const localDays = Object.keys(prayers).filter(k => prayers[k] && typeof prayers[k] === 'object');
+        if (!localDays.length) { localStorage.setItem(FULL_PUSH_KEY, '1'); return; }
+
+        // Check how many days cloud has
+        const countResp = await fetch(
+            `${REST_URL}/prayer_days?user_id=eq.${userId}&select=day_key`,
             { headers: headers(token) }
         );
-        if (!checkResp.ok) return; // network issue — retry next cycle
-        updateClockOffset(checkResp);
-        const rows = await checkResp.json();
+        if (!countResp.ok) return;
+        updateClockOffset(countResp);
+        const cloudDays = new Set((await countResp.json()).map(r => r.day_key));
 
-        if (rows.length > 0) {
-            // Cloud has data — don't push, just pull
-            localStorage.setItem(BOOTSTRAP_KEY, '1');
-            return;
-        }
+        // Find local days not yet in cloud
+        const missing = localDays.filter(k => !cloudDays.has(k));
+        if (!missing.length) { localStorage.setItem(FULL_PUSH_KEY, '1'); return; }
 
-        // Cloud is empty — skip if queue already has pending prayer items (prior bootstrap enqueued but didn't flush)
-        const q = getQueue();
-        if (q.some(i => i.table === 'prayer_days')) {
-            return; // let the normal flush handle it
-        }
-
-        // Cloud empty + queue empty = need to bootstrap (even if flag was set from a failed prior attempt)
-        if (localStorage.getItem(BOOTSTRAP_KEY)) {
-            // Previously bootstrapped but cloud is still empty — prior flush must have failed entirely
-            localStorage.removeItem(BOOTSTRAP_KEY);
-        }
-
+        // Push missing days directly (not via queue)
         const now = syncedNow();
         const fieldTs = getFieldTs();
+        let currentToken = token;
+        let pushed = 0;
 
-        // Enqueue all prayer days
-        const prayers = Storage.get(Storage.KEYS.PRAYERS, {});
-        for (const [dayKey, dd] of Object.entries(prayers)) {
-            if (!dd || typeof dd !== 'object') continue;
+        for (const dayKey of missing) {
+            const dd = prayers[dayKey];
             if (!fieldTs[dayKey]) fieldTs[dayKey] = {};
-            const data = { day_key: dayKey };
-            let hasFields = false;
-            for (const [k, v] of Object.entries(dd)) {
-                if (k.endsWith('_auto_missed') || k === '_localDirty') continue;
-                data[k] = v;
-                if (!fieldTs[dayKey][k]) fieldTs[dayKey][k] = now;
-                hasFields = true;
+            const params = { p_user_id: userId, p_day_key: dayKey };
+            for (const cf of PRAYER_FIELDS) {
+                const localField = cloudFieldToLocal(cf);
+                if (!fieldTs[dayKey][localField]) fieldTs[dayKey][localField] = now;
+                const val = dd[localField];
+                params[`p_${cf}`] = cf === 'qyaam_rakaat' ? (parseInt(val, 10) || 0) : !!val;
+                params[`p_${cf}_at`] = fieldTs[dayKey][localField];
             }
-            if (hasFields) enqueue('prayer_days', data);
-        }
-        saveFieldTs(fieldTs);
 
-        // Enqueue all goals metadata + events
-        const goals = Storage.get(Storage.KEYS.GOALS, []);
-        for (const g of goals) {
-            if (!g || !g.type) continue;
-            enqueue('goals', {
-                goal_key: g.type,
-                goal_type: g.type,
-                name: g.name || g.type,
-                target_amount: g.total || 0,
-                archived_at: g.completed ? (new Date(g.archivedAt || 0).getTime()) : 0,
-                updated_at: now,
+            let resp = await fetch(`${REST_URL}/rpc/upsert_prayer_day`, {
+                method: 'POST', headers: headers(currentToken), body: JSON.stringify({ payload: params }),
             });
-            if (Array.isArray(g.notes)) {
-                for (const n of g.notes) {
-                    enqueue('goal_events', {
-                        id: n.id || crypto.randomUUID(),
-                        goal_key: g.type,
-                        amount: n.amount || 0,
-                        note_text: n.text || null,
-                        source_key: n.sourceKey || null,
-                        prayer: n.prayer || null,
-                        ref_event_id: n.refEventId || null,
-                        device_id: DEVICE_ID,
-                        client_ts: n.date ? new Date(n.date).getTime() : now,
-                    });
-                }
+            if (resp.status === 401) {
+                currentToken = await getValidToken();
+                if (!currentToken) break;
+                resp = await fetch(`${REST_URL}/rpc/upsert_prayer_day`, {
+                    method: 'POST', headers: headers(currentToken), body: JSON.stringify({ payload: params }),
+                });
             }
+            if (resp.ok) pushed++;
         }
 
-        // Enqueue all synced settings
-        const settings = Storage.get(Storage.KEYS.SETTINGS, {});
-        const settingsTs = JSON.parse(localStorage.getItem('nur-settings-ts') || '{}');
-        for (const [key, value] of Object.entries(settings)) {
-            if (!SYNCED_SETTINGS.has(key)) continue;
-            if (!settingsTs[key]) settingsTs[key] = now;
-            enqueue('user_settings', { key, value, updated_at: settingsTs[key] });
-        }
-        localStorage.setItem('nur-settings-ts', JSON.stringify(settingsTs));
-
-        localStorage.setItem(BOOTSTRAP_KEY, '1');
+        saveFieldTs(fieldTs);
+        // Only mark done if ALL missing days were pushed
+        if (pushed >= missing.length) localStorage.setItem(FULL_PUSH_KEY, '1');
     }
 
     /* ─── Sync orchestration ───────────────────────────────────── */
@@ -642,8 +608,8 @@
             if (!session?.user?.id) return;
             const userId = session.user.id;
 
-            // Bootstrap: push all local data if cloud is empty (first v2 sync)
-            await bootstrapIfCloudEmpty(token, userId);
+            // Push all local data that's missing from cloud
+            await fullPushIfNeeded(token, userId);
 
             // Pull (get latest from cloud)
             let changed = false;
@@ -722,7 +688,7 @@
         localStorage.removeItem(LAST_SYNC_KEY);
         localStorage.removeItem(QUEUE_KEY);
         localStorage.removeItem(FIELD_TS_KEY);
-        localStorage.removeItem(BOOTSTRAP_KEY);
+        localStorage.removeItem(FULL_PUSH_KEY);
     }
 
     window.Sync = Object.freeze({
