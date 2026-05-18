@@ -527,9 +527,7 @@
     const BOOTSTRAP_KEY = 'nur-sync-v2-bootstrapped';
 
     async function bootstrapIfCloudEmpty(token, userId) {
-        if (localStorage.getItem(BOOTSTRAP_KEY)) return;
-
-        // Check if cloud already has data — if so, skip bootstrap and just pull
+        // Check if cloud has data
         const checkResp = await fetch(
             `${REST_URL}/prayer_days?user_id=eq.${userId}&select=day_key&limit=1`,
             { headers: headers(token) }
@@ -537,10 +535,23 @@
         if (!checkResp.ok) return; // network issue — retry next cycle
         updateClockOffset(checkResp);
         const rows = await checkResp.json();
+
         if (rows.length > 0) {
-            // Cloud has data from another device — don't push, just pull
+            // Cloud has data — don't push, just pull
             localStorage.setItem(BOOTSTRAP_KEY, '1');
             return;
+        }
+
+        // Cloud is empty — skip if queue already has pending prayer items (prior bootstrap enqueued but didn't flush)
+        const q = getQueue();
+        if (q.some(i => i.table === 'prayer_days')) {
+            return; // let the normal flush handle it
+        }
+
+        // Cloud empty + queue empty = need to bootstrap (even if flag was set from a failed prior attempt)
+        if (localStorage.getItem(BOOTSTRAP_KEY)) {
+            // Previously bootstrapped but cloud is still empty — prior flush must have failed entirely
+            localStorage.removeItem(BOOTSTRAP_KEY);
         }
 
         const now = syncedNow();
