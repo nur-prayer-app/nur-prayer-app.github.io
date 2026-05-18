@@ -347,7 +347,7 @@
             }
 
             const resp = await fetch(`${REST_URL}/rpc/upsert_prayer_day`, {
-                method: 'POST', headers: headers(token), body: JSON.stringify(params),
+                method: 'POST', headers: headers(token), body: JSON.stringify({ payload: params }),
             });
             if (!resp.ok) return; // stop on failure, retry next cycle
         }
