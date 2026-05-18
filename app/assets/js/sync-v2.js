@@ -330,29 +330,34 @@
         if (!prayerItems.length) return;
 
         const fieldTs = getFieldTs();
+        const failed = [];
         for (const item of prayerItems) {
             const { day_key, ...fields } = item.data;
+            if (!day_key) continue; // skip malformed
             const params = { p_user_id: userId, p_day_key: day_key };
-            // Build RPC params — set 0 for unchanged fields
             for (const cf of PRAYER_FIELDS) {
                 const localField = cloudFieldToLocal(cf);
                 const ts = fieldTs[day_key]?.[localField] || 0;
                 if (localField in fields) {
-                    params[`p_${cf}`] = fields[localField];
+                    params[`p_${cf}`] = cf === 'qyaam_rakaat' ? (parseInt(fields[localField], 10) || 0) : !!fields[localField];
                     params[`p_${cf}_at`] = ts;
                 } else {
                     params[`p_${cf}`] = cf === 'qyaam_rakaat' ? 0 : false;
-                    params[`p_${cf}_at`] = 0; // won't overwrite (0 < any real timestamp)
+                    params[`p_${cf}_at`] = 0;
                 }
             }
 
             const resp = await fetch(`${REST_URL}/rpc/upsert_prayer_day`, {
                 method: 'POST', headers: headers(token), body: JSON.stringify({ payload: params }),
             });
-            if (!resp.ok) return; // stop on failure, retry next cycle
+            if (!resp.ok) {
+                if (resp.status === 401) return; // auth expired — stop entirely, retry next cycle
+                failed.push(item); // skip this item, continue with rest
+            }
         }
-        // Remove flushed prayer items from queue
-        const remaining = q.filter(i => i.table !== 'prayer_days');
+        // Remove successfully flushed items, keep failed ones for retry
+        const flushed = prayerItems.filter(i => !failed.includes(i));
+        const remaining = q.filter(i => i.table !== 'prayer_days').concat(failed);
         saveQueue(remaining);
     }
 
