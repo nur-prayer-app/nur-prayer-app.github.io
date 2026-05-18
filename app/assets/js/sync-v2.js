@@ -560,13 +560,15 @@
         const missing = localDays.filter(k => !cloudDays.has(k));
         if (!missing.length) { localStorage.setItem(FULL_PUSH_KEY, '1'); return; }
 
-        // Push missing days directly (not via queue)
+        // Push missing days directly — throttled to avoid rate limits
         const now = syncedNow();
         const fieldTs = getFieldTs();
         let currentToken = token;
         let pushed = 0;
+        const BATCH_SIZE = 20;
 
-        for (const dayKey of missing) {
+        for (let i = 0; i < missing.length; i++) {
+            const dayKey = missing[i];
             const dd = prayers[dayKey];
             if (!fieldTs[dayKey]) fieldTs[dayKey] = {};
             const params = { p_user_id: userId, p_day_key: dayKey };
@@ -588,7 +590,19 @@
                     method: 'POST', headers: headers(currentToken), body: JSON.stringify({ payload: params }),
                 });
             }
+            if (resp.status === 429) {
+                // Rate limited — pause 2s and retry
+                await new Promise(r => setTimeout(r, 2000));
+                resp = await fetch(`${REST_URL}/rpc/upsert_prayer_day`, {
+                    method: 'POST', headers: headers(currentToken), body: JSON.stringify({ payload: params }),
+                });
+            }
             if (resp.ok) pushed++;
+
+            // Pause every BATCH_SIZE to avoid rate limits
+            if ((i + 1) % BATCH_SIZE === 0 && i + 1 < missing.length) {
+                await new Promise(r => setTimeout(r, 500));
+            }
         }
 
         saveFieldTs(fieldTs);
