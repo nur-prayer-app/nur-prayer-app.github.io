@@ -331,6 +331,7 @@
 
         const fieldTs = getFieldTs();
         const failed = [];
+        let currentToken = token;
         for (const item of prayerItems) {
             const { day_key, ...fields } = item.data;
             if (!day_key) continue; // skip malformed
@@ -347,12 +348,20 @@
                 }
             }
 
-            const resp = await fetch(`${REST_URL}/rpc/upsert_prayer_day`, {
-                method: 'POST', headers: headers(token), body: JSON.stringify({ payload: params }),
+            let resp = await fetch(`${REST_URL}/rpc/upsert_prayer_day`, {
+                method: 'POST', headers: headers(currentToken), body: JSON.stringify({ payload: params }),
             });
+            if (resp.status === 401) {
+                // Token expired mid-flush — refresh and retry this item once
+                const refreshed = await getValidToken();
+                if (!refreshed) return; // can't recover
+                currentToken = refreshed;
+                resp = await fetch(`${REST_URL}/rpc/upsert_prayer_day`, {
+                    method: 'POST', headers: headers(currentToken), body: JSON.stringify({ payload: params }),
+                });
+            }
             if (!resp.ok) {
-                if (resp.status === 401) return; // auth expired — stop entirely, retry next cycle
-                failed.push(item); // skip this item, continue with rest
+                failed.push(item);
             }
         }
         // Remove successfully flushed items, keep failed ones for retry
