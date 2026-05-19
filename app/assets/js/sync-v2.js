@@ -68,14 +68,25 @@
 
     /* ─── Session ──────────────────────────────────────────────── */
 
+    let _cachedTokenExp = 0;
+
     function getSession() {
         if (cachedSession) return cachedSession;
-        try { cachedSession = JSON.parse(localStorage.getItem(SESSION_KEY)); return cachedSession; }
-        catch { return null; }
+        try {
+            cachedSession = JSON.parse(localStorage.getItem(SESSION_KEY));
+            if (cachedSession?.access_token && !_cachedTokenExp) {
+                try { _cachedTokenExp = decodeJwtPayload(cachedSession.access_token).exp; } catch {}
+            }
+            return cachedSession;
+        } catch { return null; }
     }
 
     function saveSession(session) {
         cachedSession = session;
+        _cachedTokenExp = 0;
+        if (session?.access_token) {
+            try { _cachedTokenExp = decodeJwtPayload(session.access_token).exp; } catch {}
+        }
         if (session) localStorage.setItem(SESSION_KEY, JSON.stringify(session));
         else localStorage.removeItem(SESSION_KEY);
     }
@@ -141,7 +152,7 @@
                 method: 'POST', headers: headers(),
                 body: JSON.stringify({ refresh_token: session.refresh_token }),
             });
-            if (!resp.ok) { saveSession(null); window.dispatchEvent(new CustomEvent('sync-session-lost')); return null; }
+            if (!resp.ok) { saveSession(null); stopAutoSync(); window.dispatchEvent(new CustomEvent('sync-session-lost')); return null; }
             const data = await resp.json();
             const newSession = { access_token: data.access_token, refresh_token: data.refresh_token, user: data.user };
             saveSession(newSession);
@@ -154,8 +165,8 @@
         let session = getSession();
         if (!session?.access_token) return null;
         try {
-            const payload = decodeJwtPayload(session.access_token);
-            if (Date.now() > payload.exp * 1000 - 60000) session = await refreshToken();
+            const exp = _cachedTokenExp || decodeJwtPayload(session.access_token).exp;
+            if (Date.now() > exp * 1000 - 60000) session = await refreshToken();
         } catch { session = await refreshToken(); }
         return session?.access_token || null;
     }
@@ -170,6 +181,8 @@
         };
         saveSession(session);
         localStorage.removeItem(LAST_SYNC_KEY);
+        _fullPushDone = false;
+        _fullPushGoalsDone = false;
         startAutoSync();
         return session;
     }
@@ -239,7 +252,7 @@
         saveSession(null);
         localStorage.removeItem(LAST_SYNC_KEY);
         localStorage.removeItem(QUEUE_KEY);
-        localStorage.removeItem(FULL_PUSH_KEY);
+        _queueCache = null;
         stopAutoSync();
     }
 
@@ -249,14 +262,24 @@
         saveSession(null);
         localStorage.removeItem(LAST_SYNC_KEY);
         localStorage.removeItem(QUEUE_KEY);
-        localStorage.removeItem(FULL_PUSH_KEY);
+        _queueCache = null;
         stopAutoSync();
     }
 
     /* ─── Offline Queue ────────────────────────────────────────── */
 
-    function getQueue() { try { return JSON.parse(localStorage.getItem(QUEUE_KEY)) || []; } catch { return []; } }
-    function saveQueue(q) { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); }
+    let _queueCache = null;
+
+    function getQueue() {
+        if (_queueCache !== null) return _queueCache;
+        try { _queueCache = JSON.parse(localStorage.getItem(QUEUE_KEY)) || []; }
+        catch { _queueCache = []; }
+        return _queueCache;
+    }
+    function saveQueue(q) {
+        _queueCache = q;
+        localStorage.setItem(QUEUE_KEY, JSON.stringify(q));
+    }
 
     function enqueue(table, data) {
         const q = getQueue();
@@ -266,14 +289,17 @@
 
     /* ─── Field Timestamps (for prayer days LWW) ───────────────── */
 
-    function getFieldTs() { try { return JSON.parse(localStorage.getItem(FIELD_TS_KEY)) || {}; } catch { return {}; } }
-    function saveFieldTs(ts) { localStorage.setItem(FIELD_TS_KEY, JSON.stringify(ts)); }
+    let _fieldTsCache = null;
 
-    function stampField(dayKey, field) {
-        const ts = getFieldTs();
-        if (!ts[dayKey]) ts[dayKey] = {};
-        ts[dayKey][field] = syncedNow();
-        saveFieldTs(ts);
+    function getFieldTs() {
+        if (_fieldTsCache !== null) return _fieldTsCache;
+        try { _fieldTsCache = JSON.parse(localStorage.getItem(FIELD_TS_KEY)) || {}; }
+        catch { _fieldTsCache = {}; }
+        return _fieldTsCache;
+    }
+    function saveFieldTs(ts) {
+        _fieldTsCache = ts;
+        localStorage.setItem(FIELD_TS_KEY, JSON.stringify(ts));
     }
 
     /* ─── Sync: Prayer Days ────────────────────────────────────── */
@@ -284,19 +310,16 @@
         'fajr_qadaa', 'dhuhr_qadaa', 'asr_qadaa', 'maghrib_qadaa', 'isha_qadaa', 'fasting_qadaa'
     ];
 
-    // Map local field names to cloud column names
-    const LOCAL_TO_CLOUD = { shafaWitr: 'shafa_witr', qyaamRakaat: 'qyaam_rakaat' };
-    const CLOUD_TO_LOCAL = { shafa_witr: 'shafaWitr', qyaam_rakaat: 'qyaamRakaat' };
-    // Qadaa field mapping
-    const QADAA_LOCAL_TO_CLOUD = {};
-    const QADAA_CLOUD_TO_LOCAL = {};
+    // Pre-merged field maps (single lookup instead of chained fallbacks)
+    const FIELD_L2C = { shafaWitr: 'shafa_witr', qyaamRakaat: 'qyaam_rakaat' };
+    const FIELD_C2L = { shafa_witr: 'shafaWitr', qyaam_rakaat: 'qyaamRakaat' };
     ['fajr','dhuhr','asr','maghrib','isha'].forEach(p => {
-        QADAA_LOCAL_TO_CLOUD[`${p}_qadaa_recorded`] = `${p}_qadaa`;
-        QADAA_CLOUD_TO_LOCAL[`${p}_qadaa`] = `${p}_qadaa_recorded`;
+        FIELD_L2C[`${p}_qadaa_recorded`] = `${p}_qadaa`;
+        FIELD_C2L[`${p}_qadaa`] = `${p}_qadaa_recorded`;
     });
 
-    function localFieldToCloud(f) { return QADAA_LOCAL_TO_CLOUD[f] || LOCAL_TO_CLOUD[f] || f; }
-    function cloudFieldToLocal(f) { return QADAA_CLOUD_TO_LOCAL[f] || CLOUD_TO_LOCAL[f] || f; }
+    function localFieldToCloud(f) { return FIELD_L2C[f] || f; }
+    function cloudFieldToLocal(f) { return FIELD_C2L[f] || f; }
 
     async function pullPrayerDays(token, userId) {
         const lastSync = getLastSync();
@@ -314,18 +337,19 @@
 
         for (const row of rows) {
             const dayKey = row.day_key;
+            if (typeof dayKey !== 'string') continue;
             if (!prayers[dayKey]) prayers[dayKey] = {};
             if (!fieldTs[dayKey]) fieldTs[dayKey] = {};
             const dd = prayers[dayKey];
-            const localTs = fieldTs[dayKey];
+            const dayTs = fieldTs[dayKey];
 
             for (const cloudField of PRAYER_FIELDS) {
-                const cloudTs = row[cloudField + '_at'] || 0;
+                const cloudTs = typeof row[cloudField + '_at'] === 'number' ? row[cloudField + '_at'] : 0;
                 const localField = cloudFieldToLocal(cloudField);
-                const myTs = localTs[localField] || 0;
+                const myTs = dayTs[localField] || 0;
                 if (cloudTs > myTs) {
                     dd[localField] = row[cloudField];
-                    localTs[localField] = cloudTs;
+                    dayTs[localField] = cloudTs;
                     changed = true;
                 }
             }
@@ -349,14 +373,14 @@
         let currentToken = token;
         for (const item of prayerItems) {
             const { day_key, ...fields } = item.data;
-            if (!day_key) continue; // skip malformed
+            if (!day_key) continue;
+            const dayTs = fieldTs[day_key] || {};
             const params = { p_user_id: userId, p_day_key: day_key };
             for (const cf of PRAYER_FIELDS) {
                 const localField = cloudFieldToLocal(cf);
-                const ts = fieldTs[day_key]?.[localField] || 0;
                 if (localField in fields) {
                     params[`p_${cf}`] = cf === 'qyaam_rakaat' ? (parseInt(fields[localField], 10) || 0) : !!fields[localField];
-                    params[`p_${cf}_at`] = ts;
+                    params[`p_${cf}_at`] = dayTs[localField] || 0;
                 } else {
                     params[`p_${cf}`] = cf === 'qyaam_rakaat' ? 0 : false;
                     params[`p_${cf}_at`] = 0;
@@ -379,8 +403,6 @@
                 failed.push(item);
             }
         }
-        // Remove successfully flushed items, keep failed ones for retry
-        const flushed = prayerItems.filter(i => !failed.includes(i));
         const remaining = q.filter(i => i.table !== 'prayer_days').concat(failed);
         saveQueue(remaining);
     }
@@ -406,22 +428,25 @@
         let changed = false;
 
         for (const cg of cloudGoals) {
+            if (!cg.goal_type || typeof cg.goal_type !== 'string') continue;
+            if (typeof cg.target_amount !== 'number') continue;
             let local = localGoals.find(g => g.type === cg.goal_type && (g.createdAt || '') === (new Date(cg.updated_at || 0).toISOString()));
             if (!local) local = localGoals.find(g => g.type === cg.goal_type);
             if (!local) {
-                // New goal from cloud
-                local = { type: cg.goal_type, name: cg.name, total: cg.target_amount, remaining: cg.target_amount, notes: [], perPrayer: null, createdAt: new Date().toISOString() };
+                local = { type: cg.goal_type, name: cg.name || cg.goal_type, total: cg.target_amount, remaining: cg.target_amount, notes: [], perPrayer: null, createdAt: new Date().toISOString() };
                 localGoals.push(local);
                 changed = true;
             }
             if (cg.target_amount > local.total) { local.total = cg.target_amount; changed = true; }
-            if (cg.name !== local.name) { local.name = cg.name; changed = true; }
+            if (typeof cg.name === 'string' && cg.name !== local.name) { local.name = cg.name; changed = true; }
             if (cg.archived_at > 0 && !local.completed) { local.completed = true; local.archivedAt = new Date(cg.archived_at).toISOString(); changed = true; }
         }
 
         // Merge new events into local notes
         if (cloudEvents.length) {
             for (const ev of cloudEvents) {
+                if (!ev.id || typeof ev.id !== 'string') continue;
+                if (typeof ev.amount !== 'number') continue;
                 const goal = localGoals.find(g => g.type === ev.goal_key || (g.type + '') === ev.goal_key);
                 if (!goal) continue;
                 goal.notes = goal.notes || [];
@@ -430,7 +455,7 @@
                     goal.notes.push({
                         id: ev.id,
                         date: ev.created_at || new Date(ev.client_ts).toISOString(),
-                        text: ev.note_text || '',
+                        text: typeof ev.note_text === 'string' ? ev.note_text : '',
                         amount: ev.amount,
                         sourceKey: ev.source_key || null,
                         prayer: ev.prayer || null,
@@ -460,28 +485,50 @@
         const goalMeta = q.filter(i => i.table === 'goals');
         if (!goalItems.length && !goalMeta.length) return;
 
+        let currentToken = token;
+        const failedMeta = [];
+        const failedEvents = [];
+
         // Push goal metadata
-        if (goalMeta.length) {
-            for (const item of goalMeta) {
-                await fetch(`${REST_URL}/goals`, {
-                    method: 'POST', headers: { ...headers(token), 'Prefer': 'resolution=merge-duplicates' },
+        for (const item of goalMeta) {
+            let resp = await fetch(`${REST_URL}/goals`, {
+                method: 'POST', headers: { ...headers(currentToken), 'Prefer': 'resolution=merge-duplicates' },
+                body: JSON.stringify({ user_id: userId, ...item.data }),
+            });
+            if (resp.status === 401) {
+                currentToken = await getValidToken();
+                if (!currentToken) return;
+                resp = await fetch(`${REST_URL}/goals`, {
+                    method: 'POST', headers: { ...headers(currentToken), 'Prefer': 'resolution=merge-duplicates' },
                     body: JSON.stringify({ user_id: userId, ...item.data }),
                 });
             }
+            if (!resp.ok) failedMeta.push(item);
         }
 
         // Push goal events (ON CONFLICT DO NOTHING — dedup by PK)
         if (goalItems.length) {
             const events = goalItems.map(i => ({ user_id: userId, ...i.data }));
-            await fetch(`${REST_URL}/goal_events`, {
+            let resp = await fetch(`${REST_URL}/goal_events`, {
                 method: 'POST',
-                headers: { ...headers(token), 'Prefer': 'resolution=ignore-duplicates' },
+                headers: { ...headers(currentToken), 'Prefer': 'resolution=ignore-duplicates' },
                 body: JSON.stringify(events),
             });
+            if (resp.status === 401) {
+                currentToken = await getValidToken();
+                if (!currentToken) return;
+                resp = await fetch(`${REST_URL}/goal_events`, {
+                    method: 'POST',
+                    headers: { ...headers(currentToken), 'Prefer': 'resolution=ignore-duplicates' },
+                    body: JSON.stringify(events),
+                });
+            }
+            if (!resp.ok) failedEvents.push(...goalItems);
         }
 
-        // Remove flushed items
-        const remaining = q.filter(i => i.table !== 'goal_events' && i.table !== 'goals');
+        // Remove successfully flushed items, keep failed for retry
+        const remaining = q.filter(i => i.table !== 'goal_events' && i.table !== 'goals')
+            .concat(failedMeta).concat(failedEvents);
         saveQueue(remaining);
     }
 
@@ -494,6 +541,19 @@
         'autoMarkMissed', 'hijriOffset', 'trackLatePrayers',
     ]);
 
+    let _settingsTsCache = null;
+
+    function getSettingsTs() {
+        if (_settingsTsCache !== null) return _settingsTsCache;
+        try { _settingsTsCache = JSON.parse(localStorage.getItem('nur-settings-ts') || '{}'); }
+        catch { _settingsTsCache = {}; }
+        return _settingsTsCache;
+    }
+    function saveSettingsTs(ts) {
+        _settingsTsCache = ts;
+        localStorage.setItem('nur-settings-ts', JSON.stringify(ts));
+    }
+
     async function pullSettings(token, userId) {
         const resp = await fetch(`${REST_URL}/user_settings?user_id=eq.${userId}&select=*`, { headers: headers(token) });
         if (!resp.ok) return false;
@@ -501,12 +561,12 @@
         if (!rows.length) return false;
 
         const settings = Storage.get(Storage.KEYS.SETTINGS, {});
-        const localTs = JSON.parse(localStorage.getItem('nur-settings-ts') || '{}');
+        const localTs = getSettingsTs();
         let changed = false;
 
         for (const row of rows) {
             if (!SYNCED_SETTINGS.has(row.key)) continue;
-            const cloudTs = row.updated_at || 0;
+            const cloudTs = typeof row.updated_at === 'number' ? row.updated_at : 0;
             const myTs = localTs[row.key] || 0;
             if (cloudTs > myTs) {
                 settings[row.key] = row.value;
@@ -518,7 +578,7 @@
         if (changed) {
             Storage.suppressDirty(true);
             try { Storage.set(Storage.KEYS.SETTINGS, settings); } finally { Storage.suppressDirty(false); }
-            localStorage.setItem('nur-settings-ts', JSON.stringify(localTs));
+            saveSettingsTs(localTs);
         }
         return changed;
     }
@@ -528,16 +588,27 @@
         const settingsItems = q.filter(i => i.table === 'user_settings');
         if (!settingsItems.length) return;
 
+        let currentToken = token;
+        const failed = [];
         for (const item of settingsItems) {
-            const resp = await fetch(`${REST_URL}/user_settings`, {
+            let resp = await fetch(`${REST_URL}/user_settings`, {
                 method: 'POST',
-                headers: { ...headers(token), 'Prefer': 'resolution=merge-duplicates' },
+                headers: { ...headers(currentToken), 'Prefer': 'resolution=merge-duplicates' },
                 body: JSON.stringify({ user_id: userId, ...item.data }),
             });
-            if (!resp.ok) return; // retry next cycle
+            if (resp.status === 401) {
+                currentToken = await getValidToken();
+                if (!currentToken) return;
+                resp = await fetch(`${REST_URL}/user_settings`, {
+                    method: 'POST',
+                    headers: { ...headers(currentToken), 'Prefer': 'resolution=merge-duplicates' },
+                    body: JSON.stringify({ user_id: userId, ...item.data }),
+                });
+            }
+            if (!resp.ok) failed.push(item);
         }
 
-        const remaining = q.filter(i => i.table !== 'user_settings');
+        const remaining = q.filter(i => i.table !== 'user_settings').concat(failed);
         saveQueue(remaining);
     }
 
@@ -547,20 +618,24 @@
         const dateHeader = resp.headers.get('date');
         if (dateHeader) {
             const serverTime = new Date(dateHeader).getTime();
-            if (!isNaN(serverTime)) clockOffset = serverTime - Date.now();
+            if (!isNaN(serverTime)) {
+                const drift = serverTime - Date.now();
+                if (Math.abs(drift) < 5 * 60 * 1000) clockOffset = drift;
+            }
         }
     }
 
     /* ─── Full Push: directly push all local prayer data to cloud ── */
 
-    const FULL_PUSH_KEY = 'nur-sync-v2-full-push-done';
+    let _fullPushDone = false;
 
     async function fullPushIfNeeded(token, userId) {
+        if (_fullPushDone) return;
 
         const prayers = Storage.get(Storage.KEYS.PRAYERS, {});
         const localDays = Object.keys(prayers).filter(k => prayers[k] && typeof prayers[k] === 'object');
         syncLog(`fullPush: local=${localDays.length} days`);
-        if (!localDays.length) return;
+        if (!localDays.length) { _fullPushDone = true; return; }
 
         // Check how many days cloud has
         const countResp = await fetch(
@@ -574,7 +649,7 @@
         // Find local days not yet in cloud
         const missing = localDays.filter(k => !cloudDays.has(k));
         syncLog(`fullPush: cloud=${cloudDays.size}, missing=${missing.length}`);
-        if (!missing.length) return;
+        if (!missing.length) { _fullPushDone = true; return; }
 
         // Push missing days directly — throttled to avoid rate limits
         const now = syncedNow();
@@ -624,13 +699,18 @@
 
         saveFieldTs(fieldTs);
         syncLog(`fullPush: pushed=${pushed}/${missing.length}`);
+        _fullPushDone = true;
     }
 
     /* ─── Full Push: Goals + Events ────────────────────────────── */
 
+    let _fullPushGoalsDone = false;
+
     async function fullPushGoalsIfNeeded(token, userId) {
+        if (_fullPushGoalsDone) return;
+
         const goals = Storage.get(Storage.KEYS.GOALS, []);
-        if (!goals.length) return;
+        if (!goals.length) { _fullPushGoalsDone = true; return; }
 
         // Check cloud goal count
         const cloudResp = await fetch(`${REST_URL}/goals?user_id=eq.${userId}&select=goal_key`, { headers: headers(token) });
@@ -676,23 +756,30 @@
         }
 
         syncLog(`fullPushGoals: cloudEvents=${cloudEventIds.size}, missing=${missingEvents.length}`);
-        if (!missingEvents.length) return;
+        if (!missingEvents.length) { _fullPushGoalsDone = true; return; }
 
         // Push in batches of 20 (PostgREST accepts arrays)
+        let currentToken = token;
         for (let i = 0; i < missingEvents.length; i += 20) {
             const batch = missingEvents.slice(i, i + 20);
-            const resp = await fetch(`${REST_URL}/goal_events`, {
+            let resp = await fetch(`${REST_URL}/goal_events`, {
                 method: 'POST',
-                headers: { ...headers(token), 'Prefer': 'resolution=ignore-duplicates' },
+                headers: { ...headers(currentToken), 'Prefer': 'resolution=ignore-duplicates' },
                 body: JSON.stringify(batch),
             });
-            if (!resp.ok && resp.status === 401) {
-                token = await getValidToken();
-                if (!token) { syncLog('fullPushGoals: token refresh failed'); return; }
+            if (resp.status === 401) {
+                currentToken = await getValidToken();
+                if (!currentToken) { syncLog('fullPushGoals: token refresh failed'); return; }
+                resp = await fetch(`${REST_URL}/goal_events`, {
+                    method: 'POST',
+                    headers: { ...headers(currentToken), 'Prefer': 'resolution=ignore-duplicates' },
+                    body: JSON.stringify(batch),
+                });
             }
             if (i + 20 < missingEvents.length) await new Promise(r => setTimeout(r, 300));
         }
         syncLog(`fullPushGoals: done`);
+        _fullPushGoalsDone = true;
     }
 
     /* ─── Sync orchestration ───────────────────────────────────── */
@@ -789,7 +876,10 @@
         localStorage.removeItem(LAST_SYNC_KEY);
         localStorage.removeItem(QUEUE_KEY);
         localStorage.removeItem(FIELD_TS_KEY);
-        localStorage.removeItem(FULL_PUSH_KEY);
+        _queueCache = null;
+        _fieldTsCache = null;
+        _fullPushDone = false;
+        _fullPushGoalsDone = false;
     }
 
     window.Sync = Object.freeze({
@@ -825,9 +915,9 @@
         enqueueSetting(key, value) {
             if (!SYNCED_SETTINGS.has(key)) return;
             const ts = syncedNow();
-            const localTs = JSON.parse(localStorage.getItem('nur-settings-ts') || '{}');
+            const localTs = getSettingsTs();
             localTs[key] = ts;
-            localStorage.setItem('nur-settings-ts', JSON.stringify(localTs));
+            saveSettingsTs(localTs);
             enqueue('user_settings', { key, value, updated_at: ts });
         },
         // Constants
