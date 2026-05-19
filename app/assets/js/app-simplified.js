@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.289';
+    const APP_VERSION = '1.1.290';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -86,10 +86,12 @@
     const EMPTY_DAY = { fajr:false, dhuhr:false, asr:false, maghrib:false, isha:false, qyaam:false, qyaamRakaat:0, duha:false, shafaWitr:false, fasting:false };
 
     const _modifiedDays = new Set();
+    const _daySnapshots = {}; // dayKey -> shallow copy before mutation
 
     /** Get or create prayer data for a day (use when writing). */
     function dayData(key) {
         if (!S.prayers[key]) S.prayers[key] = { ...EMPTY_DAY };
+        if (!_daySnapshots[key]) _daySnapshots[key] = { ...S.prayers[key] };
         _modifiedDays.add(key);
         return S.prayers[key];
     }
@@ -110,13 +112,22 @@
         if (k === KEYS.PRAYERS && typeof Sync !== 'undefined' && Sync.enqueuePrayerDay) {
             for (const dayKey of _modifiedDays) {
                 const dd = S.prayers[dayKey];
-                if (dd) Sync.enqueuePrayerDay(dayKey, dd);
+                const snap = _daySnapshots[dayKey] || {};
+                const changed = {};
+                if (dd) {
+                    for (const [f, val] of Object.entries(dd)) {
+                        if (val !== snap[f]) changed[f] = val;
+                    }
+                }
+                if (Object.keys(changed).length) Sync.enqueuePrayerDay(dayKey, changed);
+                delete _daySnapshots[dayKey];
             }
             _modifiedDays.clear();
         }
         if (k === KEYS.SETTINGS && typeof Sync !== 'undefined' && Sync.enqueueSetting) {
-            for (const [sk, sv] of Object.entries(v)) {
-                Sync.enqueueSetting(sk, sv);
+            if (_changedSettingKey) {
+                Sync.enqueueSetting(_changedSettingKey, v[_changedSettingKey]);
+                _changedSettingKey = null;
             }
         }
     }
@@ -3206,6 +3217,8 @@
         return S.settings[key] !== undefined ? S.settings[key] : fallback;
     }
 
+    let _changedSettingKey = null;
+
     function setSetting(key, value) {
         if (LOCAL_SETTINGS.has(key)) {
             _localSettings[key] = value;
@@ -3213,6 +3226,7 @@
             return;
         }
         S.settings[key] = value;
+        _changedSettingKey = key;
         save(KEYS.SETTINGS, S.settings);
     }
 
@@ -3732,15 +3746,12 @@
                 inp.addEventListener('change', () => persistAdjust(inp.dataset.adjust, parseInt(inp.value) || 0));
             });
 
-            // Persist a plain numeric setting (e.g. notifPreMinutes). Saves + re-schedules.
             const persistNumSetting = (key, val) => {
-                S.settings[key] = val;
-                save(KEYS.SETTINGS, S.settings);
+                setSetting(key, val);
                 if (S.settings.notifications) { schedulePrayerNotifications(); resyncPushSubscription(); }
             };
             const persistBoolSetting = (key, val) => {
-                S.settings[key] = val;
-                save(KEYS.SETTINGS, S.settings);
+                setSetting(key, val);
                 if (S.settings.notifications) { schedulePrayerNotifications(); resyncPushSubscription(); }
             };
             // Raw number inputs (used by notif sub-settings)
@@ -6243,10 +6254,10 @@
         if (todayStartOfDay < installedAt && todayStartOfDay.toDateString() !== installedAt.toDateString()) return;
 
         const key = hk(todayH.year, todayH.month, todayH.day);
-        // If sync is active but this day doesn't exist locally yet, skip —
+        // If sync is active but first pull hasn't completed yet, skip —
         // the data may be on cloud and hasn't been pulled. Running the check
         // would create false auto-missed goals that poison sync timestamps.
-        if (!S.prayers[key] && typeof Sync !== 'undefined' && Sync.getSession && Sync.getSession()) return;
+        if (typeof Sync !== 'undefined' && Sync.getSession && Sync.getSession() && !Sync.firstPullDone) return;
         const d = peekDay(key);
         let added = 0;
         let missedNames = [];
@@ -6306,7 +6317,10 @@
             // Restore _modifiedDays to pre-check state so only real user changes
             // trigger sync pushes.
             for (const mk of [..._modifiedDays]) {
-                if (!_savedModifiedDays.has(mk)) _modifiedDays.delete(mk);
+                if (!_savedModifiedDays.has(mk)) {
+                    _modifiedDays.delete(mk);
+                    delete _daySnapshots[mk];
+                }
             }
             Storage.set(KEYS.PRAYERS, S.prayers);
             renderGoals();
