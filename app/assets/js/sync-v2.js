@@ -539,8 +539,6 @@
 
     const SYNCED_SETTINGS = new Set([
         'location', 'calcMethod', 'asrSchool', 'iqamaOffsets', 'timeAdjustments',
-        'notifications', 'notifPreEnabled', 'notifPreMinutes', 'notifAdhanEnabled',
-        'notifPreIqamaEnabled', 'notifPreIqamaMinutes', 'prayerNotifs',
         'autoMarkMissed', 'hijriOffset', 'trackLatePrayers',
     ]);
 
