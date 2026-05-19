@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.286';
+    const APP_VERSION = '1.1.287';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -5891,6 +5891,7 @@
             S.settings.notifications = false;
             save(KEYS.SETTINGS, S.settings);
             clearScheduledNotifications();
+            unsubscribeFromPush();
             toast('Prayer notifications off');
             updateNotifToggleBtn();
             $('.notif-sub-list')?.classList.add('disabled');
@@ -6017,6 +6018,25 @@
             }
             _hasPushSubscription = true;
             await savePushSubscription(sub);
+        } catch {}
+    }
+
+    async function unsubscribeFromPush() {
+        if (isElectron || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+        try {
+            const reg = await navigator.serviceWorker.ready;
+            const sub = await reg.pushManager.getSubscription();
+            if (sub) await sub.unsubscribe();
+            _hasPushSubscription = false;
+            const deviceId = getDeviceId();
+            const session = (typeof Sync !== 'undefined' && Sync.getSession) ? Sync.getSession() : null;
+            await fetch(`${PUSH_SUPABASE_URL}/rest/v1/push_subscriptions?device_id=eq.${encodeURIComponent(deviceId)}`, {
+                method: 'DELETE',
+                headers: {
+                    'apikey': PUSH_SUPABASE_ANON_KEY,
+                    'Authorization': `Bearer ${session ? session.access_token : PUSH_SUPABASE_ANON_KEY}`,
+                },
+            });
         } catch {}
     }
 
