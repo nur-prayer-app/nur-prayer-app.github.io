@@ -429,6 +429,7 @@
 
         for (const cg of cloudGoals) {
             if (!cg.goal_type || typeof cg.goal_type !== 'string') continue;
+            if (cg.goal_type === 'qadaa-auto') continue;
             if (typeof cg.target_amount !== 'number') continue;
             let local = localGoals.find(g => g.type === cg.goal_type && (g.createdAt || '') === (new Date(cg.updated_at || 0).toISOString()));
             if (!local) local = localGoals.find(g => g.type === cg.goal_type);
@@ -481,8 +482,8 @@
 
     async function flushGoalQueue(token, userId) {
         const q = getQueue();
-        const goalItems = q.filter(i => i.table === 'goal_events');
-        const goalMeta = q.filter(i => i.table === 'goals');
+        const goalItems = q.filter(i => i.table === 'goal_events' && i.data.goal_key !== 'qadaa-auto');
+        const goalMeta = q.filter(i => i.table === 'goals' && i.data.goal_type !== 'qadaa-auto');
         if (!goalItems.length && !goalMeta.length) return;
 
         let currentToken = token;
@@ -710,7 +711,7 @@
     async function fullPushGoalsIfNeeded(token, userId) {
         if (_fullPushGoalsDone) return;
 
-        const goals = Storage.get(Storage.KEYS.GOALS, []);
+        const goals = Storage.get(Storage.KEYS.GOALS, []).filter(g => g.type !== 'qadaa-auto');
         if (!goals.length) { _fullPushGoalsDone = true; return; }
 
         // Check cloud goal count
