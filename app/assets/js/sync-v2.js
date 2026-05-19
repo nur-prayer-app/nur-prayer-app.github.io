@@ -33,6 +33,7 @@
     let syncFailures = 0;
     let isSyncing = false;
     let clockOffset = 0;
+    let _firstPullDone = false;
 
     const DEVICE_ID = localStorage.getItem(DEVICE_ID_KEY) ||
         (() => { const id = crypto.randomUUID(); localStorage.setItem(DEVICE_ID_KEY, id); return id; })();
@@ -183,6 +184,7 @@
         localStorage.removeItem(LAST_SYNC_KEY);
         _fullPushDone = false;
         _fullPushGoalsDone = false;
+        _firstPullDone = false;
         startAutoSync();
         return session;
     }
@@ -701,7 +703,7 @@
 
         saveFieldTs(fieldTs);
         syncLog(`fullPush: pushed=${pushed}/${missing.length}`);
-        _fullPushDone = true;
+        if (pushed === missing.length) _fullPushDone = true;
     }
 
     /* ─── Full Push: Goals + Events ────────────────────────────── */
@@ -806,6 +808,7 @@
             if (await pullPrayerDays(token, userId)) changed = true;
             if (await pullGoals(token, userId)) changed = true;
             if (await pullSettings(token, userId)) changed = true;
+            _firstPullDone = true;
 
             if (changed) window.dispatchEvent(new Event('sync-data-updated'));
 
@@ -891,13 +894,13 @@
         // Sync
         syncAll, stopAutoSync, clearCloud,
         // Queue helpers (called by app on save)
-        enqueuePrayerDay(dayKey, fields) {
+        enqueuePrayerDay(dayKey, changedFields) {
             const fieldTs = getFieldTs();
             if (!fieldTs[dayKey]) fieldTs[dayKey] = {};
             const now = syncedNow();
             const data = { day_key: dayKey };
-            for (const [k, v] of Object.entries(fields)) {
-                if (k.endsWith('_auto_missed') || k === '_localDirty') continue; // never sync these
+            for (const [k, v] of Object.entries(changedFields)) {
+                if (k.endsWith('_auto_missed') || k === '_localDirty') continue;
                 data[k] = v;
                 fieldTs[dayKey][k] = now;
             }
@@ -922,6 +925,8 @@
             saveSettingsTs(localTs);
             enqueue('user_settings', { key, value, updated_at: ts });
         },
+        // State
+        get firstPullDone() { return _firstPullDone; },
         // Constants
         SUPABASE_URL, SUPABASE_KEY, DEVICE_ID, SYNCED_SETTINGS,
         // Debug
