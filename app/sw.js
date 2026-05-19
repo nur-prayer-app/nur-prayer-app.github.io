@@ -1,5 +1,5 @@
 // Nur — Service Worker (cache-first, version stamped by build-web.js)
-const CACHE_VERSION = 'nur-v285';
+const CACHE_VERSION = 'nur-v286';
 const CACHE_NAME = CACHE_VERSION;
 
 const PRECACHE_URLS = [
@@ -8,7 +8,7 @@ const PRECACHE_URLS = [
   'assets/css/styles.css',
   'assets/js/app-simplified.js',
   'assets/js/storage.js',
-  'assets/js/sync.js',
+  'assets/js/sync-v2.js',
   'assets/js/hijri-calendar.js',
   'assets/icons/asr.svg',
   'assets/icons/book-open.svg',
