@@ -665,10 +665,11 @@
             const params = { p_user_id: userId, p_day_key: dayKey };
             for (const cf of PRAYER_FIELDS) {
                 const localField = cloudFieldToLocal(cf);
-                if (!fieldTs[dayKey][localField]) fieldTs[dayKey][localField] = now;
                 const val = dd[localField];
+                const hasTs = !!fieldTs[dayKey][localField];
+                if (!hasTs && val) fieldTs[dayKey][localField] = now;
                 params[`p_${cf}`] = cf === 'qyaam_rakaat' ? (parseInt(val, 10) || 0) : !!val;
-                params[`p_${cf}_at`] = fieldTs[dayKey][localField];
+                params[`p_${cf}_at`] = fieldTs[dayKey][localField] || 0;
             }
 
             let resp = await fetch(`${REST_URL}/rpc/upsert_prayer_day`, {
