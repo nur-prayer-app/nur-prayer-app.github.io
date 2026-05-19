@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.287';
+    const APP_VERSION = '1.1.288';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -6228,6 +6228,11 @@
         if (!getSetting('autoMarkMissed', true)) return;
         if (!S.settings.location) return;
 
+        // Snapshot _modifiedDays so we can undo any keys added by dayData() calls
+        // during this check — auto-missed flags are local-only and must NOT trigger
+        // sync pushes that would stamp stale field timestamps.
+        const _savedModifiedDays = new Set(_modifiedDays);
+
         const installedAt = new Date(Storage.get(KEYS.INSTALLED_AT) || Date.now());
         const now = new Date();
         const nowMinutes = now.getHours() * 60 + now.getMinutes();
@@ -6238,7 +6243,11 @@
         if (todayStartOfDay < installedAt && todayStartOfDay.toDateString() !== installedAt.toDateString()) return;
 
         const key = hk(todayH.year, todayH.month, todayH.day);
-        const d = dayData(key);
+        // If sync is active but this day doesn't exist locally yet, skip —
+        // the data may be on cloud and hasn't been pulled. Running the check
+        // would create false auto-missed goals that poison sync timestamps.
+        if (!S.prayers[key] && typeof Sync !== 'undefined' && Sync.getSession && Sync.getSession()) return;
+        const d = peekDay(key);
         let added = 0;
         let missedNames = [];
         const prayerMinsToday = getPrayerMinutes();
@@ -6261,7 +6270,9 @@
 
             const cutoff = nextPrayerMin[p.id];
             if (nowMinutes >= cutoff) {
-                d[`${p.id}_auto_missed`] = true;
+                // Now we need to write — use dayData to ensure the entry exists
+                const wd = dayData(key);
+                wd[`${p.id}_auto_missed`] = true;
                 addAutoMissedGoal(p.id, now.toISOString());
                 added++;
                 missedNames.push(p.name);
@@ -6275,9 +6286,10 @@
             yest.setDate(yest.getDate() - 1);
             const yestH = HijriCalendar.gregorianToHijri(yest);
             const yestKey = hk(yestH.year, yestH.month, yestH.day);
-            const yd = dayData(yestKey);
+            const yd = peekDay(yestKey);
             if (!yd.isha && !yd.isha_auto_missed) {
-                yd.isha_auto_missed = true;
+                const ywd = dayData(yestKey);
+                ywd.isha_auto_missed = true;
                 addAutoMissedGoal('isha', yest.toISOString());
                 added++;
                 missedNames.push('Isha');
@@ -6285,7 +6297,18 @@
         }
 
         if (added > 0) {
-            save(KEYS.PRAYERS, S.prayers);
+            // Save _auto_missed flags directly to storage, bypassing the sync
+            // push queue. Auto-missed flags are local-only (never synced — see
+            // enqueuePrayerDay filter), but using the normal save() path would
+            // stamp ALL fields (including prayers still set to false) with the
+            // current timestamp, poisoning sync field-level LWW and preventing
+            // the cloud's true values from being pulled down on next sync.
+            // Restore _modifiedDays to pre-check state so only real user changes
+            // trigger sync pushes.
+            for (const mk of [..._modifiedDays]) {
+                if (!_savedModifiedDays.has(mk)) _modifiedDays.delete(mk);
+            }
+            Storage.set(KEYS.PRAYERS, S.prayers);
             renderGoals();
             toast(`Missed: ${missedNames.join(', ')}`);
         }
@@ -6673,11 +6696,12 @@
         _lastDashboardKey = dashboardKey();
         render();
         updateClock();
-        // Defer auto-missed check until after first sync pull (avoid flagging prayers done on other devices)
+        // Defer auto-missed check until after first sync pull (avoid flagging prayers done on other devices).
+        // Timeout must exceed SYNC_INTERVAL_FG (15s) to give the first pull time to complete.
         if (typeof Sync !== 'undefined' && Sync.getSession && Sync.getSession()) {
             const _onFirstSync = () => { window.removeEventListener('sync-data-updated', _onFirstSync); runAutoMissedCheck(); };
             window.addEventListener('sync-data-updated', _onFirstSync);
-            setTimeout(() => { window.removeEventListener('sync-data-updated', _onFirstSync); runAutoMissedCheck(); }, 10000);
+            setTimeout(() => { window.removeEventListener('sync-data-updated', _onFirstSync); runAutoMissedCheck(); }, 30000);
         } else {
             runAutoMissedCheck();
         }
@@ -6693,7 +6717,8 @@
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
                 updateClock();
-                runAutoMissedCheck();
+                // Delay auto-missed check to let sync pull first
+                setTimeout(runAutoMissedCheck, 5000);
             }
         });
 
