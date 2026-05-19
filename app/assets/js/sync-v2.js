@@ -169,6 +169,7 @@
             user: data.user || { id: decodeJwtPayload(data.access_token).sub, email: decodeJwtPayload(data.access_token).email },
         };
         saveSession(session);
+        localStorage.removeItem(LAST_SYNC_KEY);
         startAutoSync();
         return session;
     }
@@ -625,6 +626,75 @@
         syncLog(`fullPush: pushed=${pushed}/${missing.length}`);
     }
 
+    /* ─── Full Push: Goals + Events ────────────────────────────── */
+
+    async function fullPushGoalsIfNeeded(token, userId) {
+        const goals = Storage.get(Storage.KEYS.GOALS, []);
+        if (!goals.length) return;
+
+        // Check cloud goal count
+        const cloudResp = await fetch(`${REST_URL}/goals?user_id=eq.${userId}&select=goal_key`, { headers: headers(token) });
+        if (!cloudResp.ok) { syncLog('fullPushGoals: cloud check failed ' + cloudResp.status); return; }
+        const cloudGoals = new Set((await cloudResp.json()).map(r => r.goal_key));
+
+        // Push missing goal metadata
+        for (const g of goals) {
+            if (!g || !g.type) continue;
+            if (cloudGoals.has(g.type)) continue;
+            const resp = await fetch(`${REST_URL}/goals`, {
+                method: 'POST',
+                headers: { ...headers(token), 'Prefer': 'resolution=merge-duplicates' },
+                body: JSON.stringify({
+                    user_id: userId, goal_key: g.type, goal_type: g.type,
+                    name: g.name || g.type, target_amount: g.total || 0,
+                    archived_at: g.completed ? new Date(g.archivedAt || 0).getTime() : 0,
+                    updated_at: syncedNow(),
+                }),
+            });
+            if (resp.ok) syncLog(`fullPushGoals: pushed goal ${g.type}`);
+        }
+
+        // Check cloud event count
+        const evResp = await fetch(`${REST_URL}/goal_events?user_id=eq.${userId}&select=id`, { headers: headers(token) });
+        if (!evResp.ok) { syncLog('fullPushGoals: events check failed ' + evResp.status); return; }
+        const cloudEventIds = new Set((await evResp.json()).map(r => r.id));
+
+        // Collect all local events not in cloud
+        const missingEvents = [];
+        for (const g of goals) {
+            if (!Array.isArray(g.notes)) continue;
+            for (const n of g.notes) {
+                if (!n.id || cloudEventIds.has(n.id)) continue;
+                missingEvents.push({
+                    id: n.id, user_id: userId, goal_key: g.type,
+                    amount: n.amount || 0, note_text: n.text || null,
+                    source_key: n.sourceKey || null, prayer: n.prayer || null,
+                    ref_event_id: n.refEventId || null, device_id: DEVICE_ID,
+                    client_ts: n.date ? new Date(n.date).getTime() : syncedNow(),
+                });
+            }
+        }
+
+        syncLog(`fullPushGoals: cloudEvents=${cloudEventIds.size}, missing=${missingEvents.length}`);
+        if (!missingEvents.length) return;
+
+        // Push in batches of 20 (PostgREST accepts arrays)
+        for (let i = 0; i < missingEvents.length; i += 20) {
+            const batch = missingEvents.slice(i, i + 20);
+            const resp = await fetch(`${REST_URL}/goal_events`, {
+                method: 'POST',
+                headers: { ...headers(token), 'Prefer': 'resolution=ignore-duplicates' },
+                body: JSON.stringify(batch),
+            });
+            if (!resp.ok && resp.status === 401) {
+                token = await getValidToken();
+                if (!token) { syncLog('fullPushGoals: token refresh failed'); return; }
+            }
+            if (i + 20 < missingEvents.length) await new Promise(r => setTimeout(r, 300));
+        }
+        syncLog(`fullPushGoals: done`);
+    }
+
     /* ─── Sync orchestration ───────────────────────────────────── */
 
     async function syncAll() {
@@ -640,6 +710,7 @@
 
             // Push all local data that's missing from cloud
             await fullPushIfNeeded(token, userId);
+            await fullPushGoalsIfNeeded(token, userId);
 
             // Pull (get latest from cloud)
             let changed = false;
