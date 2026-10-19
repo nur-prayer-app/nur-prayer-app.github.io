@@ -24,8 +24,8 @@
     const LAST_SYNC_KEY = 'nur-last-sync-v2';
     const FIELD_TS_KEY = 'nur-field-ts';
     const DEVICE_ID_KEY = 'nur-device-id';
-    const SYNC_INTERVAL_FG = 15 * 1000;
-    const SYNC_INTERVAL_BG = 60 * 1000;
+    const SYNC_INTERVAL = 5 * 60 * 1000;
+    const SYNC_DEBOUNCE = 2 * 1000;
 
     let syncTimer = null;
     let syncEnabled = false;
@@ -830,38 +830,59 @@
     const MAX_BACKOFF = 30 * 60 * 1000;
 
     function scheduleNextSync() {
-        const isBackground = document.hidden;
-        const baseInterval = isBackground ? SYNC_INTERVAL_BG : SYNC_INTERVAL_FG;
-        const delay = Math.min(baseInterval * Math.pow(2, syncFailures), MAX_BACKOFF);
-        syncTimer = setTimeout(async () => {
-            await syncAll();
-            if (syncEnabled) scheduleNextSync();
-        }, delay);
+        const delay = Math.min(SYNC_INTERVAL * Math.pow(2, syncFailures), MAX_BACKOFF);
+        syncTimer = setTimeout(() => { kickSync(); }, delay);
+    }
+
+    let syncSoonTimer = null;
+
+    async function kickSync() {
+        if (!syncEnabled) return;
+        if (isSyncing) {
+            requestSync();
+            return;
+        }
+        if (syncTimer !== null) { clearTimeout(syncTimer); syncTimer = null; }
+        await syncAll();
+        if (syncEnabled) scheduleNextSync();
+    }
+
+    function requestSync() {
+        if (!getSession()) return;
+        if (!syncEnabled) {
+            startAutoSync();
+            return;
+        }
+        clearTimeout(syncSoonTimer);
+        syncSoonTimer = setTimeout(() => {
+            syncSoonTimer = null;
+            kickSync();
+        }, SYNC_DEBOUNCE);
     }
 
     function startAutoSync() {
         stopAutoSync();
         syncEnabled = true;
         syncFailures = 0;
-        scheduleNextSync();
+        kickSync();
     }
 
     function stopAutoSync() {
         syncEnabled = false;
         if (syncTimer !== null) { clearTimeout(syncTimer); syncTimer = null; }
+        if (syncSoonTimer !== null) { clearTimeout(syncSoonTimer); syncSoonTimer = null; }
     }
 
     if (getSession()) startAutoSync();
 
     window.addEventListener('online', () => {
-        if (syncEnabled && !isSyncing) { syncFailures = 0; clearTimeout(syncTimer); scheduleNextSync(); }
+        if (!syncEnabled) return;
+        syncFailures = 0;
+        kickSync();
     });
 
     window.addEventListener('visibilitychange', () => {
-        if (!document.hidden && syncEnabled && !isSyncing) {
-            clearTimeout(syncTimer);
-            syncAll().then(() => { if (syncEnabled) scheduleNextSync(); });
-        }
+        if (!document.hidden && syncEnabled) kickSync();
     });
 
     /* ─── Public API ───────────────────────────────────────────── */
@@ -890,7 +911,7 @@
         signUp, signIn, signInWithGoogle, signOut, signOutAll, resetPassword,
         getSession, getLastSync,
         // Sync
-        syncAll, stopAutoSync, clearCloud,
+        syncAll, requestSync, stopAutoSync, clearCloud,
         // Queue helpers (called by app on save)
         enqueuePrayerDay(dayKey, changedFields) {
             const fieldTs = getFieldTs();
