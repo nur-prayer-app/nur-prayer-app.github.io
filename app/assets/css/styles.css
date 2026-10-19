@@ -7793,6 +7793,12 @@ body.electron .pwa-install-bar { display: none; }
     .dashboard-cards > .card {
         max-height: none;
     }
+    /* The goals card is uncapped on a phone. Keep the list itself scrolling
+       so a long run of missed prayers cannot push the calendar down the page. */
+    .goals-list {
+        max-height: 280px;
+        overflow-y: auto;
+    }
 
     /* ---- Prayer Times page: timeline schedule ---- */
     .times-timeline {
