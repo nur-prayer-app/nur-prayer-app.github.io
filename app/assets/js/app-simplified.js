@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.1.291';
+    const APP_VERSION = '1.2.0';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -130,6 +130,7 @@
                 _changedSettingKey = null;
             }
         }
+        if (typeof Sync !== 'undefined' && Sync.requestSync) Sync.requestSync();
     }
 
     /* ── Formatters ──────────────────────────────────────────
@@ -340,7 +341,9 @@
             const dd = S.prayers[hk(mH.year, mH.month, mH.day)];
             if (dd && dd[g.missedPrayer]) {
                 g.remaining = 0;
-                delete dd[`${g.missedPrayer}_auto_missed`];
+                // Keep the flag when late tracking is on so the calendar and
+                // stats still show the prayer as late after it is checked off.
+                if (!S.settings.trackLatePrayers) delete dd[`${g.missedPrayer}_auto_missed`];
                 _reconciled = true;
             }
         });
@@ -2495,8 +2498,7 @@
     }
 
     /* ── Record Qadaa Done modal (user prayed qadaa today) ─────
-     * Different from openAddQadaaModal (which adds MISSED prayers).
-     * This DECREMENTS the Qadaa goal counters.
+     * Decrements the qadaa goal counters for prayers made up on this day.
      */
     function openRecordQadaaModal(sourceKey) {
         const modal = $('#modal-backdrop');
@@ -2911,119 +2913,6 @@
         modal.setAttribute('aria-hidden', 'false');
     }
 
-    /* ── Add Qadaa modal (from a day) ─────────────────────────
-     * Lets the user record missed items for this specific day.
-     * Marks them on the calendar AND adds to goals.
-     */
-    function openAddQadaaModal(key) {
-        clearModalHeaderActions();
-        const dd = dayData(key);
-        const [y, m, d] = key.split('-').map(Number);
-        const md = HijriCalendar.getMonthData(y, m);
-
-        const modal = $('#modal-backdrop');
-        const content = $('#modal-content');
-        if (!modal || !content) return;
-
-        $('#modal-title').textContent = `Record missed: ${md.monthName} ${d}`;
-
-        content.innerHTML = `
-            <div class="addqadaa-modal">
-                <div class="settings-section">
-                    <h4>Missed prayers</h4>
-                    <div class="addq-prayer-grid">
-                        ${PRAYERS.map(p => {
-                            const alreadyAuto = dd[`${p.id}_auto_missed`];
-                            const alreadyDone = dd[p.id];
-                            return `
-                            <button type="button" class="addq-prayer-btn" data-prayer="${p.id}" ${alreadyDone || alreadyAuto ? 'disabled' : ''} title="${alreadyDone ? 'Already prayed' : alreadyAuto ? 'Already auto-missed' : `Mark ${p.name} as missed`}">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">${PRAYER_ICONS[p.id]}</svg>
-                                <span>${p.name}</span>
-                            </button>`;
-                        }).join('')}
-                    </div>
-                    <div class="addq-bulk-row">
-                        <button type="button" class="btn btn-secondary" id="addq-allday">Full day missed (–5)</button>
-                    </div>
-                </div>
-
-                <div class="settings-section">
-                    <h4>Missed fasting</h4>
-                    <button type="button" class="day-toggle-btn" id="addq-fasting">
-                        <div class="mpi-circle">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">${FASTING_GLYPH}</svg>
-                        </div>
-                        <div class="dtb-info">
-                            <div class="dtb-label">Add to Qadaa Fasting</div>
-                        </div>
-                    </button>
-                </div>
-
-                <div class="modal-actions" style="display:flex;gap:var(--sp-3);margin-top:var(--sp-4)">
-                    <button type="button" class="btn btn-secondary" id="addq-done">Done</button>
-                </div>
-            </div>`;
-
-        // Mark prayer as missed for this day + add to qadaa goal
-        $$('.addq-prayer-btn', content).forEach(btn => {
-            btn.addEventListener('click', () => {
-                const pid = btn.dataset.prayer;
-                const d2 = dayData(key);
-                d2[`${pid}_missed`] = true; // mark on calendar
-                save(KEYS.PRAYERS, S.prayers);
-                addQadaaPrayers(pid, 1, 'qadaa', `Missed ${PRAYER_MAP[pid]?.name || pid} on ${md.monthName} ${d}`);
-                renderGoals();
-                renderCalendar();
-                btn.disabled = true;
-                toast(`${PRAYER_MAP[pid]?.name || pid} added to Qadaa`);
-            });
-        });
-
-        // Full day missed (all 5)
-        $('#addq-allday')?.addEventListener('click', () => {
-            const d2 = dayData(key);
-            const mix = {};
-            PRAYERS.forEach(p => {
-                if (!d2[p.id] && !d2[`${p.id}_auto_missed`] && !d2[`${p.id}_missed`]) {
-                    mix[p.id] = 1;
-                    d2[`${p.id}_missed`] = true;
-                }
-            });
-            const total = Object.values(mix).reduce((a, b) => a + b, 0);
-            if (total === 0) { toast('Nothing new to add'); return; }
-            save(KEYS.PRAYERS, S.prayers);
-            addQadaaPrayers(mix, 1, 'qadaa', `Full day missed: ${md.monthName} ${d}`);
-            renderGoals();
-            renderCalendar();
-            openAddQadaaModal(key);
-            toast(`${total} added to Qadaa`);
-        });
-
-        // Fasting missed
-        $('#addq-fasting')?.addEventListener('click', () => {
-            const goals = getGoals();
-            let fg = goals.find(g => g.type === 'qadaa-fast');
-            if (!fg) {
-                fg = { type: 'qadaa-fast', name: 'Qadaa Fasting', total: 1, remaining: 1, notes: [], createdAt: new Date().toISOString() };
-                goals.push(fg);
-            } else {
-                fg.total++; fg.remaining++;
-            }
-            fg.notes = fg.notes || [];
-            fg.notes.push(makeNote({ text: `Missed fasting on ${md.monthName} ${d}`, amount: 1 }));
-            saveGoals();
-            renderGoals();
-            toast('Fasting day added');
-        });
-
-        $('#addq-done')?.addEventListener('click', () => {
-            openDayModal(key);
-        });
-
-        modal.classList.add('active');
-        modal.setAttribute('aria-hidden', 'false');
-    }
-
     function markAllPrayers(key, status) {
         const d = dayData(key);
         PRAYERS.forEach(p => {
@@ -3209,7 +3098,7 @@
     }
 
     /* ── Settings ─────────────────────────────────────────── */
-    const LOCAL_SETTINGS = new Set(['primaryCalendar', 'weekStart', 'showGregorian', 'showIndicators', 'archiveStyle']);
+    const LOCAL_SETTINGS = new Set(['primaryCalendar', 'weekStart', 'showGregorian', 'showIndicators', 'archiveStyle', 'lastAutoMissCheck']);
     let _localSettings = (() => { try { return JSON.parse(localStorage.getItem('nur-settings-local')) || {}; } catch { return {}; } })();
 
     function getSetting(key, fallback) {
@@ -6166,19 +6055,64 @@
     }
 
     /* ── Auto-missed prayers ─────────────────────────────────── */
-    /** Returns today's prayer times in "minutes since midnight" form for auto-missed logic. */
-    function getPrayerMinutes() {
+    function startOfLocalDay(d) {
+        return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    }
+
+    /** Next-adhan cutoff for each prayer on a calendar day. Isha closes at the next day's Fajr. */
+    function prayerCutoffsForDay(day) {
         const loc = S.settings.location;
-        if (!loc) {
-            // Fallback defaults if user hasn't set a location yet
-            return { fajr: 315, dhuhr: 750, asr: 945, maghrib: 1100, isha: 1200 };
-        }
-        const times = computeRawTimesCached(loc.lat, loc.lng, new Date(), getTimesOptions());
-        const out = {};
-        PRAYER_RING_IDS.forEach(id => {
-            out[id] = times[id].getHours() * 60 + times[id].getMinutes();
+        const times = computeRawTimesCached(loc.lat, loc.lng, day, getTimesOptions());
+        const next = new Date(day);
+        next.setDate(next.getDate() + 1);
+        const nextTimes = computeRawTimesCached(loc.lat, loc.lng, next, getTimesOptions());
+        return {
+            fajr: times.dhuhr,
+            dhuhr: times.asr,
+            asr: times.maghrib,
+            maghrib: times.isha,
+            isha: nextTimes.fajr,
+        };
+    }
+
+    function hijriKeyForGregorianDay(day) {
+        const noon = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 12, 0, 0, 0);
+        const h = HijriCalendar.gregorianToHijri(noon);
+        return hk(h.year, h.month, h.day);
+    }
+
+    /**
+     * Keep the day flag and the qadaa-auto goal together.
+     * The calendar badge reads the goal. The day modal reads the flag.
+     */
+    function reconcileMissedPairs() {
+        let changed = false;
+        getGoals().forEach(g => {
+            if (g.type !== 'qadaa-auto' || !g.missedOn || !g.missedPrayer) return;
+            if ((g.remaining || 0) <= 0) return;
+            const h = toHijri(g.missedOn);
+            const key = hk(h.year, h.month, h.day);
+            const existing = S.prayers[key];
+            if (existing && existing[g.missedPrayer]) return;
+            if (existing && existing[`${g.missedPrayer}_auto_missed`]) return;
+            dayData(key)[`${g.missedPrayer}_auto_missed`] = true;
+            changed = true;
         });
-        return out;
+
+        Object.entries(S.prayers || {}).forEach(([key, dd]) => {
+            if (!dd) return;
+            const parts = key.split('-').map(Number);
+            if (parts.length !== 3 || parts.some(n => !Number.isFinite(n))) return;
+            PRAYERS.forEach(p => {
+                if (!dd[`${p.id}_auto_missed`] || dd[p.id]) return;
+                const before = getGoals().length;
+                const greg = HijriCalendar.hijriToGregorian(parts[0], parts[1], parts[2]);
+                greg.setHours(12, 0, 0, 0);
+                addAutoMissedGoal(p.id, greg.toISOString());
+                if (getGoals().length !== before) changed = true;
+            });
+        });
+        return changed;
     }
 
     /**
@@ -6236,95 +6170,66 @@
     }
 
     function runAutoMissedCheck() {
-        if (!getSetting('autoMarkMissed', true)) return;
-        if (!S.settings.location) return;
+        // If sync is active but first pull hasn't completed yet, skip —
+        // the data may be on cloud and hasn't been pulled. Running the check
+        // would create false auto-missed goals that poison sync timestamps.
+        if (typeof Sync !== 'undefined' && Sync.getSession && Sync.getSession() && !Sync.firstPullDone) return;
 
         // Snapshot _modifiedDays so we can undo any keys added by dayData() calls
         // during this check — auto-missed flags are local-only and must NOT trigger
         // sync pushes that would stamp stale field timestamps.
         const _savedModifiedDays = new Set(_modifiedDays);
+        const missedNames = [];
 
-        const installedAt = new Date(Storage.get(KEYS.INSTALLED_AT) || Date.now());
-        const now = new Date();
-        const nowMinutes = now.getHours() * 60 + now.getMinutes();
-
-        // Only check today's day (auto-miss only happens forward, never backfill old days)
-        const todayH = HijriCalendar.gregorianToHijri(now);
-        const todayStartOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        if (todayStartOfDay < installedAt && todayStartOfDay.toDateString() !== installedAt.toDateString()) return;
-
-        const key = hk(todayH.year, todayH.month, todayH.day);
-        // If sync is active but first pull hasn't completed yet, skip —
-        // the data may be on cloud and hasn't been pulled. Running the check
-        // would create false auto-missed goals that poison sync timestamps.
-        if (typeof Sync !== 'undefined' && Sync.getSession && Sync.getSession() && !Sync.firstPullDone) return;
-        const d = peekDay(key);
-        let added = 0;
-        let missedNames = [];
-        const prayerMinsToday = getPrayerMinutes();
-
-        // Miss is confirmed only when the NEXT prayer's adhan has passed —
-        // i.e. user can no longer pray the current one in-window. This is the Islamic
-        // definition of a missed prayer (prayed outside its window = qadaa).
-        // For Isha, "next" is tomorrow's Fajr.
-        const nextPrayerMin = {
-            fajr: prayerMinsToday.dhuhr,
-            dhuhr: prayerMinsToday.asr,
-            asr: prayerMinsToday.maghrib,
-            maghrib: prayerMinsToday.isha,
-        };
-
-        PRAYERS.forEach(p => {
-            if (p.id === 'isha') return; // handled separately below
-            if (d[p.id]) return; // already marked done
-            if (d[`${p.id}_auto_missed`]) return; // already auto-missed
-
-            const cutoff = nextPrayerMin[p.id];
-            if (nowMinutes >= cutoff) {
-                // Now we need to write — use dayData to ensure the entry exists
-                const wd = dayData(key);
-                wd[`${p.id}_auto_missed`] = true;
-                addAutoMissedGoal(p.id, now.toISOString());
-                added++;
-                missedNames.push(p.name);
+        if (getSetting('autoMarkMissed', true) && S.settings.location) {
+            const now = new Date();
+            const installedAt = new Date(Storage.get(KEYS.INSTALLED_AT) || Date.now());
+            let cursor = startOfLocalDay(installedAt);
+            const lastCheck = getSetting('lastAutoMissCheck', null);
+            if (lastCheck) {
+                const lastDay = startOfLocalDay(new Date(lastCheck));
+                if (lastDay > cursor) cursor = lastDay;
             }
-        });
+            const today = startOfLocalDay(now);
 
-        // Check yesterday's Isha: Isha's window extends until Fajr, so only
-        // mark it missed once Fajr has passed (nowMinutes >= fajr).
-        if (nowMinutes >= prayerMinsToday.fajr) {
-            const yest = new Date(now);
-            yest.setDate(yest.getDate() - 1);
-            const yestH = HijriCalendar.gregorianToHijri(yest);
-            const yestKey = hk(yestH.year, yestH.month, yestH.day);
-            const yd = peekDay(yestKey);
-            if (!yd.isha && !yd.isha_auto_missed) {
-                const ywd = dayData(yestKey);
-                ywd.isha_auto_missed = true;
-                addAutoMissedGoal('isha', yest.toISOString());
-                added++;
-                missedNames.push('Isha');
+            // Walk every local day since install (or the last check), inclusive.
+            // A prayer is missed when the next adhan has passed. Isha closes at
+            // the next day's Fajr, so a closed day is filled in the next morning
+            // instead of leaving four prayers blank.
+            while (cursor <= today) {
+                const key = hijriKeyForGregorianDay(cursor);
+                const cutoffs = prayerCutoffsForDay(cursor);
+                const noon = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate(), 12, 0, 0, 0);
+                PRAYERS.forEach(p => {
+                    const existing = S.prayers[key];
+                    if (existing && (existing[p.id] || existing[`${p.id}_auto_missed`])) return;
+                    if (now < cutoffs[p.id]) return;
+                    const wd = dayData(key);
+                    wd[`${p.id}_auto_missed`] = true;
+                    addAutoMissedGoal(p.id, noon.toISOString());
+                    missedNames.push(p.name);
+                });
+                cursor = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() + 1);
             }
+            setSetting('lastAutoMissCheck', now.toISOString());
         }
 
-        if (added > 0) {
-            // Save _auto_missed flags directly to storage, bypassing the sync
-            // push queue. Auto-missed flags are local-only (never synced — see
-            // enqueuePrayerDay filter), but using the normal save() path would
-            // stamp ALL fields (including prayers still set to false) with the
-            // current timestamp, poisoning sync field-level LWW and preventing
-            // the cloud's true values from being pulled down on next sync.
-            // Restore _modifiedDays to pre-check state so only real user changes
-            // trigger sync pushes.
-            for (const mk of [..._modifiedDays]) {
-                if (!_savedModifiedDays.has(mk)) {
-                    _modifiedDays.delete(mk);
-                    delete _daySnapshots[mk];
-                }
+        const paired = reconcileMissedPairs();
+
+        const touched = paired || [..._modifiedDays].some(mk => !_savedModifiedDays.has(mk));
+        for (const mk of [..._modifiedDays]) {
+            if (!_savedModifiedDays.has(mk)) {
+                _modifiedDays.delete(mk);
+                delete _daySnapshots[mk];
             }
-            Storage.set(KEYS.PRAYERS, S.prayers);
-            renderGoals();
-            toast(`Missed: ${missedNames.join(', ')}`);
+        }
+        if (touched) Storage.set(KEYS.PRAYERS, S.prayers);
+        if (missedNames.length || touched) renderGoals();
+        if (missedNames.length) {
+            const summary = missedNames.length > 6
+                ? `${missedNames.length} prayers`
+                : missedNames.join(', ');
+            toast(`Missed: ${summary}`);
         }
     }
 
@@ -6711,7 +6616,7 @@
         render();
         updateClock();
         // Defer auto-missed check until after first sync pull (avoid flagging prayers done on other devices).
-        // Timeout must exceed SYNC_INTERVAL_FG (15s) to give the first pull time to complete.
+        // First sync starts on load. This timeout is only a fallback if that pull never finishes.
         if (typeof Sync !== 'undefined' && Sync.getSession && Sync.getSession()) {
             const _onFirstSync = () => { window.removeEventListener('sync-data-updated', _onFirstSync); runAutoMissedCheck(); };
             window.addEventListener('sync-data-updated', _onFirstSync);
