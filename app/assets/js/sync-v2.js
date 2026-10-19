@@ -450,6 +450,7 @@
             for (const ev of cloudEvents) {
                 if (!ev.id || typeof ev.id !== 'string') continue;
                 if (typeof ev.amount !== 'number') continue;
+                if (ev.goal_key === 'qadaa-auto') continue;
                 const goal = localGoals.find(g => g.type === ev.goal_key || (g.type + '') === ev.goal_key);
                 if (!goal) continue;
                 goal.notes = goal.notes || [];
@@ -467,8 +468,11 @@
                     changed = true;
                 }
             }
-            // Recompute remaining for each goal
+            // Recompute remaining for each synced goal. Auto-missed goals are
+            // local-only: their creation note is the miss itself, so adding
+            // that note on top of total turns 1 into 2.
             for (const g of localGoals) {
+                if (g.type === 'qadaa-auto') continue;
                 const sum = (g.notes || []).reduce((s, n) => s + (n.amount || 0), 0);
                 const computed = Math.max(0, g.total + sum);
                 if (g.remaining !== computed) { g.remaining = computed; changed = true; }
@@ -477,7 +481,12 @@
 
         if (changed) {
             Storage.suppressDirty(true);
-            try { Storage.set(Storage.KEYS.GOALS, localGoals); } finally { Storage.suppressDirty(false); }
+            try {
+                const fresh = Storage.get(Storage.KEYS.GOALS, []);
+                const keptAuto = fresh.filter(g => g.type === 'qadaa-auto');
+                const synced = localGoals.filter(g => g.type !== 'qadaa-auto');
+                Storage.set(Storage.KEYS.GOALS, synced.concat(keptAuto));
+            } finally { Storage.suppressDirty(false); }
         }
         return changed;
     }
