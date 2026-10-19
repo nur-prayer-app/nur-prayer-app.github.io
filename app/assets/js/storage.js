@@ -20,19 +20,15 @@
     const KEYS = Object.freeze({
         THEME: 'prayer-theme',
         PRAYERS: 'prayer-data',
-        QADAA: 'qadaa-data',
         GOALS: 'goals-data',
         GOALS_ARCHIVE: 'goals-archive',
         SETTINGS: 'app-settings',
         INSTALLED_AT: 'installed-at',
-        // Legacy (read-only, migrated at init)
-        LEGACY_FASTING: 'fasting-data',
     });
 
     /* JSON-shaped keys. Anything not listed is stored as a raw string. */
     const JSON_KEYS = new Set([
         KEYS.PRAYERS,
-        KEYS.QADAA,
         KEYS.GOALS,
         KEYS.GOALS_ARCHIVE,
         KEYS.SETTINGS,
