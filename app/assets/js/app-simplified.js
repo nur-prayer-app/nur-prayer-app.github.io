@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.2.0';
+    const APP_VERSION = '1.2.1';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -364,8 +364,8 @@
             html += goals.map((g) => {
                 const realIdx = allGoals.indexOf(g);
                 const type = GOAL_TYPES[g.type] || GOAL_TYPES.custom;
-                const done = g.total - g.remaining;
-                const pct = g.total > 0 ? Math.round((done / g.total) * 100) : 0;
+                const done = Math.max(0, g.total - Math.max(0, g.remaining));
+                const pct = g.total > 0 ? Math.min(100, Math.round((done / g.total) * 100)) : 0;
                 const finished = g.remaining <= 0;
                 const isAutoType = g.type === 'qadaa-auto';
                 const showAutoTag = isAutoType && !g.isManual;
@@ -3098,7 +3098,7 @@
     }
 
     /* ── Settings ─────────────────────────────────────────── */
-    const LOCAL_SETTINGS = new Set(['primaryCalendar', 'weekStart', 'showGregorian', 'showIndicators', 'archiveStyle', 'lastAutoMissCheck']);
+    const LOCAL_SETTINGS = new Set(['primaryCalendar', 'weekStart', 'showGregorian', 'showIndicators', 'archiveStyle', 'lastAutoMissCheck', 'autoMissBackfillRepaired']);
     let _localSettings = (() => { try { return JSON.parse(localStorage.getItem('nur-settings-local')) || {}; } catch { return {}; } })();
 
     function getSetting(key, fallback) {
@@ -6169,11 +6169,59 @@
         saveGoals();
     }
 
+    /**
+     * v1.2.0's first run treated a missing last-check time as "since install"
+     * and created one goal per unchecked prayer. Drop those, and put a doubled
+     * count back to one. Runs once per device.
+     */
+    function repairAutoMissBackfill() {
+        if (getSetting('autoMissBackfillRepaired', false)) return false;
+        const goals = getGoals();
+        const dayMs = 24 * 60 * 60 * 1000;
+        let removed = 0;
+        let fixed = 0;
+        let prayersChanged = false;
+        for (let i = goals.length - 1; i >= 0; i--) {
+            const g = goals[i];
+            if (g.type !== 'qadaa-auto' || g.isManual || !g.missedOn) continue;
+            if ((g.remaining || 0) <= 0) continue;
+            const missed = startOfLocalDay(new Date(g.missedOn));
+            const created = g.createdAt ? startOfLocalDay(new Date(g.createdAt)) : null;
+            const backfilled = created && Math.round((created.getTime() - missed.getTime()) / dayMs) > 1;
+            if (backfilled) {
+                const key = hijriKeyForGregorianDay(missed);
+                const dd = S.prayers[key];
+                if (dd && g.missedPrayer && dd[`${g.missedPrayer}_auto_missed`]) {
+                    delete dd[`${g.missedPrayer}_auto_missed`];
+                    prayersChanged = true;
+                }
+                goals.splice(i, 1);
+                removed++;
+                continue;
+            }
+            if ((g.total || 0) === 1 && g.remaining > 1) {
+                g.remaining = 1;
+                if (g.perPrayer && g.missedPrayer) g.perPrayer[g.missedPrayer] = 1;
+                fixed++;
+            }
+        }
+        setSetting('autoMissBackfillRepaired', true);
+        if (prayersChanged) {
+            Storage.suppressDirty(true);
+            try { Storage.set(KEYS.PRAYERS, S.prayers); } finally { Storage.suppressDirty(false); }
+        }
+        if (removed || fixed) saveGoals();
+        if (removed) toast(removed === 1 ? 'Cleared 1 backfilled missed prayer' : `Cleared ${removed} backfilled missed prayers`);
+        return removed > 0 || fixed > 0 || prayersChanged;
+    }
+
     function runAutoMissedCheck() {
         // If sync is active but first pull hasn't completed yet, skip —
         // the data may be on cloud and hasn't been pulled. Running the check
         // would create false auto-missed goals that poison sync timestamps.
         if (typeof Sync !== 'undefined' && Sync.getSession && Sync.getSession() && !Sync.firstPullDone) return;
+
+        const repaired = repairAutoMissBackfill();
 
         // Snapshot _modifiedDays so we can undo any keys added by dayData() calls
         // during this check — auto-missed flags are local-only and must NOT trigger
@@ -6183,16 +6231,21 @@
 
         if (getSetting('autoMarkMissed', true) && S.settings.location) {
             const now = new Date();
-            const installedAt = new Date(Storage.get(KEYS.INSTALLED_AT) || Date.now());
-            let cursor = startOfLocalDay(installedAt);
-            const lastCheck = getSetting('lastAutoMissCheck', null);
-            if (lastCheck) {
-                const lastDay = startOfLocalDay(new Date(lastCheck));
-                if (lastDay > cursor) cursor = lastDay;
-            }
             const today = startOfLocalDay(now);
+            const installedDay = startOfLocalDay(new Date(Storage.get(KEYS.INSTALLED_AT) || Date.now()));
+            const lastCheck = getSetting('lastAutoMissCheck', null);
+            let cursor;
+            if (lastCheck) {
+                cursor = startOfLocalDay(new Date(lastCheck));
+            } else {
+                // No saved check on this device. Yesterday still catches Isha
+                // that closed at this morning's Fajr. Do not walk back to install.
+                cursor = new Date(today);
+                cursor.setDate(cursor.getDate() - 1);
+            }
+            if (cursor < installedDay) cursor = installedDay;
 
-            // Walk every local day since install (or the last check), inclusive.
+            // Walk every local day since the last check, inclusive.
             // A prayer is missed when the next adhan has passed. Isha closes at
             // the next day's Fajr, so a closed day is filled in the next morning
             // instead of leaving four prayers blank.
@@ -6224,7 +6277,7 @@
             }
         }
         if (touched) Storage.set(KEYS.PRAYERS, S.prayers);
-        if (missedNames.length || touched) renderGoals();
+        if (missedNames.length || touched || repaired) renderGoals();
         if (missedNames.length) {
             const summary = missedNames.length > 6
                 ? `${missedNames.length} prayers`
@@ -6613,6 +6666,7 @@
         initEvents();
         initContext();
         _lastDashboardKey = dashboardKey();
+        repairAutoMissBackfill();
         render();
         updateClock();
         // Defer auto-missed check until after first sync pull (avoid flagging prayers done on other devices).
