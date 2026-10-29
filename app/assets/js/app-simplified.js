@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.2.1';
+    const APP_VERSION = '1.2.2';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -4282,9 +4282,20 @@
         const trueLong = L + C;
         const obliq = 23.43929111 - T * 0.01300417;
         const decl = rad2deg(Math.asin(Math.sin(deg2rad(obliq)) * Math.sin(deg2rad(trueLong))));
-        const eqTime = 4 * (L - 0.0057183 - rad2deg(
-            Math.atan2(Math.cos(deg2rad(obliq)) * Math.sin(deg2rad(trueLong)), Math.cos(deg2rad(trueLong)))
+        const ra = rad2deg(Math.atan2(
+            Math.cos(deg2rad(obliq)) * Math.sin(deg2rad(trueLong)),
+            Math.cos(deg2rad(trueLong))
         ));
+        // atan2 can return a right ascension a full turn away from the sun's
+        // longitude. The gap is an angle, so fold it into ±180° before turning
+        // it into minutes. Left raw, the equation of time is 24 hours too big:
+        // every prayer is stamped on the previous calendar day, yesterday's
+        // Isha looks like it already passed, and the schedule rolls to tomorrow
+        // (and to Jumu'ah) for the whole morning.
+        let eqDeg = L - 0.0057183 - ra;
+        eqDeg = ((eqDeg % 360) + 360) % 360;
+        if (eqDeg > 180) eqDeg -= 360;
+        const eqTime = 4 * eqDeg;
 
         const tz = -new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0).getTimezoneOffset() / 60;
         const noon = 12 - eqTime / 60 - lng / 15 + tz; // Dhuhr in decimal hours (local)
@@ -4901,7 +4912,7 @@
                     const endAt = winEnds[id];
                     prayerBandsAll.push({
                         id, day: day.dateKey,
-                        name: PRAYER_TIME_LABELS[id],
+                        name: getPrayerLabel(id, dt.dhuhr),
                         fromPct: clampPct(pctOfDay(startAt)),
                         toPct: clampPct(pctOfDay(endAt)),
                         dur: formatDuration(endAt - startAt, { compact: true }),
@@ -4948,7 +4959,7 @@
                 PRAYER_RING_IDS.forEach(id => {
                     markerSpecsAll.push({
                         id, day: day.dateKey, at: dt[id], leftPct: pctOfDay(dt[id]),
-                        endAt: winEnds[id], label: PRAYER_TIME_LABELS[id],
+                        endAt: winEnds[id], label: getPrayerLabel(id, dt.dhuhr),
                     });
                 });
                 markerSpecsAll.push({
