@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.2.2';
+    const APP_VERSION = '1.2.3';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -3098,7 +3098,7 @@
     }
 
     /* ── Settings ─────────────────────────────────────────── */
-    const LOCAL_SETTINGS = new Set(['primaryCalendar', 'weekStart', 'showGregorian', 'showIndicators', 'archiveStyle', 'lastAutoMissCheck', 'autoMissBackfillRepaired']);
+    const LOCAL_SETTINGS = new Set(['primaryCalendar', 'weekStart', 'showGregorian', 'showIndicators', 'archiveStyle', 'lastAutoMissCheck', 'autoMissBackfillRepaired', 'ishaGapRepaired']);
     let _localSettings = (() => { try { return JSON.parse(localStorage.getItem('nur-settings-local')) || {}; } catch { return {}; } })();
 
     function getSetting(key, fallback) {
@@ -6226,6 +6226,39 @@
         return removed > 0 || fixed > 0 || prayersChanged;
     }
 
+    /** True when this tracked day has a closed Isha that was never logged. */
+    function unloggedClosedIsha(day, now) {
+        const data = S.prayers[hijriKeyForGregorianDay(day)];
+        if (data && (data.isha || data.isha_auto_missed)) return false;
+        const tracked = data && PRAYERS.some(p => p.id !== 'isha' && (data[p.id] || data[`${p.id}_auto_missed`]));
+        if (!tracked) return false;
+        return now >= prayerCutoffsForDay(day).isha;
+    }
+
+    /**
+     * The midnight watermark skipped Isha on days whose other prayers were
+     * already tracked. Fill those once. Days with no prayer record are left
+     * alone so this does not walk back to the install date.
+     */
+    function repairSkippedIsha(now, installedDay) {
+        if (getSetting('ishaGapRepaired', false)) return [];
+        const names = [];
+        Object.keys(S.prayers || {}).forEach(key => {
+            const parts = key.split('-').map(Number);
+            if (parts.length !== 3 || parts.some(n => !Number.isFinite(n))) return;
+            const greg = HijriCalendar.hijriToGregorian(parts[0], parts[1], parts[2]);
+            const day = startOfLocalDay(greg);
+            if (day < installedDay || !unloggedClosedIsha(day, now)) return;
+            const noon = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 12, 0, 0, 0);
+            const wd = dayData(key);
+            wd.isha_auto_missed = true;
+            addAutoMissedGoal('isha', noon.toISOString());
+            names.push('Isha');
+        });
+        setSetting('ishaGapRepaired', true);
+        return names;
+    }
+
     function runAutoMissedCheck() {
         // If sync is active but first pull hasn't completed yet, skip —
         // the data may be on cloud and hasn't been pulled. Running the check
@@ -6254,12 +6287,25 @@
                 cursor = new Date(today);
                 cursor.setDate(cursor.getDate() - 1);
             }
-            if (cursor < installedDay) cursor = installedDay;
+            if (cursor < installedDay) cursor = new Date(installedDay);
+
+            // Isha closes at the next day's Fajr, which is after midnight.
+            // A check in that gap used to stamp lastAutoMissCheck on the new
+            // calendar day, and the next walk started there — so that Isha was
+            // never visited. Step back when the previous day was tracked and
+            // its Isha has since closed without being logged.
+            if (cursor > installedDay) {
+                const prev = new Date(cursor);
+                prev.setDate(prev.getDate() - 1);
+                if (prev >= installedDay && unloggedClosedIsha(prev, now)) cursor = prev;
+            }
 
             // Walk every local day since the last check, inclusive.
             // A prayer is missed when the next adhan has passed. Isha closes at
             // the next day's Fajr, so a closed day is filled in the next morning
             // instead of leaving four prayers blank.
+            const startCursor = new Date(cursor);
+            let lastClosedDay = null;
             while (cursor <= today) {
                 const key = hijriKeyForGregorianDay(cursor);
                 const cutoffs = prayerCutoffsForDay(cursor);
@@ -6273,9 +6319,20 @@
                     addAutoMissedGoal(p.id, noon.toISOString());
                     missedNames.push(p.name);
                 });
+                if (now >= cutoffs.isha) lastClosedDay = startOfLocalDay(cursor);
                 cursor = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() + 1);
             }
-            setSetting('lastAutoMissCheck', now.toISOString());
+            // Stay on a day until its Isha has closed. Saving "now" between
+            // midnight and Fajr is what skipped that night's Isha.
+            if (lastClosedDay) {
+                const nextOpen = new Date(lastClosedDay);
+                nextOpen.setDate(nextOpen.getDate() + 1);
+                setSetting('lastAutoMissCheck', nextOpen.toISOString());
+            } else {
+                setSetting('lastAutoMissCheck', startCursor.toISOString());
+            }
+
+            missedNames.push(...repairSkippedIsha(now, installedDay));
         }
 
         const paired = reconcileMissedPairs();
