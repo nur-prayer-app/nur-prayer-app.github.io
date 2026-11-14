@@ -1525,26 +1525,31 @@ body.electron .app-header {
   transform-origin: 50% 0;
 }
 
-/* Stuck states: JS sets `left` in track-pixel-space so the pill stays pinned to the visible
-   edge even as the track scrolls. Transform is cleared so the pill doesn't center-offset. */
+/* Stuck states: JS pins the pill to the visible edge. Instead of ‹ / › text arrows,
+   the pill morphs into a soft pointer aimed at the off-screen NOW. Same green
+   language as the centered chip (not karaha red hatch). */
 .daybar-now[data-stuck="left"] .daybar-now-label {
   transform: none;
+  padding: 3px 11px 3px 14px;
+  border-radius: 0;
+  /* Point aims left (off-screen), rounded on the inner/right side */
+  clip-path: polygon(0 50%, 8px 0, 100% 0, 100% 100%, 8px 100%);
 }
 .daybar-now[data-stuck="right"] .daybar-now-label {
-  /* Right-anchor the pill at JS-provided `left` */
   transform: translateX(-100%);
+  padding: 3px 14px 3px 11px;
+  border-radius: 0;
+  /* Point aims right (off-screen), rounded feel on the inner/left side via padding */
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 0 100%);
 }
 /* When stuck, the .daybar-now vertical line should hide so we don't see a stray line at 0% */
 .daybar-now[data-stuck] {
-  /* Hide the line itself - keep only the pill visible */
   background: transparent !important;
   box-shadow: none !important;
   animation: none;
 }
 .daybar-now[data-stuck="left"]  .daybar-now-label:hover { transform: scale(1.06); transform-origin: 0 50%; }
 .daybar-now[data-stuck="right"] .daybar-now-label:hover { transform: translateX(-100%) scale(1.06); transform-origin: 100% 50%; }
-
-/* (arrow removed - chip is now centered inside the track, no tail needed) */
 
 @keyframes daybar-now-pulse {
   0%, 100% { box-shadow: 0 0 8px var(--accent-1); }

@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.2.9';
+    const APP_VERSION = '1.2.10';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -5344,12 +5344,12 @@
                     const PAD = 30;
                     if (nowX < viewStart + PAD) {
                         nowEl.dataset.stuck = 'left';
-                        nowLabel.textContent = '‹ NOW';
+                        nowLabel.textContent = 'NOW';
                         nowLabel.style.left = `${(viewStart + 8) - nowX}px`;
                         nowLabel.style.right = 'auto';
                     } else if (nowX > viewEnd - PAD) {
                         nowEl.dataset.stuck = 'right';
-                        nowLabel.textContent = 'NOW ›';
+                        nowLabel.textContent = 'NOW';
                         nowLabel.style.left = `${(viewEnd - 8) - nowX}px`;
                         nowLabel.style.right = 'auto';
                     } else {
