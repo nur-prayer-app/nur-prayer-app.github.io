@@ -1,0 +1,7 @@
+#!/bin/sh
+# Strip AI/bot co-author trailers so only Isaac remains on GitHub Contributors.
+MSG_FILE="$1"
+[ -f "$MSG_FILE" ] || exit 0
+# Portable in-place edit without relying on GNU sed -i
+tmp="${MSG_FILE}.sole"
+grep -viE '^Co-authored-by:|^Co-Authored-By:' "$MSG_FILE" > "$tmp" && mv "$tmp" "$MSG_FILE"
