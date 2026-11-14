@@ -1,5 +1,5 @@
 /* ================================================================
-   Nur Prayer Tracker — Stylesheet
+   Nur Prayer Tracker - Stylesheet
    ================================================================
    Sections:
      0. Custom Title Bar (Electron frameless)
@@ -35,7 +35,7 @@
 
 /* ================================================================
    0. Custom Title Bar (Electron frameless window)
-   Hidden in browser — only visible when the native frame is removed.
+   Hidden in browser - only visible when the native frame is removed.
    ================================================================ */
 .titlebar {
   display: none;
@@ -213,7 +213,7 @@ body[data-theme="sunset"] {
 
 
 /* ================================================================
-   Aurora Theme Override (teal + gold + deep indigo — no pink)
+   Aurora Theme Override (teal + gold + deep indigo - no pink)
    ================================================================ */
 
 [data-theme="aurora"] {
@@ -270,7 +270,7 @@ body[data-theme="aurora"] {
   box-sizing: border-box;
 }
 
-/* Global scrollbar — no visible track, thumb blends with app bg */
+/* Global scrollbar - no visible track, thumb blends with app bg */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -610,7 +610,7 @@ body.electron .app-header {
   grid-template-columns: repeat(3, 1fr);
   gap: var(--sp-5);
   margin-bottom: var(--sp-8);
-  /* The prayer card (ring + 5 icons) is the reference — ~380px natural height.
+  /* The prayer card (ring + 5 icons) is the reference - ~380px natural height.
      Every other card is clamped to this height and scrolls internally if it overflows.
      This keeps the 3-card row visually compact with no empty space on the left card. */
   align-items: stretch;
@@ -667,7 +667,7 @@ body.electron .app-header {
 
 
 /* ================================================================
-   Prayer Times page — hero countdown, ring grid, schedule
+   Prayer Times page - hero countdown, ring grid, schedule
    ================================================================ */
 
 .times-page {
@@ -724,7 +724,7 @@ body.electron .app-header {
   .times-main-row { grid-template-columns: 1fr; }
 }
 
-/* Hero: countdown (narrow) — extra breathing room so the card doesn't feel cramped */
+/* Hero: countdown (narrow) - extra breathing room so the card doesn't feel cramped */
 .times-hero {
   padding: var(--sp-6) var(--sp-5);
   background: var(--glass-bg);
@@ -799,7 +799,7 @@ body.electron .app-header {
 
 
 .hero-progress {
-  margin-top: 0; /* countdown sits immediately above — flex gap (sp-3) handles rhythm */
+  margin-top: 0; /* countdown sits immediately above - flex gap (sp-3) handles rhythm */
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -814,7 +814,7 @@ body.electron .app-header {
 
 .hero-progress-fill {
   height: 100%;
-  /* Explicit neutral green→blue gradient — never tinted by the upcoming prayer's
+  /* Explicit neutral green→blue gradient - never tinted by the upcoming prayer's
      color. Keeps the bar a stable visual reference while the next prayer name
      underneath can still be color-coded. */
   background: linear-gradient(90deg, #68d391, #63b3ed) !important;
@@ -823,7 +823,7 @@ body.electron .app-header {
   box-shadow: 0 0 12px rgba(104, 211, 145, 0.25);
 }
 
-/* Progress labels above the bar — name on the left, next prayer on the right,
+/* Progress labels above the bar - name on the left, next prayer on the right,
    each with a clock time underneath so the user sees the window bounds clearly. */
 .hero-progress-labels {
   display: flex;
@@ -858,13 +858,13 @@ body.electron .app-header {
   font-variant-numeric: tabular-nums;
 }
 
-/* Both endpoint labels use neutral greys — progress bar stays a stable visual
+/* Both endpoint labels use neutral greys - progress bar stays a stable visual
    reference and isn't tinted by the upcoming prayer's color. */
 .hpl-side.hpl-right .hpl-name { color: var(--text-tertiary); }
 .hpl-side.hpl-right .hpl-time { color: var(--text-secondary); }
 
 
-/* Secondary counter row — Since-last (always) + Iqama (only post-adhan, auto-hides) */
+/* Secondary counter row - Since-last (always) + Iqama (only post-adhan, auto-hides) */
 .hero-sub-counters {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
@@ -1008,7 +1008,7 @@ body.electron .app-header {
 }
 
 /* Timeline (schedule) */
-/* Wrap around daybar — gives the popover an absolute anchor */
+/* Wrap around daybar - gives the popover an absolute anchor */
 .times-daybar-wrap {
   position: relative;
 }
@@ -1159,7 +1159,7 @@ body.electron .app-header {
   flex-direction: column;
 }
 
-/* Schedule header — use the same column template as .time-row so the "Adhan" label
+/* Schedule header - use the same column template as .time-row so the "Adhan" label
    lines up exactly above the time column (not the bell icon). */
 .times-timeline-head {
   display: grid;
@@ -1263,7 +1263,7 @@ body.electron .app-header {
 
 .time-row.past { opacity: 0.75; }
 
-/* Sunrise reference row — not a prayer, rendered muted + smaller to signal "informational".
+/* Sunrise reference row - not a prayer, rendered muted + smaller to signal "informational".
    The notif-btn slot is left empty (no toggle for a solar event). */
 .time-row-ref {
   opacity: 0.6;
@@ -1340,7 +1340,7 @@ body.electron .app-header {
   font-weight: var(--weight-medium);
 }
 
-/* Day timeline bar — 24h visual with prayer markers + tinted spiritual windows */
+/* Day timeline bar - 24h visual with prayer markers + tinted spiritual windows */
 .times-daybar {
   padding: var(--sp-3) var(--sp-5) var(--sp-3);
   background: var(--glass-bg);
@@ -1382,7 +1382,7 @@ body.electron .app-header {
   overflow: visible;
 }
 
-/* Day divider lines — subtle vertical marks at the day boundaries (33.33% and 66.67%) */
+/* Day divider lines - subtle vertical marks at the day boundaries (33.33% and 66.67%) */
 /* Day divider = midnight line. Prominent because it marks the today→tomorrow / yesterday→today boundary
    so the user can see at a glance where one day ends and the next begins on the 3-day slide. */
 .daybar-day-divider {
@@ -1401,7 +1401,7 @@ body.electron .app-header {
   z-index: 5;
   pointer-events: none;
 }
-/* "12 AM" pill — dark pill at the bottom of the divider, aligned with hour labels.
+/* "12 AM" pill - dark pill at the bottom of the divider, aligned with hour labels.
    Divider extends 44px below the track; the pill sits at the very bottom. */
 .daybar-day-divider::after {
   content: '12 AM';
@@ -1427,7 +1427,7 @@ body.electron .app-header {
   font-size: 10px;
   font-weight: var(--weight-bold);
   letter-spacing: 1.2px;
-  color: rgba(255, 255, 255, 0.45); /* neutral — no green accent */
+  color: rgba(255, 255, 255, 0.45); /* neutral - no green accent */
   text-transform: uppercase;
   pointer-events: none;
   z-index: 6;
@@ -1441,7 +1441,7 @@ body.electron .app-header {
   color: rgba(255, 255, 255, 0.85);
 }
 
-/* ── Prayer window bands — each prayer's window as a colored gradient band ── */
+/* ── Prayer window bands - each prayer's window as a colored gradient band ── */
 .daybar-window {
   position: absolute;
   top: 0;
@@ -1458,7 +1458,7 @@ body.electron .app-header {
 .daybar-window-maghrib { background: linear-gradient(180deg, rgba(139, 148, 255, 0.28), rgba(139, 148, 255, 0.1)); }
 .daybar-window-isha    { background: linear-gradient(180deg, rgba(99, 102, 241, 0.28),  rgba(99, 102, 241, 0.1)); }
 
-/* Duration label rendered inside the prayer band — colored to match the prayer. */
+/* Duration label rendered inside the prayer band - colored to match the prayer. */
 .daybar-win-dur {
   position: absolute;
   top: 50%;
@@ -1472,7 +1472,7 @@ body.electron .app-header {
   white-space: nowrap;
   pointer-events: none;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  /* Hide overflow if band is genuinely too narrow — prevents ugly clipping onto neighbours */
+  /* Hide overflow if band is genuinely too narrow - prevents ugly clipping onto neighbours */
   max-width: 100%;
   overflow: hidden;
 }
@@ -1536,7 +1536,7 @@ body.electron .app-header {
 }
 /* When stuck, the .daybar-now vertical line should hide so we don't see a stray line at 0% */
 .daybar-now[data-stuck] {
-  /* Hide the line itself — keep only the pill visible */
+  /* Hide the line itself - keep only the pill visible */
   background: transparent !important;
   box-shadow: none !important;
   animation: none;
@@ -1544,7 +1544,7 @@ body.electron .app-header {
 .daybar-now[data-stuck="left"]  .daybar-now-label:hover { transform: scale(1.06); transform-origin: 0 50%; }
 .daybar-now[data-stuck="right"] .daybar-now-label:hover { transform: translateX(-100%) scale(1.06); transform-origin: 100% 50%; }
 
-/* (arrow removed — chip is now centered inside the track, no tail needed) */
+/* (arrow removed - chip is now centered inside the track, no tail needed) */
 
 @keyframes daybar-now-pulse {
   0%, 100% { box-shadow: 0 0 8px var(--accent-1); }
@@ -1555,7 +1555,7 @@ body.electron .app-header {
   animation: daybar-now-pulse 2s ease-in-out infinite;
 }
 
-/* Hour labels INSIDE the track (so they pan with it) — pushed below the NOW chip row */
+/* Hour labels INSIDE the track (so they pan with it) - pushed below the NOW chip row */
 .daybar-labels-inner {
   position: absolute;
   top: calc(100% + 26px); /* leave room for the NOW chip on the row above */
@@ -1574,13 +1574,13 @@ body.electron .app-header {
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
-/* Midnight 12 AM labels — hidden because the day-divider's own "12 AM" pill covers them */
+/* Midnight 12 AM labels - hidden because the day-divider's own "12 AM" pill covers them */
 .daybar-hour-midnight { display: none; }
 /* First/last labels align to edges so they don't get cut off */
 .daybar-hour-label:first-child { transform: none; }
 .daybar-hour-label:last-child { transform: translateX(-100%); }
 
-/* Spiritual windows (Duha / Karaha / Last third) — same top/bottom bounds as prayer bands,
+/* Spiritual windows (Duha / Karaha / Last third) - same top/bottom bounds as prayer bands,
    no borders (so they blend into the continuous strip), same gradient opacity envelope. */
 .daybar-seg {
   position: absolute;
@@ -1597,7 +1597,7 @@ body.electron .app-header {
   background: linear-gradient(180deg, rgba(251, 191, 119, 0.28) 0%, rgba(251, 191, 119, 0.1) 100%);
 }
 
-/* Karaha — more saturated pattern so short strips remain visible,
+/* Karaha - more saturated pattern so short strips remain visible,
    but same vertical bounds so the strip stays continuous with surrounding bands. */
 .daybar-seg-karaha {
   background: repeating-linear-gradient(45deg, rgba(245, 101, 101, 0.38), rgba(245, 101, 101, 0.38) 3px, rgba(245, 101, 101, 0.16) 3px, rgba(245, 101, 101, 0.16) 6px);
@@ -1615,7 +1615,7 @@ body.electron .app-header {
   background: linear-gradient(180deg, rgba(96, 165, 250, 0.28) 0%, rgba(96, 165, 250, 0.1) 100%);
 }
 
-/* Band labels — name ABOVE the bar (stacked above prayer marker labels), duration INSIDE the bar */
+/* Band labels - name ABOVE the bar (stacked above prayer marker labels), duration INSIDE the bar */
 .daybar-seg-name {
   position: absolute;
   bottom: calc(100% + 4px); /* SAME level as prayer labels (both directly above the bar) */
@@ -1648,7 +1648,7 @@ body.electron .app-header {
 .daybar-seg-third .daybar-seg-name,
 .daybar-seg-third .daybar-seg-dur { color: #93c5fd; }
 
-/* Progress fill — translucent overlay showing day elapsed */
+/* Progress fill - translucent overlay showing day elapsed */
 .daybar-fill {
   position: absolute;
   inset: 0;
@@ -1660,7 +1660,9 @@ body.electron .app-header {
   pointer-events: none;
 }
 
-/* Current-time line (thin vertical, no dot) */
+/* Current-time line (thin vertical, no dot).
+   No left transition: scroll follows NOW every tick, and a CSS ease on left
+   made the pin lag and snap against the scroll. */
 .daybar-now {
   position: absolute;
   top: -4px;
@@ -1670,7 +1672,7 @@ body.electron .app-header {
   box-shadow: 0 0 10px var(--accent-1);
   border-radius: 1px;
   z-index: 4;
-  transition: left 1s linear;
+  transition: none;
   pointer-events: none;
 }
 
@@ -1768,10 +1770,10 @@ body.electron .app-header {
   letter-spacing: 0.5px;
 }
 
-/* Old inline legend — hidden; replaced by the info-button popover */
+/* Old inline legend - hidden; replaced by the info-button popover */
 .daybar-legend { display: none; }
 
-/* ── Top bar above the timeline — recenter chip on the LEFT, legend button on the RIGHT ── */
+/* ── Top bar above the timeline - recenter chip on the LEFT, legend button on the RIGHT ── */
 .daybar-topbar {
   display: flex;
   align-items: center;
@@ -1936,7 +1938,7 @@ body.electron .app-header {
 .dbl-third { background: rgba(96, 165, 250, 0.7); border: 1px solid rgba(96, 165, 250, 0.9); }
 .dbl-karaha { background: repeating-linear-gradient(45deg, rgba(245, 101, 101, 0.7), rgba(245, 101, 101, 0.7) 2px, rgba(245, 101, 101, 0.3) 2px, rgba(245, 101, 101, 0.3) 4px); border: 1px solid rgba(245, 101, 101, 0.9); }
 
-/* Detailed counter grid — adapts to available columns */
+/* Detailed counter grid - adapts to available columns */
 .times-counters {
   display: grid;
   grid-template-rows: repeat(3, 1fr);
@@ -2038,7 +2040,7 @@ body.electron .app-header {
   margin-left: 6px;
 }
 
-/* Compact 5-column layout — one row per prayer, Fajr → Isha left-to-right.
+/* Compact 5-column layout - one row per prayer, Fajr → Isha left-to-right.
    `min-width: 0` on every column prevents the grid from overflowing the modal body
    when the steppers' intrinsic content width exceeds the allotted cell (which was
    causing a horizontal scrollbar). */
@@ -2117,7 +2119,7 @@ body.electron .app-header {
   grid-column: 1 / -1;
 }
 
-/* 3-of-4 column spread — big stat cards that shouldn't stretch the full row.
+/* 3-of-4 column spread - big stat cards that shouldn't stretch the full row.
    Center them so the remaining column feels like deliberate whitespace. */
 
 /* ── Action card (top of stats): what the user should do right now ── */
@@ -2185,7 +2187,7 @@ body.electron .app-header {
 .stat-chip.up { background: rgba(104, 211, 145, 0.15); color: var(--accent-1); }
 .stat-chip.down { background: rgba(245, 101, 101, 0.15); color: #fc8181; }
 
-/* Goal row value — clearer than "12 / 30" */
+/* Goal row value - clearer than "12 / 30" */
 .stat-goal-val strong {
   font-family: var(--font-heading);
   font-variant-numeric: tabular-nums;
@@ -2307,7 +2309,7 @@ body.electron .app-header {
 }
 
 
-/* Bar tones — map to count ranges */
+/* Bar tones - map to count ranges */
 .bc-perfect  { background: linear-gradient(180deg, #68d391 0%, #38a169 100%); box-shadow: 0 0 8px rgba(104, 211, 145, 0.3); }
 .bc-good     { background: linear-gradient(180deg, #63b3ed 0%, #3182ce 100%); }
 .bc-partial  { background: linear-gradient(180deg, #fbd38d 0%, #ed8936 100%); }
@@ -2329,7 +2331,7 @@ body.electron .app-header {
   letter-spacing: 0.5px;
 }
 
-/* Inline legend for bar chart colors — so user knows green/blue/orange mean */
+/* Inline legend for bar chart colors - so user knows green/blue/orange mean */
 
 .bc-legend-item {
   display: inline-flex;
@@ -2502,7 +2504,7 @@ body.electron .app-header {
   margin-top: 6px;
 }
 
-/* Stats panel — balanced mini-tile grid that matches the donut's visual mass.
+/* Stats panel - balanced mini-tile grid that matches the donut's visual mass.
    2×2 grid on wide screens (big numbers + labeled tiles). Falls back to single column
    on narrow. */
 
@@ -2895,7 +2897,7 @@ body.electron .app-header {
   gap: var(--sp-2);
 }
 
-/* ── Richer goal card grid — replaces the thin one-line rows ── */
+/* ── Richer goal card grid - replaces the thin one-line rows ── */
 .goals-progress-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -3243,7 +3245,7 @@ body.electron .app-header {
   text-align: center;
 }
 
-/* Future prayers — adhan hasn't come yet, can't mark */
+/* Future prayers - adhan hasn't come yet, can't mark */
 .prayer-icon-btn.future {
   opacity: 0.35;
   pointer-events: none;
@@ -3265,7 +3267,7 @@ body.electron .app-header {
 .prayer-icon-btn:not(.completed)[data-prayer="maghrib"] .prayer-icon-circle { color: #e57373; }
 .prayer-icon-btn:not(.completed)[data-prayer="isha"] .prayer-icon-circle { color: #64b5f6; }
 
-/* Completed state — gradient circle, white check, dimmed text */
+/* Completed state - gradient circle, white check, dimmed text */
 .prayer-icon-btn.completed {
   border-color: rgba(104, 211, 145, 0.25);
 }
@@ -3287,7 +3289,7 @@ body.electron .app-header {
 
 .goals-card {
   align-items: stretch;
-  /* Height is set by .dashboard-cards > .card — content here scrolls via .goals-list */
+  /* Height is set by .dashboard-cards > .card - content here scrolls via .goals-list */
 }
 
 .goals-list {
@@ -3474,7 +3476,7 @@ body.electron .app-header {
   border-top: 1px solid var(--glass-border);
 }
 
-/* Read-only variant — just show the count, centered */
+/* Read-only variant - just show the count, centered */
 .pp-row-readonly {
   display: flex;
   justify-content: center;
@@ -3521,7 +3523,7 @@ body.electron .app-header {
 
 /* ---- LEGACY (still used by Record Qadaa modal) ---- */
 
-/* Per-prayer list: one row per prayer — tappable left half + inline stepper */
+/* Per-prayer list: one row per prayer - tappable left half + inline stepper */
 .qadaa-prayer-list {
   display: flex;
   flex-direction: column;
@@ -4005,7 +4007,7 @@ body.electron .app-header {
   gap: var(--sp-2);
 }
 
-/* Record-Qadaa modal — tabs + goal-card header */
+/* Record-Qadaa modal - tabs + goal-card header */
 .recq-tabs {
   display: flex;
   gap: 2px;
@@ -4149,7 +4151,7 @@ body.electron .app-header {
   min-width: 44px;
 }
 
-/* Record-Qadaa session log rows — whole row clickable */
+/* Record-Qadaa session log rows - whole row clickable */
 .addqadaa-log-list {
   display: flex;
   flex-direction: column;
@@ -4402,7 +4404,7 @@ body.electron .app-header {
   border-color: var(--accent-danger);
 }
 
-/* Qadaa per-prayer breakdown — icon grid matching Today's Prayers */
+/* Qadaa per-prayer breakdown - icon grid matching Today's Prayers */
 .qadaa-prayer-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -4535,7 +4537,7 @@ body.electron .app-header {
   flex-direction: column;
   gap: var(--sp-3);
   width: 100%;
-  /* Scroll when list grows long — matches the Goals card behavior so reminders card
+  /* Scroll when list grows long - matches the Goals card behavior so reminders card
      never pushes the dashboard grid out of alignment. */
   flex: 1 1 auto;
   overflow-y: auto;
@@ -4773,7 +4775,7 @@ body.electron .app-header {
   font-weight: var(--weight-medium);
 }
 
-/* Calendar grid — 7 columns */
+/* Calendar grid - 7 columns */
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -4828,7 +4830,7 @@ body.electron .app-header {
   box-shadow: inset 0 0 0 2px var(--accent-2);
 }
 
-/* White Days highlight — the gold "White Day" badge already signals this,
+/* White Days highlight - the gold "White Day" badge already signals this,
    so we don't also tint the day number (which would clash with the month color legend). */
 .cal-cell.white-day {
   background: rgba(255, 255, 255, 0.06);
@@ -5557,7 +5559,7 @@ body.electron .app-header {
 .app-input:focus { border-color: var(--accent-1); }
 .app-input::placeholder { color: var(--text-muted); }
 
-/* <select> variant — looks the same but adds a dropdown caret */
+/* <select> variant - looks the same but adds a dropdown caret */
 select.app-input {
   -webkit-appearance: none;
   -moz-appearance: none;
@@ -6227,7 +6229,7 @@ select.app-input option {
 }
 
 /* Inline (?) icon next to settings section titles. Hover reveals `title` text
-   as a native tooltip — keeps the UI compact but still discoverable. */
+   as a native tooltip - keeps the UI compact but still discoverable. */
 .info-tip {
   display: inline-flex;
   align-items: center;
@@ -6889,7 +6891,7 @@ body.electron .pwa-install-bar { display: none; }
 
 
 /* ================================================================
-   Focus-visible — keyboard accessibility
+   Focus-visible - keyboard accessibility
    ================================================================ */
 
 .btn:focus-visible,
@@ -6905,7 +6907,7 @@ body.electron .pwa-install-bar { display: none; }
 }
 
 /* ================================================================
-   Responsive — Tablet
+   Responsive - Tablet
    ================================================================ */
 
 @media (max-width: 960px) {
@@ -6943,7 +6945,7 @@ body.electron .pwa-install-bar { display: none; }
 
 
 /* ================================================================
-   Responsive — Mobile
+   Responsive - Mobile
    ================================================================ */
 
 @media (max-width: 640px) {
@@ -7025,7 +7027,7 @@ body.electron .pwa-install-bar { display: none; }
 }
 
 /* ================================================================
-   Statistics — 4-card focused layout (rebuilt)
+   Statistics - 4-card focused layout (rebuilt)
    ================================================================ */
 
 /* Card 1: Punctuality & reliability */
@@ -7775,8 +7777,8 @@ body.electron .pwa-install-bar { display: none; }
 }
 
 /* ================================================================
-   Responsive — Small Phone (375-430px)
-   Pure overrides — no layout rebuilds, no desktop regressions.
+   Responsive - Small Phone (375-430px)
+   Pure overrides - no layout rebuilds, no desktop regressions.
    ================================================================ */
 
 @media (max-width: 430px) {

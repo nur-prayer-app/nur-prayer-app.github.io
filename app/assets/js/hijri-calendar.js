@@ -2,7 +2,7 @@
    Hijri Calendar Engine
    ================================================================
    Uses the browser's built-in Intl.DateTimeFormat with the
-   'islamic-umalqura' calendar — the official Saudi Umm al-Qura
+   'islamic-umalqura' calendar - the official Saudi Umm al-Qura
    astronomical standard with pre-computed month lengths.
 
    Keeps a user-adjustable ±offset for regions whose observation-based
@@ -38,7 +38,7 @@ const HijriCalendar = (() => {
         MONTH_NAME_TO_IDX[m.name.toLowerCase()] = i;
         MONTH_NAME_TO_IDX[m.nameAr] = i;
     });
-    // Browser Intl uses slightly different spellings — map those too
+    // Browser Intl uses slightly different spellings - map those too
     const INTL_MONTH_MAP = {
         'muharram': 0, 'safar': 1, 'rabiʻ i': 2, 'rabiʻ ii': 3,
         "rabi' i": 2, "rabi' ii": 3, "rabīʿ al-awwal": 2, "rabīʿ al-thānī": 3,

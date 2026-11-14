@@ -1,5 +1,5 @@
 /* ================================================================
-   Sync v2 — Supabase Auth + Hybrid Table Sync
+   Sync v2 - Supabase Auth + Hybrid Table Sync
    ================================================================
    Architecture:
    - prayer_days: LWW per field (timestamp per field)
@@ -8,7 +8,7 @@
    - user_settings: LWW per key
 
    Local Storage is source of truth. Cloud is synced replica.
-   _auto_missed flags are LOCAL ONLY — never synced.
+   _auto_missed flags are LOCAL ONLY - never synced.
    ================================================================ */
 
 (function () {
@@ -393,7 +393,7 @@
                 method: 'POST', headers: headers(currentToken), body: JSON.stringify({ payload: params }),
             });
             if (resp.status === 401) {
-                // Token expired mid-flush — refresh and retry this item once
+                // Token expired mid-flush - refresh and retry this item once
                 const refreshed = await getValidToken();
                 if (!refreshed) return; // can't recover
                 currentToken = refreshed;
@@ -518,7 +518,7 @@
             if (!resp.ok) failedMeta.push(item);
         }
 
-        // Push goal events (ON CONFLICT DO NOTHING — dedup by PK)
+        // Push goal events (ON CONFLICT DO NOTHING - dedup by PK)
         if (goalItems.length) {
             const events = goalItems.map(i => ({ user_id: userId, ...i.data }));
             let resp = await fetch(`${REST_URL}/goal_events`, {
@@ -661,7 +661,7 @@
         syncLog(`fullPush: cloud=${cloudDays.size}, missing=${missing.length}`);
         if (!missing.length) { _fullPushDone = true; return; }
 
-        // Push missing days directly — throttled to avoid rate limits
+        // Push missing days directly - throttled to avoid rate limits
         const now = syncedNow();
         const fieldTs = getFieldTs();
         let currentToken = token;
@@ -694,7 +694,7 @@
                 });
             }
             if (resp.status === 429) {
-                // Rate limited — pause 2s and retry
+                // Rate limited - pause 2s and retry
                 await new Promise(r => setTimeout(r, 2000));
                 resp = await fetch(`${REST_URL}/rpc/upsert_prayer_day`, {
                     method: 'POST', headers: headers(currentToken), body: JSON.stringify({ payload: params }),

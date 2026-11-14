@@ -116,7 +116,7 @@
         if (_suppressDirtyDepth === 0) _dirtyKeys.add(key);
     }
 
-    /** Export all known keys as a single snapshot object — used by
+    /** Export all known keys as a single snapshot object - used by
      *  the Settings → Export flow. Reads raw values so import/export
      *  round-trips are byte-identical. */
     function exportAll() {
