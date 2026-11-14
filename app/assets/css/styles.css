@@ -1511,7 +1511,7 @@ body.electron .app-header {
   background: var(--accent-1);
   padding: 3px 10px;
   border-radius: 999px;
-  box-shadow: 0 2px 8px rgba(104, 211, 145, 0.5);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--accent-1) 40%, transparent);
   cursor: pointer;
   pointer-events: auto;
   z-index: 10;
@@ -1520,49 +1520,40 @@ body.electron .app-header {
   transition: background var(--duration-fast) var(--ease-out);
 }
 .daybar-now-label:hover {
-  background: #48b178;
+  background: color-mix(in srgb, var(--accent-1) 82%, #000);
   transform: translateX(-50%) scale(1.06);
   transform-origin: 50% 0;
 }
 
-/* Stuck states: same pill + same box-shadow glow as centered. Outer end gets a
-   real arrow tip (::before with top/bottom stretch; height:100% collapses here).
-   Inner end keeps the normal rounded pill cap. */
+/* Stuck states: SAME pill (border-radius 999px). Clip only the outer end into a tip.
+   Round end stays the real pill curve (no faceted polygon, no ::before seam). */
 .daybar-now[data-stuck="left"] .daybar-now-label {
   transform: none;
-  padding: 3px 10px 3px 12px;
-  border-radius: 0 999px 999px 0;
-}
-.daybar-now[data-stuck="left"] .daybar-now-label::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 10px;
-  background: inherit;
-  clip-path: polygon(0 50%, 100% 0, 100% 100%);
+  padding: 3px 10px 3px 14px;
+  border-radius: 999px;
+  box-shadow: none;
+  clip-path: polygon(0 50%, 10px 0, 100% 0, 100% 100%, 10px 100%);
 }
 .daybar-now[data-stuck="right"] .daybar-now-label {
   transform: translateX(-100%);
-  padding: 3px 12px 3px 10px;
-  border-radius: 999px 0 0 999px;
+  padding: 3px 14px 3px 10px;
+  border-radius: 999px;
+  box-shadow: none;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%);
 }
-.daybar-now[data-stuck="right"] .daybar-now-label::before {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 10px;
-  background: inherit;
-  clip-path: polygon(0 0, 100% 50%, 0 100%);
-}
-/* When stuck, the .daybar-now vertical line should hide so we don't see a stray line at 0% */
+/* When stuck, hide the vertical line; glow via parent (clip-path eats box-shadow) */
 .daybar-now[data-stuck] {
   background: transparent !important;
   box-shadow: none !important;
   animation: none;
+  filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--accent-1) 28%, transparent));
+}
+/* Explicit reset when not stuck (avoid leftover clip/filter if attribute flickers) */
+.daybar-now:not([data-stuck]) {
+  filter: none;
+}
+.daybar-now:not([data-stuck]) .daybar-now-label {
+  clip-path: none;
 }
 .daybar-now[data-stuck="left"] .daybar-now-label:hover {
   transform: scale(1.06);
