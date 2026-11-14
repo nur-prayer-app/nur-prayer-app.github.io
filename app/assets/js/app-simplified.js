@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.2.4';
+    const APP_VERSION = '1.2.5';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -5263,8 +5263,8 @@
             }
 
             // Drag-to-pan the timeline. Default mode keeps NOW in the viewport center
-            // and scrolls the track under it as time moves. Dragging pauses that follow;
-            // release (or tap the NOW chip) resumes it.
+            // and scrolls the track under it as time moves. Dragging enters free-pan so
+            // you can inspect other day slots; tap the NOW chip to re-center and follow.
             const scroller = $('#daybar-scroll');
             const syncDaybarToNow = (smooth) => {
                 if (!scroller) return;
@@ -5284,10 +5284,16 @@
             if (scroller) {
                 const nowEl = $('#daybar-now');
                 if (nowEl) nowEl.style.transition = 'none';
-                syncDaybarToNow(false);
-                requestAnimationFrame(() => syncDaybarToNow(false));
+                if (_daybarFollowNow) {
+                    syncDaybarToNow(false);
+                    requestAnimationFrame(() => syncDaybarToNow(false));
+                }
 
                 const nowLabel = timelineEl.querySelector('.daybar-now-label');
+                if (nowLabel) {
+                    nowLabel.title = 'Tap to center on NOW';
+                    nowLabel.setAttribute('aria-label', 'Center timeline on NOW');
+                }
                 nowLabel?.addEventListener('click', (e) => {
                     e.stopPropagation();
                     _daybarFollowNow = true;
@@ -5371,22 +5377,13 @@
                 scroller.addEventListener('scroll', updateActiveDay, { passive: true });
                 setTimeout(updateActiveDay, 60);
 
+                // After a real pan, stay free so tomorrow / yesterday slots can be inspected.
+                // Tap the NOW chip (or the edge ‹ NOW / NOW › chip) to follow again.
                 const endPan = (didDrag) => {
                     _daybarDragging = false;
                     scroller.classList.remove('dragging');
                     if (!didDrag) return;
-                    _daybarFollowNow = true;
-                    if (nowEl) {
-                        delete nowEl.dataset.stuck;
-                        nowEl.style.transition = 'none';
-                    }
-                    if (nowLabel) {
-                        nowLabel.textContent = 'NOW';
-                        nowLabel.style.left = '';
-                        nowLabel.style.right = '';
-                    }
-                    // Instant, not smooth: a smooth scroll would fight the per-second follow tick.
-                    syncDaybarToNow(false);
+                    updateNowChip();
                     const swallow = (e) => { e.stopPropagation(); e.preventDefault(); };
                     scroller.addEventListener('click', swallow, { capture: true, once: true });
                 };
