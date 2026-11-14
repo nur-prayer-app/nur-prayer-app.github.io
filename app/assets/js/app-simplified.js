@@ -1,11 +1,11 @@
 /* ================================================================
-   Nur — Prayer Tracker Application
+   Nur - Prayer Tracker Application
    Written from scratch. No legacy code.
    ================================================================ */
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.2.3';
+    const APP_VERSION = '1.2.4';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -184,7 +184,7 @@
 
     /** Clear the auto-missed flag for `prayerId` on the Hijri day that `dateIso`
      *  falls on. Called when the user marks an auto-missed prayer as prayed or
-     *  dismisses the goal. Idempotent — no-op if the flag is absent. */
+     *  dismisses the goal. Idempotent - no-op if the flag is absent. */
     function clearAutoMissedFlag(prayerId, dateIso, force) {
         if (!prayerId || !dateIso) return;
         if (!force && S.settings.trackLatePrayers) return;
@@ -371,7 +371,7 @@
                 const showAutoTag = isAutoType && !g.isManual;
                 // For AUTO (not manual) qadaa-auto goals, fold the origin date into the title as
                 // "X days ago" so we don't add an extra row that inflates the card. Manual entries
-                // are a pure "pay back a missed prayer" goal — no day-of-origin, so no suffix.
+                // are a pure "pay back a missed prayer" goal - no day-of-origin, so no suffix.
                 let displayName = esc(g.name) || type.name;
                 if (isAutoType && !g.isManual && g.missedOn) {
                     const _now = new Date();
@@ -449,7 +449,7 @@
 
         list.innerHTML = html;
 
-        // Click row to open detail (event delegation — attached once per list element)
+        // Click row to open detail (event delegation - attached once per list element)
         if (!list.dataset.delegated) {
             list.dataset.delegated = '1';
             list.addEventListener('click', (e) => {
@@ -558,8 +558,8 @@
                         <span id="calc-unit-label">prayers</span>
                     </div>
                     <div class="calc-pace" id="calc-pace">
-                        <div class="calc-pace-row"><span class="pace-label" id="pace1-label">At 1/day</span><span id="calc-pace1">—</span></div>
-                        <div class="calc-pace-row"><span class="pace-label" id="pace5-label">At 5/day</span><span id="calc-pace5">—</span></div>
+                        <div class="calc-pace-row"><span class="pace-label" id="pace1-label">At 1/day</span><span id="calc-pace1">-</span></div>
+                        <div class="calc-pace-row"><span class="pace-label" id="pace5-label">At 5/day</span><span id="calc-pace5">-</span></div>
                     </div>
                 </div>
 
@@ -610,8 +610,8 @@
             const pace5 = Math.ceil(total / 5);
             const d1 = new Date(); d1.setDate(d1.getDate() + pace1);
             const d5 = new Date(); d5.setDate(d5.getDate() + pace5);
-            const e1 = $('#calc-pace1'); if (e1) e1.textContent = total > 0 ? `${fmtShortDate(d1)} · ${pace1}d` : '—';
-            const e5 = $('#calc-pace5'); if (e5) e5.textContent = total > 0 ? `${fmtShortDate(d5)} · ${pace5}d` : '—';
+            const e1 = $('#calc-pace1'); if (e1) e1.textContent = total > 0 ? `${fmtShortDate(d1)} · ${pace1}d` : '-';
+            const e5 = $('#calc-pace5'); if (e5) e5.textContent = total > 0 ? `${fmtShortDate(d5)} · ${pace5}d` : '-';
         }
 
         // Goal type selection
@@ -688,7 +688,7 @@
             // - 1 selected → single per-prayer missed goal (manual flag)
             // - 2+ selected → ONE combined manual qadaa goal with those prayers counted
             //   (auto-missed is always split per-prayer, but manual batches stay together
-            //   because user intent is a single event — "I missed these today")
+            //   because user intent is a single event - "I missed these today")
             if (selectedSingles.size > 0) {
                 const now = new Date().toISOString();
                 const selected = [...selectedSingles];
@@ -776,7 +776,7 @@
         const p = PRAYER_MAP[pid] || PRAYERS[0];
         // Labels recomputed fresh from `missedOn` so stale cached strings
         // (from old algorithm runs / seed data) can't drift from the current calendar.
-        let dateLabel = '—';
+        let dateLabel = '-';
         let hijriLabel = '';
         if (g.missedOn) {
             dateLabel = fmtLongDate(g.missedOn);
@@ -827,7 +827,7 @@
 
                 <div class="automiss-actions">
                     ${isComplete ? `
-                    <div class="automiss-complete-pill">✓ Prayed — goal complete</div>
+                    <div class="automiss-complete-pill">✓ Prayed - goal complete</div>
                     ` : `
                     <button type="button" class="btn btn-primary automiss-record-btn" id="am-record">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><polyline points="20,6 9,17 4,12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -845,7 +845,7 @@
                     <h4>Activity</h4>
                     <div class="goal-notes">
                         ${g.notes.map((n, i) => ({ n, i })).filter(x => x.n).slice(-5).reverse().map(({ n, i }) => {
-                            const text = esc(n.text || '—');
+                            const text = esc(n.text || '-');
                             const dateStr = fmtNoteDate(n);
                             return `<button type="button" class="goal-note" data-note-idx="${i}">
                                 <div class="goal-note-body">
@@ -887,7 +887,7 @@
             if (bt) $('#am-back')?.addEventListener('click', bt.run);
         }
 
-        // "I prayed it" — clears the goal AND clears the auto-missed flag on the day so
+        // "I prayed it" - clears the goal AND clears the auto-missed flag on the day so
         // the calendar's MISSED badge disappears immediately (no page refresh needed).
         $('#am-record')?.addEventListener('click', () => {
             g.remaining = 0;
@@ -902,7 +902,7 @@
             toast(`${p.name} recorded`);
         });
 
-        // "I didn't pray" — closes modal (goal stays)
+        // "I didn't pray" - closes modal (goal stays)
         $('#am-forgot')?.addEventListener('click', () => {
             closeAllModals();
         });
@@ -1073,7 +1073,7 @@
                     <h4>Recent activity <span class="info-tip" data-hint="Tap any row to undo that action.">?</span></h4>
                     <div class="goal-notes">
                         ${g.notes.map((n, i) => ({ n, i })).filter(x => x.n).slice(-8).reverse().map(({ n, i }) => {
-                            const text = esc(n.text || '—');
+                            const text = esc(n.text || '-');
                             const dateStr = fmtNoteDate(n);
                             return `<button type="button" class="goal-note" data-note-idx="${i}" title="Tap to undo this action">
                                 <div class="goal-note-body">
@@ -1089,7 +1089,7 @@
                 </div>
                 ` : ''}
 
-                <!-- Danger zone — delete goal -->
+                <!-- Danger zone - delete goal -->
                 <div class="goal-danger-zone">
                     <button type="button" class="btn-danger-ghost" id="goal-delete">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
@@ -1169,7 +1169,7 @@
             });
         });
 
-        // Recent activity — tap the whole row to undo
+        // Recent activity - tap the whole row to undo
         $$('.goal-note', content).forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -1241,12 +1241,12 @@
                 });
                 if (dayFlagsSet.length) save(KEYS.PRAYERS, S.prayers);
                 g.notes = g.notes || [];
-                g.notes.push(makeNote({ text: `${total} prayers — ${days} day${days === 1 ? '' : 's'}`, amount: -total, sourceKey: tk }));
+                g.notes.push(makeNote({ text: `${total} prayers - ${days} day${days === 1 ? '' : 's'}`, amount: -total, sourceKey: tk }));
                 saveGoals();
                 reopen();
                 renderGoals();
                 renderCalendar();
-                toast(`${total} prayers — ${days} day${days === 1 ? '' : 's'}`, { label: 'Undo', fn: () => {
+                toast(`${total} prayers - ${days} day${days === 1 ? '' : 's'}`, { label: 'Undo', fn: () => {
                     restoreGoalSnapshot(g, snap);
                     saveGoals();
                     if (dayFlagsSet.length) clearQadaaFlags(tk, dayFlagsSet);
@@ -1443,7 +1443,7 @@
             url: 'https://sunnah.com/nasai:2432',
         },
         'Islamic New Year': {
-            text: 'The Islamic New Year marks the first day of Muharram, the beginning of the lunar Hijri calendar. It commemorates the Hijrah — the migration of Prophet Muhammad ﷺ and his companions from Makkah to Madinah in 622 CE, a turning point in Islamic history.',
+            text: 'The Islamic New Year marks the first day of Muharram, the beginning of the lunar Hijri calendar. It commemorates the Hijrah - the migration of Prophet Muhammad ﷺ and his companions from Makkah to Madinah in 622 CE, a turning point in Islamic history.',
             source: '',
         },
         'Day of Ashura': {
@@ -1493,14 +1493,14 @@
         },
     };
 
-    /* ── Reminders — month-specific special days ─────────────── */
+    /* ── Reminders - month-specific special days ─────────────── */
     // Multi-day events keyed by Hijri month
     const MONTH_EVENTS = {
-        // Muharram — days of virtue
+        // Muharram - days of virtue
         1: [
             { range: [9, 11], short: 'Muharram', name: 'Days of Muharram', detail: 'Recommended fasting: 9, 10 (Ashura), 11' },
         ],
-        // Dhul Hijjah — the sacred 10 days
+        // Dhul Hijjah - the sacred 10 days
         12: [
             { range: [1, 10], short: 'Dhul Hijjah', name: 'First 10 Days of Dhul Hijjah', detail: 'The most beloved days to Allah' },
         ],
@@ -1516,7 +1516,7 @@
     function getDynamicEvents(year, month) {
         const events = [];
 
-        // Shawwal: 6 days of fasting — show days remaining in month
+        // Shawwal: 6 days of fasting - show days remaining in month
         if (month === 10) {
             const today = HijriCalendar.gregorianToHijri(new Date());
             const totalDays = HijriCalendar.daysInMonth(year, month);
@@ -1529,7 +1529,7 @@
             events.push({
                 name: '6 Days of Shawwal',
                 detail: daysLeft > 0
-                    ? `Fast any 6 days — ${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left this month`
+                    ? `Fast any 6 days - ${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left this month`
                     : 'Shawwal has ended',
                 icon: 'dynamic',
             });
@@ -1558,7 +1558,7 @@
                 type: 'range',
                 name: e.name,
                 detail: e.detail,
-                rangeText: `${monthData.monthName} ${e.range[0]}–${e.range[1]}`,
+                rangeText: `${monthData.monthName} ${e.range[0]}-${e.range[1]}`,
             });
         });
 
@@ -1572,7 +1572,7 @@
         });
 
         // White Days every month
-        specials.push({ type: 'white', day: '13–15', name: 'White Days (Fasting)' });
+        specials.push({ type: 'white', day: '13-15', name: 'White Days (Fasting)' });
 
         return specials;
     }
@@ -1621,7 +1621,7 @@
     };
 
     /** Build a Set<"Y-M-D"> of every Hijri day currently flagged as auto-missed.
-     * O(goals) once — callers then do O(1) lookups per cell instead of O(cells × goals).
+     * O(goals) once - callers then do O(1) lookups per cell instead of O(cells × goals).
      * Only non-manual, unresolved goals count (manual entries don't flag the calendar;
      * they're goals to pray back a prayer, not a record of which day it was missed). */
     function buildAutoMissedSet() {
@@ -1769,7 +1769,7 @@
 
         const todayStr = new Date().toDateString();
         const showSecondary = S.settings.showGregorian !== false;
-        // Memoize Hijri getMonthData calls — same (year,month) pair repeats across many cells.
+        // Memoize Hijri getMonthData calls - same (year,month) pair repeats across many cells.
         const monthDataCache = {};
         const getMInfo = (y, m) => {
             const k = `${y}-${m}`;
@@ -2327,7 +2327,7 @@
 
         // Mark-missed buttons: flag a prayer as missed for THIS specific day and create
         // a qadaa-auto goal dated to THIS day (so the calendar cell shows MISSED and the
-        // goal is anchored to the day the prayer was actually missed — not "today").
+        // goal is anchored to the day the prayer was actually missed - not "today").
         $$('.mmr-btn', content).forEach(btn => {
             btn.addEventListener('click', () => {
                 if (btn.disabled) return;
@@ -2391,14 +2391,14 @@
         content.querySelector('[data-action="fasting"]')?.addEventListener('click', () => {
             const d2 = dayData(key);
             if (d2.fasting) {
-                // Toggling OFF — just unmark
+                // Toggling OFF - just unmark
                 d2.fasting = false;
                 save(KEYS.PRAYERS, S.prayers);
                 render();
                 openDayModal(key);
                 return;
             }
-            // Toggling ON — check if qadaa fasting goal exists
+            // Toggling ON - check if qadaa fasting goal exists
             const fastGoal = getGoals().find(g => g.type === 'qadaa-fast' && g.remaining > 0);
             if (fastGoal) {
                 // Ask user: count toward qadaa or voluntary?
@@ -2483,12 +2483,12 @@
 
 
 
-        // Create a new goal — opens the Add Goal modal with a "Back" trail to this day
+        // Create a new goal - opens the Add Goal modal with a "Back" trail to this day
         content.querySelector('[data-action="create-goal"]')?.addEventListener('click', () => {
             openAddGoalModal({ backToDay: key });
         });
 
-        // Open Record Qadaa modal — user prayed qadaa for this day
+        // Open Record Qadaa modal - user prayed qadaa for this day
         content.querySelector('[data-action="qadaa-record"]')?.addEventListener('click', () => {
             openRecordQadaaModal(key);
         });
@@ -2517,7 +2517,7 @@
             sourceLabel = `${md.monthName} ${dd2}`;
         }
 
-        $('#modal-title').textContent = sourceKey ? `Record Qadaa — ${sourceLabel}` : 'Record Qadaa';
+        $('#modal-title').textContent = sourceKey ? `Record Qadaa - ${sourceLabel}` : 'Record Qadaa';
         clearModalHeaderActions();
 
         if (openGoals.length === 0) {
@@ -2538,7 +2538,7 @@
             return;
         }
 
-        // Picker state — which goal we're recording against
+        // Picker state - which goal we're recording against
         let targetId = null; // goal index in the full goals array
 
         function resolveInitialTarget() {
@@ -2567,7 +2567,7 @@
             return esc(g.name) || 'Qadaa Prayers';
         }
 
-        // Render whole modal body — re-rendered when target or data changes
+        // Render whole modal body - re-rendered when target or data changes
         function renderBody() {
             const g = getTargetGoal();
             if (!g) {
@@ -2579,7 +2579,7 @@
             const pct = g.total > 0 ? Math.round((done / g.total) * 100) : 0;
             const isAuto = g.type === 'qadaa-auto';
 
-            // Goal picker — all open qadaa goals
+            // Goal picker - all open qadaa goals
             const allOpen = getGoals()
                 .map((x, idx) => ({ g: x, idx }))
                 .filter(x => (x.g.type === 'qadaa' || x.g.type === 'qadaa-auto') && x.g.remaining > 0);
@@ -2590,7 +2590,7 @@
                     <select class="app-input recq-goal-select" id="recq-goal-picker">
                         ${allOpen.map(x => `
                             <option value="${x.idx}" ${x.idx === targetId ? 'selected' : ''}>
-                                ${goalLabel(x.g)} — ${x.g.remaining} remaining
+                                ${goalLabel(x.g)} - ${x.g.remaining} remaining
                             </option>
                         `).join('')}
                     </select>
@@ -2604,7 +2604,7 @@
                 <div class="record-qadaa-modal">
                     ${pickerHTML}
 
-                    <!-- Prominent goal header — makes it obvious which goal we're decrementing -->
+                    <!-- Prominent goal header - makes it obvious which goal we're decrementing -->
                     <div class="recq-goal-card recq-goal-card-${isAuto ? 'auto' : 'manual'}">
                         <div class="recq-goal-top">
                             <span class="recq-goal-name">${goalLabel(g)} ${targetGoalBadge}</span>
@@ -2657,7 +2657,7 @@
                 renderBody();
             });
 
-            // Open-goal shortcut — jumps to the goal detail.
+            // Open-goal shortcut - jumps to the goal detail.
             // Back-chip returns to Record Qadaa (which itself has its own Back to day).
             $('#recq-open-goal')?.addEventListener('click', () => {
                 const backTarget = {
@@ -2695,7 +2695,7 @@
                     }
                     if (totalDeducted === 0) { delete g2._dontArchive; toast('Nothing to record'); return; }
                     g2.notes = g2.notes || [];
-                    g2.notes.push(makeNote({ text: `${totalDeducted} prayers — ${days} day${days === 1 ? '' : 's'}`, amount: -totalDeducted, sourceKey: dayKey }));
+                    g2.notes.push(makeNote({ text: `${totalDeducted} prayers - ${days} day${days === 1 ? '' : 's'}`, amount: -totalDeducted, sourceKey: dayKey }));
                     saveGoals();
 
                     const d2 = dayData(dayKey);
@@ -2709,7 +2709,7 @@
                     if (dayFlagsSet.length) save(KEYS.PRAYERS, S.prayers);
 
                     sessionLog.push({
-                        text: `${totalDeducted} prayer${totalDeducted === 1 ? '' : 's'} — ${days} day${days === 1 ? '' : 's'}`,
+                        text: `${totalDeducted} prayer${totalDeducted === 1 ? '' : 's'} - ${days} day${days === 1 ? '' : 's'}`,
                         undo: () => {
                             restoreGoalSnapshot(g2, snap);
                             saveGoals();
@@ -2757,7 +2757,7 @@
                         </div>
                     </div>`;
                 }
-                // Single prayer (auto-missed) — single big card
+                // Single prayer (auto-missed) - single big card
                 return `
                 <div class="qadaa-prayer-row">
                     <button type="button" class="qpr-main${disabled ? ' disabled' : ''}" data-prayer="${p.id}" ${disabled ? 'disabled' : ''}>
@@ -2841,7 +2841,7 @@
                 const dateStr = fmtNoteDate(n);
                 return `
                 <button type="button" class="aq-log-row aq-log-history" data-scope="history" data-i="${i}" title="Tap to undo">
-                    <span class="aq-log-text">${esc(n.text || '—')}</span>
+                    <span class="aq-log-text">${esc(n.text || '-')}</span>
                     <span class="aq-log-date">${dateStr}</span>
                     <span class="aq-undo-hint" aria-hidden="true">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 14l-4-4 4-4M5 10h9a5 5 0 0 1 0 10h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -2855,7 +2855,7 @@
                 ${historyRows}
             ` : '');
 
-            // Session-row undo (LIFO — only allow undoing the most recent entry)
+            // Session-row undo (LIFO - only allow undoing the most recent entry)
             $$('.aq-log-row[data-scope="session"]', el).forEach(btn => {
                 btn.addEventListener('click', () => {
                     const i = parseInt(btn.dataset.i);
@@ -2870,7 +2870,7 @@
                 });
             });
 
-            // History-row undo — reverse the persistent note's amount against the goal
+            // History-row undo - reverse the persistent note's amount against the goal
             $$('.aq-log-row[data-scope="history"]', el).forEach(btn => {
                 btn.addEventListener('click', () => {
                     if (!btn.classList.contains('confirm')) {
@@ -2894,7 +2894,7 @@
                     if (note.prayer && g2.perPrayer[note.prayer] !== undefined) {
                         g2.perPrayer[note.prayer] = Math.max(0, g2.perPrayer[note.prayer] + reverse);
                     } else if (!note.prayer) {
-                        // Multi-prayer note — reset per-prayer breakdown for redistribution
+                        // Multi-prayer note - reset per-prayer breakdown for redistribution
                         g2.perPrayer = null;
                     }
                     if (note.sourceKey) clearQadaaFlags(note.sourceKey);
@@ -3065,7 +3065,7 @@
 
     /**
      * Sweep active goals: any with remaining === 0 moves to archive with { completed: true }.
-     * Auto-missed goals are NOT auto-archived when pending — only when manually recorded
+     * Auto-missed goals are NOT auto-archived when pending - only when manually recorded
      * as prayed or dismissed. Completed goals of any type are archived so stats can include
      * them and the active list stays tidy.
      */
@@ -3545,7 +3545,7 @@
                     btn.classList.add('active');
                 });
             });
-            // Language select — currently only English; writes to settings for forward-compat
+            // Language select - currently only English; writes to settings for forward-compat
             $('select[data-setting="language"]', content)?.addEventListener('change', (e) => {
                 setSetting('language', e.target.value);
             });
@@ -3610,7 +3610,7 @@
                 refreshAllTimes();
                 resyncPushSubscription();
             });
-            // Asr school segmented buttons trigger recompute via re-wire above — add recompute hook
+            // Asr school segmented buttons trigger recompute via re-wire above - add recompute hook
             $$('.seg-toggle-btn[data-setting="asrSchool"]', content).forEach(btn => {
                 btn.addEventListener('click', () => refreshAllTimes());
             });
@@ -3739,7 +3739,7 @@
                 if (!email) { if (syncError) syncError.textContent = 'Enter your email first'; return; }
                 try {
                     await Sync.resetPassword(email);
-                    if (syncError) { syncError.style.color = '#68d391'; syncError.textContent = 'Reset link sent — check your email'; }
+                    if (syncError) { syncError.style.color = '#68d391'; syncError.textContent = 'Reset link sent - check your email'; }
                 } catch (err) {
                     if (syncError) syncError.textContent = err.message;
                 }
@@ -3935,7 +3935,7 @@
                     filtered[k] = (v !== null && typeof v === 'object') ? JSON.stringify(v) : v;
                 }
                 Storage.importAll(filtered);
-                toast('Data imported — reloading…');
+                toast('Data imported - reloading…');
                 setTimeout(() => location.reload(), 800);
             } catch {
                 toast('Import failed: invalid file');
@@ -3975,13 +3975,13 @@
         if (!grid) return;
 
         // Time-range picker state: 7, 14, or 30 days. Defaults to 7.
-        // This picker drives EVERY card below — period-vs-previous-period comparisons,
+        // This picker drives EVERY card below - period-vs-previous-period comparisons,
         // volunteer counts, on-time %, etc. all scale to the chosen window so the page
         // reads as one coherent "last N days" view.
         const RANGE_DAYS = parseInt(localStorage.getItem('nur-stats-range'), 10) || 7;
 
         // Render the global stats toolbar (range picker) OUTSIDE the cards grid so it reads
-        // as a page-level control — not a card control. Mounted once into the stats page.
+        // as a page-level control - not a card control. Mounted once into the stats page.
         const statsPage = grid.parentElement;
         let toolbar = $('#stats-toolbar');
         if (!toolbar && statsPage) {
@@ -4032,7 +4032,7 @@
         // ── Range-scoped stats (uses the RANGE_DAYS picker value: 7 / 14 / 30) ──
         // "On-time" fallback: no timestamp in data model, so we count a prayer as on-time
         // if it's marked done AND NOT flagged `${id}_auto_missed`. An auto-miss flag means
-        // the user didn't log it before the next adhan — i.e. it's being paid back as qadaa.
+        // the user didn't log it before the next adhan - i.e. it's being paid back as qadaa.
         const rangePerPrayer = { fajr:0, dhuhr:0, asr:0, maghrib:0, isha:0 };
         const rangeOnTimePer = { fajr:0, dhuhr:0, asr:0, maghrib:0, isha:0 };
         const rangeLatePer = { fajr:0, dhuhr:0, asr:0, maghrib:0, isha:0 };
@@ -4183,7 +4183,7 @@
                 ${qadaaTotal === 0 ? `
                     <div class="stat-empty">
                         <div class="stat-empty-icon">✓</div>
-                        <div class="stat-empty-text">No qadaa goals yet — you're all caught up.</div>
+                        <div class="stat-empty-text">No qadaa goals yet - you're all caught up.</div>
                     </div>
                 ` : `
                     <div class="qadaa-big-stat">
@@ -4216,7 +4216,7 @@
      * Reference: PrayTimes.js formulas (Hamid Zarrabi-Zadeh, public domain).
      * ────────────────────────────────────────────────────────── */
 
-    // Calculation methods: fajrAngle, ishaAngle, ishaInterval (if > 0 replaces angle — minutes after maghrib)
+    // Calculation methods: fajrAngle, ishaAngle, ishaInterval (if > 0 replaces angle - minutes after maghrib)
     const CALC_METHODS = {
         ISNA:         { name: 'ISNA (North America)',       fajr: 15,   isha: 15,   ishaInterval: 0  },
         MWL:          { name: 'Muslim World League',         fajr: 18,   isha: 17,   ishaInterval: 0  },
@@ -4530,16 +4530,20 @@
             return target[prop];
         }
     });
-    // Prayer-ring window order (Sunrise excluded — it's not a prayer, just a time marker)
+    // Prayer-ring window order (Sunrise excluded - it's not a prayer, just a time marker)
     const PRAYER_RING_IDS = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
 
     let _timesTicker = null;
-    let _tickEls = null; // cached DOM refs for tickTimes — populated by renderPrayerTimes
+    let _tickEls = null; // cached DOM refs for tickTimes - populated by renderPrayerTimes
     let _timesAC = null; // AbortController for document-level listeners in renderPrayerTimes
     let _lastRolledState = false; // track post-Isha roll state for re-render
     let _windowsCache = { key: '', value: null }; // cached windows array for tickTimes perf
+    // Keep the NOW pin in the middle of the viewport. The 3-day track scrolls under it.
+    // Dragging pauses follow; releasing (or tapping the NOW chip) resumes it.
+    let _daybarFollowNow = true;
+    let _daybarDragging = false;
 
-    /* Cache today's prayer times — computeRawTimes does expensive trig and gets called
+    /* Cache today's prayer times - computeRawTimes does expensive trig and gets called
        via tickTimes every second. Invalidated when the calendar date changes. */
     let _todayTimesCache = { key: '', value: null };
     function getTodayPrayerTimes() {
@@ -4576,7 +4580,7 @@
 
     /** Build a sorted array of prayer events (Date ascending) to find current + next.
      * Sunrise is included as an event so the hero countdown can target Sunrise between
-     * Fajr and Dhuhr — reflecting the Islamic rule that Fajr window ends at sunrise and
+     * Fajr and Dhuhr - reflecting the Islamic rule that Fajr window ends at sunrise and
      * praying after sunrise is makruh until Dhuhr zawal. */
     function buildPrayerSchedule(times) {
         const events = PRAYER_RING_IDS.map(id => ({ id, name: PRAYER_TIME_LABELS[id], at: times.today[id] }));
@@ -4584,7 +4588,7 @@
         // the hero jumps past Sunrise to Dhuhr).
         events.push({ id: 'sunrise', name: 'Sunrise', at: times.today.sunrise, isSunrise: true });
         // Tomorrow's Fajr is in the schedule (for the post-Isha overnight countdown) but we label it
-        // plainly as "Fajr" in the UI — no "(tomorrow)" clutter.
+        // plainly as "Fajr" in the UI - no "(tomorrow)" clutter.
         events.push({ id: 'fajr-next', name: 'Fajr', at: times.tomorrowFajr });
         events.sort((a, b) => a.at - b.at);
         return events;
@@ -4652,8 +4656,8 @@
         const fastingOn = S.settings.fastingTracker !== undefined ? !!S.settings.fastingTracker : isRamadan;
         const highLatWarn = times && times.today && times.today.highLatitudeWarning;
 
-        // Build the static skeleton — dynamic parts updated by tick()
-        // Settings live in the global gear icon (top header) — no duplicate controls here.
+        // Build the static skeleton - dynamic parts updated by tick()
+        // Settings live in the global gear icon (top header) - no duplicate controls here.
         page.innerHTML = `
             <div class="times-page-wrap">
                 <!-- Header: location + notification toggle -->
@@ -4665,14 +4669,14 @@
                         </p>
                     </div>
                     <div class="times-header-actions">
-                        <button type="button" class="icon-btn" id="toggle-notif" title="${notifOn ? 'Prayer notifications are ON — click to mute all' : 'Prayer notifications are OFF — click to enable'}" aria-pressed="${notifOn}">
+                        <button type="button" class="icon-btn" id="toggle-notif" title="${notifOn ? 'Prayer notifications are ON - click to mute all' : 'Prayer notifications are OFF - click to enable'}" aria-pressed="${notifOn}">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                                 ${notifOn
                                     ? '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>'
                                     : '<path d="M13.73 21a2 2 0 0 1-3.46 0M18.63 13A17.89 17.89 0 0 1 18 8M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14M18 8a6 6 0 0 0-9.33-5M1 1l22 22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>'}
                             </svg>
                         </button>
-                        <button type="button" class="icon-btn" id="toggle-fasting" title="${fastingOn ? 'Fasting tracker ON — click to hide' : 'Show fasting tracker'}" aria-pressed="${fastingOn}">
+                        <button type="button" class="icon-btn" id="toggle-fasting" title="${fastingOn ? 'Fasting tracker ON - click to hide' : 'Show fasting tracker'}" aria-pressed="${fastingOn}">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                                 ${fastingOn
                                     ? '<path d="M6 2h12M6 22h12M6 2c0 4 4 5 4 8s-4 4-4 8h12c0-4-4-5-4-8s4-4 4-8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>'
@@ -4724,12 +4728,12 @@
                         <div class="hero-progress">
                             <div class="hero-progress-labels hero-progress-labels-top">
                                 <span class="hpl-side">
-                                    <span class="hpl-name" id="hero-progress-from">—</span>
-                                    <span class="hpl-time" id="hero-progress-from-time">—</span>
+                                    <span class="hpl-name" id="hero-progress-from">-</span>
+                                    <span class="hpl-time" id="hero-progress-from-time">-</span>
                                 </span>
                                 <span class="hpl-side hpl-right">
-                                    <span class="hpl-name" id="hero-progress-to">—</span>
-                                    <span class="hpl-time" id="hero-progress-to-time">—</span>
+                                    <span class="hpl-name" id="hero-progress-to">-</span>
+                                    <span class="hpl-time" id="hero-progress-to-time">-</span>
                                 </span>
                             </div>
                             <div class="hero-progress-bar"><div class="hero-progress-fill" id="hero-progress-fill" style="width:0%"></div></div>
@@ -4740,11 +4744,11 @@
                                       counts down to iqama. Hides automatically once iqama passes. -->
                         <div class="hero-sub-counters">
                             <div class="hero-sub-counter" id="hsub-since">
-                                <div class="hsub-val" id="hsub-since-val">—</div>
+                                <div class="hsub-val" id="hsub-since-val">-</div>
                                 <div class="hsub-label" id="hsub-since-label">Since last</div>
                             </div>
                             <div class="hero-sub-counter hero-sub-iqama" id="hsub-iqama" hidden>
-                                <div class="hsub-val" id="hsub-iqama-val">—</div>
+                                <div class="hsub-val" id="hsub-iqama-val">-</div>
                                 <div class="hsub-label" id="hsub-iqama-label">Iqama in</div>
                             </div>
                         </div>
@@ -4753,15 +4757,15 @@
                         <div class="hero-windows">
                             <div class="hw-card hw-current" id="hw-current" data-tone="prayer">
                                 <div class="hw-label">Current window</div>
-                                <div class="hw-name" id="hw-cur-name">—</div>
-                                <div class="hw-count" id="hw-cur-count">—</div>
-                                <div class="hw-sub" id="hw-cur-sub">—</div>
+                                <div class="hw-name" id="hw-cur-name">-</div>
+                                <div class="hw-count" id="hw-cur-count">-</div>
+                                <div class="hw-sub" id="hw-cur-sub">-</div>
                             </div>
                             <div class="hw-card hw-next" id="hw-next">
                                 <div class="hw-label">Next window</div>
-                                <div class="hw-name" id="hw-nxt-name">—</div>
-                                <div class="hw-count" id="hw-nxt-count">—</div>
-                                <div class="hw-sub" id="hw-nxt-sub">—</div>
+                                <div class="hw-name" id="hw-nxt-name">-</div>
+                                <div class="hw-count" id="hw-nxt-count">-</div>
+                                <div class="hw-sub" id="hw-nxt-sub">-</div>
                             </div>
                         </div>
                     </div>
@@ -4783,7 +4787,7 @@
                 </p>
             </div>`;
 
-        // Static: timeline rows — 5 prayers + Sunrise as a subtle reference row.
+        // Static: timeline rows - 5 prayers + Sunrise as a subtle reference row.
         // Each prayer row has a prayer icon on the left and a per-prayer notification toggle
         // on the right so the user can mute specific prayers. Sunrise is informational only.
         const perPrayerNotifs = S.settings.prayerNotifs || {
@@ -4822,7 +4826,7 @@
                     current[pid] = !(current[pid] !== false);
                     S.settings.prayerNotifs = current;
                     save(KEYS.SETTINGS, S.settings);
-                    // Update JUST this button's visuals — avoid a full page re-render that
+                    // Update JUST this button's visuals - avoid a full page re-render that
                     // would reset the timeline scroll position (the "glitch" user saw).
                     const nowOn = current[pid] !== false;
                     btn.classList.toggle('on', nowOn);
@@ -4852,7 +4856,7 @@
             if (wrap) wrap.classList.toggle('hidden', !on);
             if (btn) {
                 btn.setAttribute('aria-pressed', on);
-                btn.title = on ? 'Fasting tracker ON — click to hide' : 'Show fasting tracker';
+                btn.title = on ? 'Fasting tracker ON - click to hide' : 'Show fasting tracker';
                 btn.querySelector('svg').innerHTML = on
                     ? '<path d="M6 2h12M6 22h12M6 2c0 4 4 5 4 8s-4 4-4 8h12c0-4-4-5-4-8s4-4 4-8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>'
                     : '<path d="M6 2h12M6 22h12M6 2c0 4 4 5 4 8s-4 4-4 8h12c0-4-4-5-4-8s4-4 4-8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.4"/>';
@@ -4862,7 +4866,7 @@
 
         // Day timeline skeleton: 24h scale with tinted windows (Duha / Karaha / Last-Third)
         // + prayer markers. Track is wider than the card (200% base) so the user can slide
-        // horizontally to see past/future — no day-nav buttons needed.
+        // horizontally to see past/future - no day-nav buttons needed.
         const timelineEl = $('#times-daybar');
         if (timelineEl) {
             const renderNow = new Date();
@@ -4906,7 +4910,7 @@
                     fajr: dt.sunrise, dhuhr: dt.asr, asr: dt.maghrib, maghrib: dt.isha, isha: day.nextFajr,
                 };
 
-                // Prayer bands — no day clamp, isha's band naturally spans into next day's slot on the 3-day track
+                // Prayer bands - no day clamp, isha's band naturally spans into next day's slot on the 3-day track
                 PRAYER_RING_IDS.forEach(id => {
                     const startAt = dt[id];
                     const endAt = winEnds[id];
@@ -4920,7 +4924,7 @@
                     });
                 });
 
-                // Duha — ends exactly when Zawal karaha starts (no gap between windows)
+                // Duha - ends exactly when Zawal karaha starts (no gap between windows)
                 const duhaStart = new Date(dt.sunrise.getTime() + 15 * 60 * 1000);
                 const duhaEnd = new Date(dt.dhuhr.getTime() - 10 * 60 * 1000);
                 duhaSegsAll.push({
@@ -4930,7 +4934,7 @@
                     dur: formatDuration(duhaEnd - duhaStart, { compact: true }),
                 });
 
-                // Karaha (3 windows per day) — store duration so tooltip/popover can surface it
+                // Karaha (3 windows per day) - store duration so tooltip/popover can surface it
                 [
                     { from: dt.sunrise, to: new Date(dt.sunrise.getTime() + 15 * 60 * 1000), label: 'after sunrise' },
                     { from: new Date(dt.dhuhr.getTime() - 10 * 60 * 1000), to: dt.dhuhr, label: 'before zawal' },
@@ -4955,7 +4959,7 @@
                     dur: formatDuration(day.nextFajr - lastStart, { compact: true }),
                 });
 
-                // Markers — prayers + sunrise
+                // Markers - prayers + sunrise
                 PRAYER_RING_IDS.forEach(id => {
                     markerSpecsAll.push({
                         id, day: day.dateKey, at: dt[id], leftPct: pctOfDay(dt[id]),
@@ -5029,7 +5033,7 @@
                             </div>
                         `;}).join('')}
 
-                        <!-- Karaha (3 per day) — strips are too narrow for inline text; tooltip
+                        <!-- Karaha (3 per day) - strips are too narrow for inline text; tooltip
                              surfaces duration + label. Click opens full popover with start/end time. -->
                         ${karahaSegsAll.map(s => {
                             const w = Math.max(0.15, s.toPct - s.fromPct);
@@ -5105,7 +5109,7 @@
                 </div>`;
 
             // Info-icon toggle. When legend is open, also add `legend-open` to the daybar card
-            // so its z-index rises above sibling cards (hero, schedule) — otherwise the popover
+            // so its z-index rises above sibling cards (hero, schedule) - otherwise the popover
             // renders behind them due to adjacent stacking contexts.
             const legendPop = $('#daybar-legend-pop');
             const infoBtn = $('#daybar-info');
@@ -5126,7 +5130,7 @@
                 }
             }, { signal: _signal });
 
-            // Prayer markers — thin vertical bars with text labels above the track.
+            // Prayer markers - thin vertical bars with text labels above the track.
             // Render markers for all 3 days (yesterday + today + tomorrow).
             const markers = $('#daybar-markers');
             if (markers) {
@@ -5177,7 +5181,7 @@
                     const dur = formatDuration(durMs, { compact: true });
                     return `
                         <div class="tl-popover-title">${title}</div>
-                        <div class="tl-popover-time">${formatTime12(from)} – ${formatTime12(to)}</div>
+                        <div class="tl-popover-time">${formatTime12(from)} - ${formatTime12(to)}</div>
                         <div class="tl-popover-dur">Lasts ${dur}</div>
                         ${hint ? `<div class="tl-popover-hint">${hint}</div>` : ''}
                     `;
@@ -5213,7 +5217,7 @@
                     });
                 });
 
-                // Band click — match DOM element back to its data record via position.
+                // Band click - match DOM element back to its data record via position.
                 // For each segment, we look up by (left%, className) against the appropriate array.
                 $$('.daybar-seg', timelineEl).forEach(seg => {
                     seg.addEventListener('click', (e) => {
@@ -5258,30 +5262,56 @@
                 }, { capture: true, signal: _signal });
             }
 
-            // ── Drag-to-pan the timeline ──
+            // Drag-to-pan the timeline. Default mode keeps NOW in the viewport center
+            // and scrolls the track under it as time moves. Dragging pauses that follow;
+            // release (or tap the NOW chip) resumes it.
             const scroller = $('#daybar-scroll');
-            const centerOnNow = (smooth) => {
+            const syncDaybarToNow = (smooth) => {
                 if (!scroller) return;
                 const nowEl = $('#daybar-now');
                 const track = scroller.querySelector('.daybar-track');
                 if (!nowEl || !track) { scroller.scrollLeft = 0; return; }
                 const pct = parseFloat(nowEl.style.left) || 50;
                 const nowX = (pct / 100) * track.offsetWidth;
-                scroller.scrollTo({ left: Math.max(0, nowX - scroller.clientWidth / 2), behavior: smooth ? 'smooth' : 'instant' });
+                const maxScroll = Math.max(0, track.offsetWidth - scroller.clientWidth);
+                const target = Math.max(0, Math.min(maxScroll, nowX - scroller.clientWidth / 2));
+                if (smooth) {
+                    scroller.scrollTo({ left: target, behavior: 'smooth' });
+                } else if (Math.abs(scroller.scrollLeft - target) > 0.5) {
+                    scroller.scrollLeft = target;
+                }
             };
             if (scroller) {
-                setTimeout(() => centerOnNow(false), 50);
+                const nowEl = $('#daybar-now');
+                if (nowEl) nowEl.style.transition = 'none';
+                syncDaybarToNow(false);
+                requestAnimationFrame(() => syncDaybarToNow(false));
+
                 const nowLabel = timelineEl.querySelector('.daybar-now-label');
                 nowLabel?.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    centerOnNow(true);
+                    _daybarFollowNow = true;
+                    if (nowEl) {
+                        delete nowEl.dataset.stuck;
+                        nowEl.style.transition = 'none';
+                    }
+                    if (nowLabel) {
+                        nowLabel.textContent = 'NOW';
+                        nowLabel.style.left = '';
+                        nowLabel.style.right = '';
+                    }
+                    syncDaybarToNow(false);
                 });
-                // Transform the SAME NOW pill into an edge-stuck chip when NOW is scrolled off.
-                // The pill converts: 'NOW' → '‹ NOW' (left edge) or 'NOW ›' (right edge).
-                // When NOW scrolls back into view, pill reverts to centered normal chip.
-                const nowEl = $('#daybar-now');
+
                 const updateNowChip = () => {
                     if (!nowEl || !nowLabel) return;
+                    if (_daybarFollowNow && !_daybarDragging) {
+                        delete nowEl.dataset.stuck;
+                        nowLabel.textContent = 'NOW';
+                        nowLabel.style.left = '';
+                        nowLabel.style.right = '';
+                        return;
+                    }
                     const track = scroller.querySelector('.daybar-track');
                     if (!track) return;
                     const pct = parseFloat(nowEl.style.left) || 0;
@@ -5290,20 +5320,16 @@
                     const viewEnd = viewStart + scroller.clientWidth;
                     const PAD = 30;
                     if (nowX < viewStart + PAD) {
-                        // NOW off-screen LEFT — label positions relative to NOW line (which is off to the left).
-                        // Offset to place label at viewport's left edge: (viewStart + 8) - nowX
                         nowEl.dataset.stuck = 'left';
                         nowLabel.textContent = '‹ NOW';
                         nowLabel.style.left = `${(viewStart + 8) - nowX}px`;
                         nowLabel.style.right = 'auto';
                     } else if (nowX > viewEnd - PAD) {
-                        // NOW off-screen RIGHT — offset to place label at viewport's right edge.
                         nowEl.dataset.stuck = 'right';
                         nowLabel.textContent = 'NOW ›';
                         nowLabel.style.left = `${(viewEnd - 8) - nowX}px`;
                         nowLabel.style.right = 'auto';
                     } else {
-                        // NOW visible — pill returns to normal centered state above the NOW line
                         delete nowEl.dataset.stuck;
                         nowLabel.textContent = 'NOW';
                         nowLabel.style.left = '';
@@ -5312,12 +5338,7 @@
                 };
                 scroller.addEventListener('scroll', updateNowChip, { passive: true });
                 setTimeout(updateNowChip, 80);
-                setTimeout(updateNowChip, 300);
 
-                // Day labels (Yesterday / Today / Tomorrow) track with the scroll — each label
-                // pins to the middle of whatever portion of its day-slot is currently visible.
-                // If yesterday's slot is only half visible, the "Yesterday" label centers on that half.
-                // This keeps labels anchored near the day junctions as the user slides.
                 const DAY_BOUNDS = { yest: [0, 33.333], today: [33.333, 66.667], tom: [66.667, 100] };
                 const updateActiveDay = () => {
                     const track = scroller.querySelector('.daybar-track');
@@ -5335,7 +5356,6 @@
                     $$('.daybar-day-label', track).forEach(el => {
                         const day = el.dataset.day;
                         const [from, to] = DAY_BOUNDS[day] || [0, 100];
-                        // Intersect day-slot with visible range
                         const visFrom = Math.max(from, viewStartPct);
                         const visTo = Math.min(to, viewEndPct);
                         if (visTo > visFrom) {
@@ -5343,7 +5363,6 @@
                             el.style.left = `${midPct}%`;
                             el.style.opacity = '';
                         } else {
-                            // Day slot out of view — hide label rather than park it at an edge
                             el.style.opacity = '0';
                         }
                         el.classList.toggle('active', day === active);
@@ -5352,7 +5371,26 @@
                 scroller.addEventListener('scroll', updateActiveDay, { passive: true });
                 setTimeout(updateActiveDay, 60);
 
-                // Drag to pan
+                const endPan = (didDrag) => {
+                    _daybarDragging = false;
+                    scroller.classList.remove('dragging');
+                    if (!didDrag) return;
+                    _daybarFollowNow = true;
+                    if (nowEl) {
+                        delete nowEl.dataset.stuck;
+                        nowEl.style.transition = 'none';
+                    }
+                    if (nowLabel) {
+                        nowLabel.textContent = 'NOW';
+                        nowLabel.style.left = '';
+                        nowLabel.style.right = '';
+                    }
+                    // Instant, not smooth: a smooth scroll would fight the per-second follow tick.
+                    syncDaybarToNow(false);
+                    const swallow = (e) => { e.stopPropagation(); e.preventDefault(); };
+                    scroller.addEventListener('click', swallow, { capture: true, once: true });
+                };
+
                 let isDown = false, startX = 0, scrollStart = 0, dragged = false;
                 scroller.addEventListener('mousedown', (e) => {
                     isDown = true; dragged = false;
@@ -5363,35 +5401,44 @@
                 window.addEventListener('mousemove', (e) => {
                     if (!isDown) return;
                     const dx = e.pageX - startX;
-                    if (Math.abs(dx) > 3) dragged = true;
+                    if (Math.abs(dx) > 3) {
+                        dragged = true;
+                        _daybarDragging = true;
+                        _daybarFollowNow = false;
+                    }
                     scroller.scrollLeft = scrollStart - dx;
                 }, { signal: _signal });
                 window.addEventListener('mouseup', () => {
                     if (!isDown) return;
                     isDown = false;
-                    scroller.classList.remove('dragging');
-                    // If a real drag happened, swallow the next click so markers don't fire
-                    if (dragged) {
-                        const swallow = (e) => { e.stopPropagation(); e.preventDefault(); };
-                        scroller.addEventListener('click', swallow, { capture: true, once: true });
-                    }
+                    endPan(dragged);
                 }, { signal: _signal });
-                
+
                 scroller.addEventListener('touchstart', (e) => {
-                    isDown = true;
+                    isDown = true; dragged = false;
                     startX = e.touches[0].pageX;
                     scrollStart = scroller.scrollLeft;
                 }, { passive: true });
                 scroller.addEventListener('touchmove', (e) => {
                     if (!isDown) return;
-                    scroller.scrollLeft = scrollStart - (e.touches[0].pageX - startX);
+                    const dx = e.touches[0].pageX - startX;
+                    if (Math.abs(dx) > 3) {
+                        dragged = true;
+                        _daybarDragging = true;
+                        _daybarFollowNow = false;
+                    }
+                    scroller.scrollLeft = scrollStart - dx;
                 }, { passive: true });
-                scroller.addEventListener('touchend', () => { isDown = false; });
+                scroller.addEventListener('touchend', () => {
+                    if (!isDown) return;
+                    isDown = false;
+                    endPan(dragged);
+                });
             }
         }
 
         // Kick off the ticker
-        // Cache DOM refs used by tickTimes — avoids 15+ querySelector calls per second
+        // Cache DOM refs used by tickTimes - avoids 15+ querySelector calls per second
         _tickEls = {
             hero: $('.times-hero'),
             heroLabel: $('#hero-label'),
@@ -5440,7 +5487,7 @@
         if (_timesTicker) { clearInterval(_timesTicker); _timesTicker = null; }
     }
 
-    /* Cache yesterday's computed prayer times keyed by calendar date — tickTimes
+    /* Cache yesterday's computed prayer times keyed by calendar date - tickTimes
        runs every second and would otherwise recompute trig-heavy times twice per tick.
        Invalidated automatically when the date key changes. */
     let _yestTimesCache = { key: '', value: null };
@@ -5455,7 +5502,7 @@
         return value;
     }
 
-    /** Per-second render — only touches dynamic values (no re-innerHTML of the whole page). */
+    /** Per-second render - only touches dynamic values (no re-innerHTML of the whole page). */
     function tickTimes() {
         const page = $('#times-page');
         if (!page || !page.isConnected) return;
@@ -5497,7 +5544,7 @@
         const el = _tickEls || {};
         const { hero, heroLabel, heroCountdown, fill, fromEl, toEl, fromTimeEl, toTimeEl } = el;
 
-        // Hero always shows countdown to next prayer/event — clean, predictable.
+        // Hero always shows countdown to next prayer/event - clean, predictable.
         // The secondary "Since last" counter below handles elapsed-time display.
         if (hero) hero.dataset.mode = 'countdown';
         if (heroLabel) heroLabel.textContent = `Time to ${next.name}`;
@@ -5521,7 +5568,7 @@
 
         const hsSinceVal = el.sinceVal;
         const hsSinceLabel = el.sinceLabel;
-        if (hsSinceVal) hsSinceVal.textContent = prev ? formatDuration(sinceMs) : '—';
+        if (hsSinceVal) hsSinceVal.textContent = prev ? formatDuration(sinceMs) : '-';
         if (hsSinceLabel) hsSinceLabel.textContent = prev ? `Since ${prev.name}${prev.id !== 'sunrise' ? ' adhan' : ''}` : 'Since last';
 
         const hsIqamaWrap = el.iqamaWrap;
@@ -5592,8 +5639,8 @@
                     if (hwCurCount) hwCurCount.textContent = formatDuration(currentWin.end - now, { compact: true });
                     if (hwCurSub) hwCurSub.textContent = `ends ${formatTime12(currentWin.end)}`;
                 } else {
-                    if (hwCurName) hwCurName.textContent = '—';
-                    if (hwCurCount) hwCurCount.textContent = '—';
+                    if (hwCurName) hwCurName.textContent = '-';
+                    if (hwCurCount) hwCurCount.textContent = '-';
                     if (hwCurSub) hwCurSub.textContent = '';
                 }
             }
@@ -5617,15 +5664,29 @@
         }
 
         // Move the "now" pointer on the 3-day timeline (yest/today/tom = 300% track).
-        // Today's 00:00 is at 33.33%; each hour is ~1.389%.
+        // Today's 00:00 is at 33.33%; each hour is ~1.389%. While follow mode is on,
+        // keep scroll locked so NOW stays in the viewport center and the days slide under it.
         const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
         const slideStart = new Date(todayMidnight); slideStart.setDate(slideStart.getDate() - 1);
         const dayPct3 = ((now - slideStart) / (72 * 3600 * 1000)) * 100;
         const daybarNow = $('#daybar-now');
-        if (daybarNow) daybarNow.style.left = `${dayPct3.toFixed(3)}%`;
+        if (daybarNow) {
+            daybarNow.style.transition = 'none';
+            daybarNow.style.left = `${dayPct3.toFixed(3)}%`;
+            if (_daybarFollowNow && !_daybarDragging) {
+                const scroller = $('#daybar-scroll');
+                const track = scroller?.querySelector('.daybar-track');
+                if (scroller && track) {
+                    const nowX = (dayPct3 / 100) * track.offsetWidth;
+                    const maxScroll = Math.max(0, track.offsetWidth - scroller.clientWidth);
+                    const target = Math.max(0, Math.min(maxScroll, nowX - scroller.clientWidth / 2));
+                    if (Math.abs(scroller.scrollLeft - target) > 0.5) scroller.scrollLeft = target;
+                }
+            }
+        }
 
         // Mark current/past prayer markers on the timeline (only "today"-marked markers follow schedule)
-        // After post-Isha roll, the schedule is tomorrow's — today's markers are all past.
+        // After post-Isha roll, the schedule is tomorrow's - today's markers are all past.
         const isRolled = !!times.rolled;
         (el.daybarMarkers || $$('.daybar-marker')).forEach(m => {
             const id = m.dataset.marker;
@@ -5787,7 +5848,7 @@
         if (!btn) return;
         const on = !!S.settings.notifications;
         btn.setAttribute('aria-pressed', on);
-        btn.title = on ? 'Prayer notifications are ON — click to mute all' : 'Prayer notifications are OFF — click to enable';
+        btn.title = on ? 'Prayer notifications are ON - click to mute all' : 'Prayer notifications are OFF - click to enable';
         btn.querySelector('svg').innerHTML = on
             ? '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>'
             : '<path d="M13.73 21a2 2 0 0 1-3.46 0M18.63 13A17.89 17.89 0 0 1 18 8M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14M18 8a6 6 0 0 0-9.33-5M1 1l22 22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
@@ -5808,7 +5869,7 @@
             $('.notif-sub-list')?.classList.add('disabled');
             return;
         }
-        // Electron: no permission needed — native toasts always work
+        // Electron: no permission needed - native toasts always work
         if (!isElectron) {
             let perm = Notification.permission;
             if (perm === 'default') perm = await Notification.requestPermission();
@@ -5836,7 +5897,7 @@
         if (!times) return;
         const now = Date.now();
 
-        // Read sub-settings — each controls one kind of alert
+        // Read sub-settings - each controls one kind of alert
         const preOn       = S.settings.notifPreEnabled       !== false;
         const preMin      = Math.max(1, parseInt(S.settings.notifPreMinutes, 10) || 15);
         const adhanOn     = S.settings.notifAdhanEnabled     !== false;
@@ -5855,7 +5916,7 @@
                 const preAt = at - preMin * 60 * 1000;
                 if (preAt > now) {
                     const t = setTimeout(() => {
-                        showPrayerNotification(`${name} in ${preMin} min`, `Prepare for prayer — ${formatTime12(times.today[id])}`);
+                        showPrayerNotification(`${name} in ${preMin} min`, `Prepare for prayer - ${formatTime12(times.today[id])}`);
                     }, preAt - now);
                     _notifTimers.push(t);
                 }
@@ -5863,7 +5924,7 @@
             // Adhan alert
             if (adhanOn && at > now) {
                 const t = setTimeout(() => {
-                    showPrayerNotification(`${name} — ${formatTime12(times.today[id])}`, 'Time for prayer');
+                    showPrayerNotification(`${name} - ${formatTime12(times.today[id])}`, 'Time for prayer');
                     renderPrayerList(dashboardKey(), peekDay(dashboardKey()));
                 }, at - now);
                 _notifTimers.push(t);
@@ -6260,7 +6321,7 @@
     }
 
     function runAutoMissedCheck() {
-        // If sync is active but first pull hasn't completed yet, skip —
+        // If sync is active but first pull hasn't completed yet, skip -
         // the data may be on cloud and hasn't been pulled. Running the check
         // would create false auto-missed goals that poison sync timestamps.
         if (typeof Sync !== 'undefined' && Sync.getSession && Sync.getSession() && !Sync.firstPullDone) return;
@@ -6268,7 +6329,7 @@
         const repaired = repairAutoMissBackfill();
 
         // Snapshot _modifiedDays so we can undo any keys added by dayData() calls
-        // during this check — auto-missed flags are local-only and must NOT trigger
+        // during this check - auto-missed flags are local-only and must NOT trigger
         // sync pushes that would stamp stale field timestamps.
         const _savedModifiedDays = new Set(_modifiedDays);
         const missedNames = [];
@@ -6291,7 +6352,7 @@
 
             // Isha closes at the next day's Fajr, which is after midnight.
             // A check in that gap used to stamp lastAutoMissCheck on the new
-            // calendar day, and the next walk started there — so that Isha was
+            // calendar day, and the next walk started there - so that Isha was
             // never visited. Step back when the previous day was tracked and
             // its Isha has since closed without being logged.
             if (cursor > installedDay) {
@@ -6417,7 +6478,7 @@
                         const next = schedule[idx];
                         nextEl.textContent = `${next.name} in ${formatDuration(next.at - now, { compact: true })}`;
                     } else {
-                        nextEl.textContent = 'Next: —';
+                        nextEl.textContent = 'Next: -';
                     }
                 } else {
                     nextEl.textContent = 'Set location for prayer times';
@@ -6589,7 +6650,7 @@
 
     /* ── Event Listeners ─────────────────────────────────────── */
     function initEvents() {
-        // Info-tip (?) click handler — shows a small popover bubble on click, hides on second click or outside
+        // Info-tip (?) click handler - shows a small popover bubble on click, hides on second click or outside
         document.addEventListener('click', (e) => {
             const tip = e.target.closest('.info-tip');
             // Close any open tip first
@@ -6751,7 +6812,7 @@
 
         // Warn user if storage is full
         window.addEventListener('storage-quota-exceeded', () => {
-            toast('Storage full — some data may not be saved. Try exporting and clearing old data.');
+            toast('Storage full - some data may not be saved. Try exporting and clearing old data.');
         });
 
         // Re-check day + sync when app returns from background (mobile PWA, tab switch)
@@ -6817,7 +6878,7 @@
 
     window.addEventListener('sync-session-lost', () => {
         if (typeof Sync !== 'undefined' && Sync.stopAutoSync) Sync.stopAutoSync();
-        toast('Session expired — please sign in again');
+        toast('Session expired - please sign in again');
     });
 
     if (document.readyState === 'loading') {

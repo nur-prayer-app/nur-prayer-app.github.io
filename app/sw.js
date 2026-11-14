@@ -1,5 +1,5 @@
-// Nur — Service Worker (cache-first, version stamped by build-web.js)
-const CACHE_VERSION = 'nur-v3';
+// Nur - Service Worker (cache-first, version stamped by build-web.js)
+const CACHE_VERSION = 'nur-v4';
 const CACHE_NAME = CACHE_VERSION;
 
 const PRECACHE_URLS = [
@@ -27,7 +27,7 @@ const PRECACHE_URLS = [
   'manifest.json'
 ];
 
-// Install — pre-cache core assets
+// Install - pre-cache core assets
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -36,7 +36,7 @@ self.addEventListener('install', event => {
   );
 });
 
-// Activate — delete old caches
+// Activate - delete old caches
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
@@ -54,7 +54,7 @@ self.addEventListener('message', event => {
   if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
-// Push — show notification from server even when app is closed
+// Push - show notification from server even when app is closed
 self.addEventListener('push', event => {
   if (!event.data) return;
   const data = event.data.json();
@@ -69,7 +69,7 @@ self.addEventListener('push', event => {
   event.waitUntil(self.registration.showNotification(title, options));
 });
 
-// Notification click — open or focus the app
+// Notification click - open or focus the app
 self.addEventListener('notificationclick', event => {
   event.notification.close();
   event.waitUntil(
@@ -82,7 +82,7 @@ self.addEventListener('notificationclick', event => {
   );
 });
 
-// Fetch — cache-first, fall back to network, cache the response
+// Fetch - cache-first, fall back to network, cache the response
 self.addEventListener('fetch', event => {
   // Only handle GET requests
   if (event.request.method !== 'GET') return;
@@ -90,7 +90,7 @@ self.addEventListener('fetch', event => {
   // Don't intercept analytics/external scripts
   if (!event.request.url.startsWith(self.location.origin)) return;
 
-  // Skip caching for API/dynamic URLs — let browser handle directly
+  // Skip caching for API/dynamic URLs - let browser handle directly
   const url = event.request.url;
   if (url.includes('supabase.co') || url.includes('version.json') || url.includes('nominatim.openstreetmap.org')) {
     return;
