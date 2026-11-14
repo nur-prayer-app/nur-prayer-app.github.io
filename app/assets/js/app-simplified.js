@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.2.7';
+    const APP_VERSION = '1.2.8';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -4539,7 +4539,8 @@
     let _lastRolledState = false; // track post-Isha roll state for re-render
     let _windowsCache = { key: '', value: null }; // cached windows array for tickTimes perf
     // Keep the NOW pin in the middle of the viewport. The 3-day track scrolls under it.
-    // Dragging pauses follow; releasing (or tapping the NOW chip) resumes it.
+    // Dragging enters free-pan; tapping the NOW chip resumes follow. A full page rebuild
+    // (navigate to Times, location change, post-Isha roll) always re-centers on NOW.
     let _daybarFollowNow = true;
     let _daybarDragging = false;
 
@@ -5265,12 +5266,14 @@
             // Drag-to-pan the timeline. Default mode keeps NOW in the viewport center
             // and scrolls the track under it as time moves. Dragging enters free-pan so
             // you can inspect other day slots; tap the NOW chip to re-center and follow.
+            // innerHTML rebuild resets scroll to 0 (yesterday), so always re-enter follow
+            // and center on NOW when wiring a fresh daybar.
             const scroller = $('#daybar-scroll');
             const syncDaybarToNow = (smooth) => {
                 if (!scroller) return;
                 const nowEl = $('#daybar-now');
                 const track = scroller.querySelector('.daybar-track');
-                if (!nowEl || !track) { scroller.scrollLeft = 0; return; }
+                if (!nowEl || !track || track.offsetWidth < 1 || scroller.clientWidth < 1) return;
                 const pct = parseFloat(nowEl.style.left) || 50;
                 const nowX = (pct / 100) * track.offsetWidth;
                 const maxScroll = Math.max(0, track.offsetWidth - scroller.clientWidth);
@@ -5284,10 +5287,14 @@
             if (scroller) {
                 const nowEl = $('#daybar-now');
                 if (nowEl) nowEl.style.transition = 'none';
-                if (_daybarFollowNow) {
+                _daybarFollowNow = true;
+                _daybarDragging = false;
+                syncDaybarToNow(false);
+                requestAnimationFrame(() => {
                     syncDaybarToNow(false);
                     requestAnimationFrame(() => syncDaybarToNow(false));
-                }
+                });
+                setTimeout(() => syncDaybarToNow(false), 50);
 
                 const nowLabel = timelineEl.querySelector('.daybar-now-label');
                 if (nowLabel) {
