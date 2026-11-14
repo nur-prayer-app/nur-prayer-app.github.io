@@ -1525,44 +1525,38 @@ body.electron .app-header {
   transform-origin: 50% 0;
 }
 
-/* Stuck states: same green pill + glow as the centered chip. Only the off-screen
-   end becomes a point (::before tip); the inner end stays the normal rounded cap.
-   drop-shadow (not clip-path alone) keeps the soft glow around the full shape. */
+/* Stuck states: same pill + same box-shadow glow as centered. Outer end gets a
+   real arrow tip (::before with top/bottom stretch; height:100% collapses here).
+   Inner end keeps the normal rounded pill cap. */
 .daybar-now[data-stuck="left"] .daybar-now-label {
   transform: none;
-  padding: 3px 10px 3px 14px;
+  padding: 3px 10px 3px 12px;
   border-radius: 0 999px 999px 0;
-  box-shadow: none;
-  filter: drop-shadow(0 2px 8px rgba(104, 211, 145, 0.5));
 }
 .daybar-now[data-stuck="left"] .daybar-now-label::before {
   content: '';
   position: absolute;
   left: 0;
   top: 0;
-  width: 9px;
-  height: 100%;
-  background: var(--accent-1);
+  bottom: 0;
+  width: 10px;
+  background: inherit;
   clip-path: polygon(0 50%, 100% 0, 100% 100%);
-  transition: background var(--duration-fast) var(--ease-out);
 }
 .daybar-now[data-stuck="right"] .daybar-now-label {
   transform: translateX(-100%);
-  padding: 3px 14px 3px 10px;
+  padding: 3px 12px 3px 10px;
   border-radius: 999px 0 0 999px;
-  box-shadow: none;
-  filter: drop-shadow(0 2px 8px rgba(104, 211, 145, 0.5));
 }
 .daybar-now[data-stuck="right"] .daybar-now-label::before {
   content: '';
   position: absolute;
   right: 0;
   top: 0;
-  width: 9px;
-  height: 100%;
-  background: var(--accent-1);
+  bottom: 0;
+  width: 10px;
+  background: inherit;
   clip-path: polygon(0 0, 100% 50%, 0 100%);
-  transition: background var(--duration-fast) var(--ease-out);
 }
 /* When stuck, the .daybar-now vertical line should hide so we don't see a stray line at 0% */
 .daybar-now[data-stuck] {
@@ -1573,15 +1567,11 @@ body.electron .app-header {
 .daybar-now[data-stuck="left"] .daybar-now-label:hover {
   transform: scale(1.06);
   transform-origin: 0 50%;
-  filter: drop-shadow(0 2px 10px rgba(104, 211, 145, 0.62));
 }
-.daybar-now[data-stuck="left"] .daybar-now-label:hover::before { background: #48b178; }
 .daybar-now[data-stuck="right"] .daybar-now-label:hover {
   transform: translateX(-100%) scale(1.06);
   transform-origin: 100% 50%;
-  filter: drop-shadow(0 2px 10px rgba(104, 211, 145, 0.62));
 }
-.daybar-now[data-stuck="right"] .daybar-now-label:hover::before { background: #48b178; }
 
 @keyframes daybar-now-pulse {
   0%, 100% { box-shadow: 0 0 8px var(--accent-1); }
