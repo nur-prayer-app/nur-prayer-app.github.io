@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.2.8';
+    const APP_VERSION = '1.2.9';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -4539,10 +4539,11 @@
     let _lastRolledState = false; // track post-Isha roll state for re-render
     let _windowsCache = { key: '', value: null }; // cached windows array for tickTimes perf
     // Keep the NOW pin in the middle of the viewport. The 3-day track scrolls under it.
-    // Dragging enters free-pan; tapping the NOW chip resumes follow. A full page rebuild
-    // (navigate to Times, location change, post-Isha roll) always re-centers on NOW.
+    // Dragging / wheel / trackpad enters free-pan; tapping the NOW chip resumes follow.
+    // A full page rebuild (navigate to Times, location change, post-Isha roll) re-centers.
     let _daybarFollowNow = true;
     let _daybarDragging = false;
+    let _daybarProgrammaticScroll = false;
 
     /* Cache today's prayer times - computeRawTimes does expensive trig and gets called
        via tickTimes every second. Invalidated when the calendar date changes. */
@@ -5056,8 +5057,9 @@
                             </div>
                         `;}).join('')}
 
-                        <!-- NOW line (pulsing, emphasized) -->
-                        <div class="daybar-now" id="daybar-now" style="left:0%">
+                        <!-- NOW line (pulsing, emphasized). Seed left% from clock so the
+                             first center-on-NOW sync is not stuck at 0%/50% before tickTimes. -->
+                        <div class="daybar-now" id="daybar-now" style="left:${clampPct(pctOfDay(renderNow)).toFixed(3)}%">
                             <span class="daybar-now-label">NOW</span>
                         </div>
 
@@ -5264,24 +5266,32 @@
             }
 
             // Drag-to-pan the timeline. Default mode keeps NOW in the viewport center
-            // and scrolls the track under it as time moves. Dragging enters free-pan so
-            // you can inspect other day slots; tap the NOW chip to re-center and follow.
+            // and scrolls the track under it as time moves. Dragging / wheel enters free-pan
+            // so other day slots can be inspected; tap the NOW chip to re-center and follow.
             // innerHTML rebuild resets scroll to 0 (yesterday), so always re-enter follow
             // and center on NOW when wiring a fresh daybar.
             const scroller = $('#daybar-scroll');
+            const nowPctFromEl = (el) => {
+                const pct = parseFloat(el?.style?.left);
+                return Number.isFinite(pct) ? pct : 50;
+            };
             const syncDaybarToNow = (smooth) => {
                 if (!scroller) return;
                 const nowEl = $('#daybar-now');
                 const track = scroller.querySelector('.daybar-track');
                 if (!nowEl || !track || track.offsetWidth < 1 || scroller.clientWidth < 1) return;
-                const pct = parseFloat(nowEl.style.left) || 50;
+                const pct = nowPctFromEl(nowEl);
                 const nowX = (pct / 100) * track.offsetWidth;
                 const maxScroll = Math.max(0, track.offsetWidth - scroller.clientWidth);
                 const target = Math.max(0, Math.min(maxScroll, nowX - scroller.clientWidth / 2));
+                if (Math.abs(scroller.scrollLeft - target) <= 0.5) return;
+                _daybarProgrammaticScroll = true;
                 if (smooth) {
                     scroller.scrollTo({ left: target, behavior: 'smooth' });
-                } else if (Math.abs(scroller.scrollLeft - target) > 0.5) {
+                    setTimeout(() => { _daybarProgrammaticScroll = false; }, 320);
+                } else {
                     scroller.scrollLeft = target;
+                    requestAnimationFrame(() => { _daybarProgrammaticScroll = false; });
                 }
             };
             if (scroller) {
@@ -5326,8 +5336,8 @@
                         return;
                     }
                     const track = scroller.querySelector('.daybar-track');
-                    if (!track) return;
-                    const pct = parseFloat(nowEl.style.left) || 0;
+                    if (!track || track.offsetWidth < 1) return;
+                    const pct = nowPctFromEl(nowEl);
                     const nowX = (pct / 100) * track.offsetWidth;
                     const viewStart = scroller.scrollLeft;
                     const viewEnd = viewStart + scroller.clientWidth;
@@ -5349,13 +5359,11 @@
                         nowLabel.style.right = '';
                     }
                 };
-                scroller.addEventListener('scroll', updateNowChip, { passive: true });
-                setTimeout(updateNowChip, 80);
 
                 const DAY_BOUNDS = { yest: [0, 33.333], today: [33.333, 66.667], tom: [66.667, 100] };
                 const updateActiveDay = () => {
                     const track = scroller.querySelector('.daybar-track');
-                    if (!track) return;
+                    if (!track || track.offsetWidth < 1) return;
                     const trackW = track.offsetWidth;
                     const viewStartPct = (scroller.scrollLeft / trackW) * 100;
                     const viewEndPct = ((scroller.scrollLeft + scroller.clientWidth) / trackW) * 100;
@@ -5381,8 +5389,22 @@
                         el.classList.toggle('active', day === active);
                     });
                 };
-                scroller.addEventListener('scroll', updateActiveDay, { passive: true });
+
+                scroller.addEventListener('scroll', () => {
+                    // Wheel / trackpad / native swipe: leave follow so tickTimes does not snap back.
+                    if (!_daybarProgrammaticScroll && !_daybarDragging) {
+                        _daybarFollowNow = false;
+                    }
+                    updateNowChip();
+                    updateActiveDay();
+                }, { passive: true });
+                setTimeout(updateNowChip, 80);
                 setTimeout(updateActiveDay, 60);
+
+                window.addEventListener('resize', () => {
+                    if (_daybarFollowNow && !_daybarDragging) syncDaybarToNow(false);
+                    else { updateNowChip(); updateActiveDay(); }
+                }, { signal: _signal });
 
                 // After a real pan, stay free so tomorrow / yesterday slots can be inspected.
                 // Tap the NOW chip (or the edge ‹ NOW / NOW › chip) to follow again.
@@ -5397,6 +5419,7 @@
 
                 let isDown = false, startX = 0, scrollStart = 0, dragged = false;
                 scroller.addEventListener('mousedown', (e) => {
+                    if (e.button !== 0) return;
                     isDown = true; dragged = false;
                     startX = e.pageX;
                     scrollStart = scroller.scrollLeft;
@@ -5410,7 +5433,9 @@
                         _daybarDragging = true;
                         _daybarFollowNow = false;
                     }
+                    _daybarProgrammaticScroll = true;
                     scroller.scrollLeft = scrollStart - dx;
+                    _daybarProgrammaticScroll = false;
                 }, { signal: _signal });
                 window.addEventListener('mouseup', () => {
                     if (!isDown) return;
@@ -5418,22 +5443,37 @@
                     endPan(dragged);
                 }, { signal: _signal });
 
+                // Touch: drive scroll ourselves and preventDefault so native overflow
+                // does not double-apply the same gesture (jumpy pan).
                 scroller.addEventListener('touchstart', (e) => {
+                    if (!e.touches[0]) return;
                     isDown = true; dragged = false;
                     startX = e.touches[0].pageX;
                     scrollStart = scroller.scrollLeft;
                 }, { passive: true });
                 scroller.addEventListener('touchmove', (e) => {
-                    if (!isDown) return;
+                    if (!isDown || !e.touches[0]) return;
                     const dx = e.touches[0].pageX - startX;
                     if (Math.abs(dx) > 3) {
                         dragged = true;
                         _daybarDragging = true;
                         _daybarFollowNow = false;
+                        e.preventDefault();
+                    } else if (dragged) {
+                        e.preventDefault();
                     }
-                    scroller.scrollLeft = scrollStart - dx;
-                }, { passive: true });
+                    if (dragged) {
+                        _daybarProgrammaticScroll = true;
+                        scroller.scrollLeft = scrollStart - dx;
+                        _daybarProgrammaticScroll = false;
+                    }
+                }, { passive: false });
                 scroller.addEventListener('touchend', () => {
+                    if (!isDown) return;
+                    isDown = false;
+                    endPan(dragged);
+                });
+                scroller.addEventListener('touchcancel', () => {
                     if (!isDown) return;
                     isDown = false;
                     endPan(dragged);
@@ -5680,11 +5720,15 @@
             if (_daybarFollowNow && !_daybarDragging) {
                 const scroller = $('#daybar-scroll');
                 const track = scroller?.querySelector('.daybar-track');
-                if (scroller && track) {
+                if (scroller && track && track.offsetWidth > 0) {
                     const nowX = (dayPct3 / 100) * track.offsetWidth;
                     const maxScroll = Math.max(0, track.offsetWidth - scroller.clientWidth);
                     const target = Math.max(0, Math.min(maxScroll, nowX - scroller.clientWidth / 2));
-                    if (Math.abs(scroller.scrollLeft - target) > 0.5) scroller.scrollLeft = target;
+                    if (Math.abs(scroller.scrollLeft - target) > 0.5) {
+                        _daybarProgrammaticScroll = true;
+                        scroller.scrollLeft = target;
+                        requestAnimationFrame(() => { _daybarProgrammaticScroll = false; });
+                    }
                 }
             }
         }
