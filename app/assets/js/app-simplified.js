@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '1.2.13';
+    const APP_VERSION = '1.2.14';
     const UPDATE_URL = 'https://nur-prayer-app.github.io/version.json';
 
     /* ── Helpers ─────────────────────────────────────────────── */
@@ -281,6 +281,7 @@
                             && ((g.perPrayer && g.perPrayer[pid] > 0) || g.missedPrayer === pid);
                     });
                     if (matchingGoal) recordQadaaPrayers(matchingGoal, pid, 1);
+                    if (typeof NurAnalytics !== 'undefined') NurAnalytics.track('prayer_logged');
                 }
                 save(KEYS.PRAYERS, S.prayers);
                 // Targeted DOM update instead of full render
@@ -3120,6 +3121,7 @@
     }
 
     function openSettingsModal(activeTab = 'general') {
+        if (typeof NurAnalytics !== 'undefined') NurAnalytics.track('settings_opened', { tab: String(activeTab || 'general') });
         clearModalHeaderActions();
         const modal = $('#modal-backdrop');
         const content = $('#modal-content');
@@ -3513,7 +3515,7 @@
                     <div class="about-title">Nur</div>
                     <div class="about-version">v${ver}</div>
                 </div>
-                <div class="about-description">Made to help you stay consistent with your salah, day after day. Prayer times, Hijri calendar, fasting, qadaa goals, and more. Your data stays on your device. No ads, no tracking.</div>
+                <div class="about-description">Made to help you stay consistent with your salah, day after day. Prayer times, Hijri calendar, fasting, qadaa goals, and more. Your data stays on your device. No ads, no profiles, no selling your data.</div>
                 <div class="about-stats-row">
                     <div class="about-stat"><span class="about-stat-num">${totalDays}</span><span class="about-stat-label">days tracked</span></div>
                     <div class="about-stat"><span class="about-stat-num">${totalPrayed.toLocaleString()}</span><span class="about-stat-label">prayers logged</span></div>
@@ -3713,6 +3715,7 @@
                 try {
                     if (action === 'signup') await Sync.signUp(email, pass);
                     else await Sync.signIn(email, pass);
+                    if (typeof NurAnalytics !== 'undefined') NurAnalytics.track('sync_enabled', { method: 'email' });
                     // Re-render to show logged-in state
                     $('#settings-tab-content').innerHTML = renderSettingsTab('data');
                     wireSettingsTab('data');
@@ -6605,13 +6608,48 @@
         });
     }
 
+    const VALID_PAGES = ['dashboard', 'times', 'stats'];
+
+    function navigateToPage(pageId, { push = true, track = true } = {}) {
+        if (!VALID_PAGES.includes(pageId)) return false;
+        $$('.nav-tab').forEach(t => {
+            t.classList.remove('active');
+            t.setAttribute('aria-pressed', 'false');
+        });
+        const tab = $(`.nav-tab[data-page="${pageId}"]`);
+        if (tab) {
+            tab.classList.add('active');
+            tab.setAttribute('aria-pressed', 'true');
+        }
+        $$('.page').forEach(p => p.classList.remove('active'));
+        const page = $(`.page[data-page="${pageId}"]`);
+        if (page) page.classList.add('active');
+        if (pageId === 'stats') renderStats();
+        if (pageId === 'times') renderPrayerTimes();
+        else stopTimesTicker();
+
+        if (push) {
+            try {
+                const url = new URL(location.href);
+                if (pageId === 'dashboard') url.searchParams.delete('p');
+                else url.searchParams.set('p', pageId);
+                const next = url.pathname + url.search + url.hash;
+                if (next !== location.pathname + location.search + location.hash) {
+                    history.pushState({ page: pageId }, '', next);
+                }
+            } catch (_) { /* ignore bad URL environments */ }
+        }
+
+        if (track && typeof NurAnalytics !== 'undefined') {
+            NurAnalytics.track('tab_view', { page: pageId });
+        }
+        return true;
+    }
+
     // Navigate to a page from tray menu
     if (window.electronAPI?.onNavigate) {
-        const VALID_PAGES = ['dashboard', 'times', 'stats'];
         window.electronAPI.onNavigate((page) => {
-            if (!VALID_PAGES.includes(page)) return;
-            const tab = $(`.nav-tab[data-page="${page}"]`);
-            if (tab) tab.click();
+            navigateToPage(page, { push: true, track: true });
         });
     }
 
@@ -6731,23 +6769,15 @@
         $('#settings-btn')?.addEventListener('click', () => openSettingsModal());
         $('#cal-prev')?.addEventListener('click', calPrev);
 
-        // Page switching
+        // Page switching (History API so Cloudflare SPA analytics can see routes)
         $$('.nav-tab[data-page]').forEach(tab => {
             tab.addEventListener('click', () => {
-                const pageId = tab.dataset.page;
-                $$('.nav-tab').forEach(t => {
-                    t.classList.remove('active');
-                    t.setAttribute('aria-pressed', 'false');
-                });
-                tab.classList.add('active');
-                tab.setAttribute('aria-pressed', 'true');
-                $$('.page').forEach(p => p.classList.remove('active'));
-                const page = $(`.page[data-page="${pageId}"]`);
-                if (page) page.classList.add('active');
-                if (pageId === 'stats') renderStats();
-                if (pageId === 'times') renderPrayerTimes();
-                else stopTimesTicker();
+                navigateToPage(tab.dataset.page, { push: true, track: true });
             });
+        });
+        window.addEventListener('popstate', (e) => {
+            const pageId = (e.state && e.state.page) || new URL(location.href).searchParams.get('p') || 'dashboard';
+            navigateToPage(pageId, { push: false, track: true });
         });
         $('#cal-next')?.addEventListener('click', calNext);
         $('#cal-today')?.addEventListener('click', calToday);
@@ -6824,6 +6854,7 @@
     window.addEventListener('appinstalled', () => {
         _deferredInstallPrompt = null;
         document.querySelector('.pwa-install-bar')?.remove();
+        if (typeof NurAnalytics !== 'undefined') NurAnalytics.track('pwa_install');
     });
 
     /* ── Init ────────────────────────────────────────────────── */
@@ -6845,6 +6876,16 @@
         _lastDashboardKey = dashboardKey();
         repairAutoMissBackfill();
         render();
+        try {
+            const initialPage = new URL(location.href).searchParams.get('p') || 'dashboard';
+            if (initialPage !== 'dashboard') {
+                navigateToPage(initialPage, { push: false, track: true });
+            } else if (typeof NurAnalytics !== 'undefined') {
+                NurAnalytics.track('tab_view', { page: 'dashboard' });
+            }
+        } catch (_) {
+            if (typeof NurAnalytics !== 'undefined') NurAnalytics.track('tab_view', { page: 'dashboard' });
+        }
         updateClock();
         // Defer auto-missed check until after first sync pull (avoid flagging prayers done on other devices).
         // First sync starts on load. This timeout is only a fallback if that pull never finishes.
@@ -6883,6 +6924,7 @@
 
     // Re-render data tab when OAuth callback completes (from Electron deep link)
     window.addEventListener('sync-auth-changed', () => {
+        if (typeof NurAnalytics !== 'undefined') NurAnalytics.track('sync_enabled', { method: 'google' });
         const tabContent = $('#settings-tab-content');
         if (tabContent) {
             tabContent.innerHTML = renderSettingsTab('data');
