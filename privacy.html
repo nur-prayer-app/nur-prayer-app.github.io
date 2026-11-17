@@ -147,7 +147,7 @@
     <div class="wrap">
         <div class="badge"><span class="badge-dot"></span> Legal</div>
         <h1 class="stitle">Privacy Policy</h1>
-        <p class="updated">Last updated: May 2, 2026</p>
+        <p class="updated">Last updated: November 17, 2026</p>
     </div>
 </section>
 
@@ -162,24 +162,30 @@
             <li><strong>Email address</strong> - only if you create an account for cloud sync. Used solely for authentication.</li>
             <li><strong>Google account info</strong> - if you sign in with Google OAuth, we receive your name and email from Google. We do not access your contacts, calendar, or any other Google data.</li>
         </ul>
-        <p>That is everything. Nur does not collect device identifiers, IP-based location, usage patterns, or any other telemetry.</p>
+        <p>Nur also collects the anonymous, aggregate analytics described below. They are not linked to you, your account, or your prayer data.</p>
 
         <h2>How your data is stored</h2>
-        <p>By default, all your data lives on your device in <strong>localStorage</strong>. Nothing leaves your browser or desktop app unless you choose to enable cloud sync.</p>
+        <p>By default, all your data lives on your device in <strong>localStorage</strong>. Your prayer data never leaves your browser or desktop app unless you choose to enable cloud sync.</p>
         <p>If you turn on cloud sync, your prayer data is stored in <strong>Supabase</strong> (a hosted PostgreSQL service). The data is tied to your account and is not shared with anyone.</p>
 
         <h2>Analytics</h2>
-        <p>Nur does not currently include any analytics. In the future we plan to add <strong>Plausible Analytics</strong>, a privacy-friendly, cookie-free analytics tool that does not track individual users and is fully compliant with GDPR, CCPA, and PECR. No personal data will be collected through analytics.</p>
+        <p>Nur uses two cookie-free analytics tools to understand how many people use it and which features matter. Neither one builds a profile of you.</p>
+        <ul>
+            <li><strong>Cloudflare Web Analytics</strong> - counts page views and measures page load speed on this website and the web app. It does not use cookies or fingerprinting and does not follow you across other sites.</li>
+            <li><strong>Anonymous usage events</strong> - the app records a small set of events, such as which tab was opened, that a prayer was checked off, that cloud sync was turned on, or which download button was clicked on this website. Each event stores only the event name, a short label (for example "dashboard" or "hero"), and the time. It does not include your account, email, a device identifier, your IP address, your location, or which prayer you logged.</li>
+        </ul>
+        <p>Analytics data is only looked at in aggregate to improve Nur. It is never sold, shared, or used for advertising.</p>
 
         <h2>Third-party services</h2>
         <ul>
-            <li><strong>Supabase</strong> - cloud database for optional sync. Your data is stored securely and is not shared with third parties.</li>
+            <li><strong>Supabase</strong> - cloud database for optional sync and anonymous usage events. Your data is stored securely and is not shared with third parties.</li>
+            <li><strong>Cloudflare</strong> - cookie-free web analytics for page views and performance.</li>
             <li><strong>Google OAuth</strong> - used for sign-in only. We request the minimum scope (email and profile).</li>
         </ul>
         <p>Nur does not sell, rent, or share your data with anyone. There are no ads, no ad networks, and no data brokers involved.</p>
 
         <h2>Cookies and local storage</h2>
-        <p>Nur uses <strong>localStorage</strong> to save your prayer data, preferences, and settings on your device. Nur does not use tracking cookies. If Plausible Analytics is added in the future, it will operate without cookies.</p>
+        <p>Nur uses <strong>localStorage</strong> to save your prayer data, preferences, and settings on your device. Nur does not use tracking cookies, and its analytics work without cookies.</p>
 
         <h2>Your control over your data</h2>
         <ul>
